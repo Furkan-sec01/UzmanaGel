@@ -3,6 +3,8 @@ import Combine
 import FirebaseFirestore
 import FirebaseStorage
 
+///HomepageViewModel, ana sayfadaki servis yükleme, arama, filtreleme, sıralama, konum-mesafe, sesli arama, favori ve servis görselleri mantığını yönetir.
+
 @MainActor
 final class HomepageViewModel: ObservableObject {
 

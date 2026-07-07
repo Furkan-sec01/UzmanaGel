@@ -21,7 +21,7 @@ struct RootView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color("BackgroundColor").ignoresSafeArea())
             } else if session.isAuthenticated && session.isInExpertSignupFlow,
-                      let vm = session.expertSignUpViewModel {
+                      let vm = session.expertSignUpViewModel {// optional binding
                 ExpertSignUpView(vm: vm)
                     .environmentObject(session)
             } else if session.isAuthenticated && session.isExpert {

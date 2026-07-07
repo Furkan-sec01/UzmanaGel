@@ -1,3 +1,5 @@
+///ExpertDashboardView, uzman başvurusunun incelendiğini gösteren basit bir durum paneli ve çıkış ekranıdır
+
 import SwiftUI
 
 struct ExpertDashboardView: View {

@@ -5,6 +5,8 @@
 //  Uzman girişi sonrası ana ekran.
 //
 
+///ExpertHomepage.swift, expert ana ekranını, profil/başvuru durumunu, hızlı navigasyonu, şehir seçimini ve yeni ilan oluşturup Storage + Firestore’a yayınlama akışını yönetiyor
+
 import SwiftUI
 import PhotosUI
 import UIKit

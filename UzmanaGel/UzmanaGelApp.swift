@@ -5,7 +5,7 @@ import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate {
 
-    func application(_ application: UIApplication,
+    func application(_ application: UIApplication, // uygulama ilk baslatıldıgında calısır
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
         application.registerForRemoteNotifications()
@@ -13,7 +13,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication,
-                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {//device token->APNs tarafından temsil edilen token
         Auth.auth().setAPNSToken(deviceToken, type: .sandbox)
     }
 
@@ -36,7 +36,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct UzmanaGelApp: App {
 
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate // swiftuı uygulamasın Appdelegate sınıfını baglıyor
     @Environment(\.scenePhase) private var scenePhase
 
     // Session
@@ -53,7 +53,7 @@ struct UzmanaGelApp: App {
                 if showSplash {
                     PreViewScreen()
                         .transition(.opacity)
-                        .zIndex(999)
+                        .zIndex(999)// bu view digerlerinin ustunde dursun
                 }
             }
             .onAppear {

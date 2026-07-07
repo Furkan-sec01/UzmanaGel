@@ -15,12 +15,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Yakınınızdaki hizmet sağlayıcıları gösterebilmemiz için konumunuza ihtiyacımız var.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Sesli arama yapabilmeniz için mikrofon erişimine ihtiyacımız var.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Sesli arama yapabilmeniz için konuşma tanıma özelliğine ihtiyacımız var.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

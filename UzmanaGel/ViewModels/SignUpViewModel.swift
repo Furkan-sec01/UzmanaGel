@@ -125,7 +125,7 @@ final class SignUpViewModel: ObservableObject {
                 return
             }
 
-            // 5) Firestore kullanıcı dokümanı oluşturma
+            // 5) Firestore kullanıcı dokümanı oluşturma (kullanıcı verilerinin tutuldugu veri tabanı
             do {
                 try await userRepo.createUserDocument(
                     uid: user.uid,

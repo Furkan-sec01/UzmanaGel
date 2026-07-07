@@ -4,6 +4,8 @@ import FirebaseFirestore
 import FirebaseStorage
 import CoreLocation
 
+///ServiceDetailViewModel, müşteri hizmet detay ekranında uzman bilgilerini, portföyü, diğer ilanları, adresi, çalışma saatlerini, favori durumunu ve yol tarifini yönetir.
+
 @MainActor
 final class ServiceDetailViewModel: ObservableObject {
 

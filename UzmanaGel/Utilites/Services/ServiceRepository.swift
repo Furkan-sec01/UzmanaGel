@@ -1,6 +1,8 @@
 import Foundation
 import FirebaseFirestore
 
+///ServiceRepository, servisleri Firestore'dan getirir, provider bilgileriyle birleştirir, ID bazlı veya provider bazlı servis sorguları yapar ve expert ilanlarını oluşturma/güncelleme/silme işlemlerini yönetir.
+
 final class ServiceRepository {
 
     private let db = Firestore.firestore()

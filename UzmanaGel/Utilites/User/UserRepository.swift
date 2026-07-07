@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 
+/// UserRepository, normal kullanıcı ve expert verilerini Firestore’da okuyan, yazan ve güncelleyen veri erişim katmanıdır.
 /// Firestore bağlantısı: GoogleService-Info.plist içindeki Firebase projesi kullanılır.
 /// Database location (eur3 vb.) proje oluşturulurken Console'da seçilir; istemci aynı projeye bağlanır.
 final class UserRepository {

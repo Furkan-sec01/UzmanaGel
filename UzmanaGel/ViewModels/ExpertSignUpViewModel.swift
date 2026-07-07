@@ -5,6 +5,8 @@ import FirebaseFirestore
 import SwiftUI
 import PhotosUI
 
+///ExpertSignUpViewModel, uzman kayıt formunu, SMS telefon doğrulamasını, telefon hesabına email/şifre bağlamayı ve Firestore’da expert + service provider kayıtlarını oluşturmayı yönetiyor.
+
 @MainActor
 final class ExpertSignUpViewModel: ObservableObject {
 

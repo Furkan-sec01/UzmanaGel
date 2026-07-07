@@ -21,7 +21,7 @@ final class LoginViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var didLogin: Bool = false
 
-    let attemptTracker = LoginAttemptTracker.shared
+    let attemptTracker = LoginAttemptTracker.shared //singleton pattern
 
     func signInWithGoogle(presenting: UIViewController) {
         guard !attemptTracker.isLocked else {
@@ -37,7 +37,7 @@ final class LoginViewModel: ObservableObject {
             errorMessage = "Google ClientID bulunamadı."
             return
         }
-
+        // Google giriş ekranı:
         let config = GIDConfiguration(clientID: clientID)
         GIDSignIn.sharedInstance.configuration = config
 
@@ -79,7 +79,7 @@ final class LoginViewModel: ObservableObject {
     }
 
     func login() {
-        guard !attemptTracker.isLocked else {
+        guard !attemptTracker.isLocked else { // guard-> sart saglanmıyprsa hemen cık
             errorMessage = attemptTracker.lockMessage
             return
         }

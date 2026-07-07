@@ -3,6 +3,8 @@ import Speech
 import AVFoundation
 import Combine
 
+///SpeechRecognizer, mikrofondan Türkçe konuşmayı dinler, sesi metne çevirir ve bu metni Homepage aramasına aktarır.
+
 final class SpeechRecognizer: ObservableObject, @unchecked Sendable {
 
     @Published var transcript: String = ""
@@ -12,7 +14,7 @@ final class SpeechRecognizer: ObservableObject, @unchecked Sendable {
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "tr-TR"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
-    private let audioEngine = AVAudioEngine()
+    private let audioEngine = AVAudioEngine()///Mikrofondan canlı ses akışı almayı yöneten Apple ses sistemi.
 
     /// İzin durumunu kontrol et ve iste
     func requestPermissions(completion: @escaping (Bool) -> Void) {
