@@ -131,3 +131,8 @@ final class UserRepository {
         return snap.data()?["role"] as? String
     }
 }
+
+extension Notification.Name {
+    static let userDataUpdated = Notification.Name("userDataUpdated")
+}
+

@@ -1,3 +1,4 @@
+
 import SwiftUI
 import FirebaseCore
 import FirebaseAuth
@@ -39,16 +40,21 @@ struct UzmanaGelApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @Environment(\.scenePhase) private var scenePhase
 
-    // Session
-    @StateObject private var session = SessionViewModel()
+    // Session & Theme
+    @StateObject private var session      = SessionViewModel()
+    @StateObject private var themeManager = AppThemeManager()
 
     @State private var showSplash = true
+    @AppStorage("pref_theme") private var savedTheme: String = "system"
 
     var body: some Scene {
         WindowGroup {
             ZStack {
                 RootView()
                     .environmentObject(session)
+                    .environmentObject(themeManager)
+                    // Tüm SwiftUI interaktif kontrollere (Toggle, Button, vb.) renk uygular
+                    .tint(themeManager.accentColor)
 
                 if showSplash {
                     PreViewScreen()
@@ -57,12 +63,29 @@ struct UzmanaGelApp: App {
                 }
             }
             .onAppear {
+                applyTheme(savedTheme)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     withAnimation(.easeOut(duration: 0.2)) {
                         showSplash = false
                     }
                 }
             }
+            .onChange(of: savedTheme) { _, newTheme in
+                applyTheme(newTheme)
+            }
         }
     }
+
+    private func applyTheme(_ theme: String) {
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first else { return }
+        let style: UIUserInterfaceStyle
+        switch theme {
+        case "light": style = .light
+        case "dark":  style = .dark
+        default:      style = .unspecified
+        }
+        windowScene.windows.forEach { $0.overrideUserInterfaceStyle = style }
+    }
 }
+
