@@ -23,7 +23,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B91037E12F30B8670099D2B0 /* Exceptions for "UzmanaGel" folder in "UzmanaGel" target */ = {
+		16336FEF3005036400A6CD44 /* Exceptions for "UzmanaGel" folder in "UzmanaGel" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -36,7 +36,7 @@
 		B95BD2F82F2B7D200092E326 /* UzmanaGel */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B91037E12F30B8670099D2B0 /* Exceptions for "UzmanaGel" folder in "UzmanaGel" target */,
+				16336FEF3005036400A6CD44 /* Exceptions for "UzmanaGel" folder in "UzmanaGel" target */,
 			);
 			path = UzmanaGel;
 			sourceTree = "<group>";
