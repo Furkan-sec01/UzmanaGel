@@ -5,6 +5,8 @@
 //  Uzman girişi sonrası ana ekran.
 //
 
+///ExpertHomepage.swift, expert ana ekranını, profil/başvuru durumunu, hızlı navigasyonu, şehir seçimini ve yeni ilan oluşturup Storage + Firestore’a yayınlama akışını yönetiyor
+
 import SwiftUI
 import PhotosUI
 import UIKit
@@ -880,11 +882,7 @@ struct ExpertCreateListingView: View {
         }
     }
 
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(.secondary)
-    }
+   
 
     private var canPublish: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

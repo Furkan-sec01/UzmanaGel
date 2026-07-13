@@ -178,7 +178,6 @@ private extension ExpertSignUpView {
         .background(Color(.secondarySystemBackground).opacity(0.6))
     }
 
-    var stepTitle: String { "Temel Bilgilerinizi Girin" }
 
     var stepIndicator: some View {
         HStack(spacing: 8) {

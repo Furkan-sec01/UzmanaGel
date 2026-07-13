@@ -75,74 +75,124 @@ final class SignUpViewModel: ObservableObject {
 
         Task {
             // 1) E-posta mükerrer kontrolü
-            do {
-                let emailTaken = try await userRepo.isEmailTaken(trimmedEmail)
-                if emailTaken {
+//            do {
+//                let emailTaken = try await userRepo.isEmailTaken(trimmedEmail)
+//                if emailTaken {
+//                    isLoading = false
+//                    errorMessage = "Bu e-posta adresi (\(trimmedEmail)) zaten başka bir hesapta kullanılıyor. Lütfen farklı bir e-posta adresi deneyin veya mevcut hesabınızla giriş yapın."
+//                    return
+//                }
+//            } catch {
+//                isLoading = false
+//                errorMessage = "E-posta kontrolü yapılırken bağlantı hatası oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
+//                return
+//            }
+//
+//            // 2) Telefon mükerrer kontrolü
+//            do {
+//                let phoneTaken = try await userRepo.isPhoneTaken(trimmedPhone)
+//                if phoneTaken {
+//                    isLoading = false
+//                    errorMessage = "Bu telefon numarası (\(formatPhone(trimmedPhone))) zaten başka bir hesapta kayıtlı. Her telefon numarası yalnızca bir hesapta kullanılabilir. Eğer bu numara size aitse mevcut hesabınızla giriş yapın."
+//                    return
+//                }
+//            } catch {
+//                isLoading = false
+//                errorMessage = "Telefon numarası kontrolü yapılırken bağlantı hatası oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
+//                return
+//            }
+
+            // 1) Create Firebase Auth account
+                let user: FirebaseAuth.User
+
+                do {
+                    let result = try await Auth.auth().createUser(
+                        withEmail: trimmedEmail,
+                        password: password
+                    )
+
+                    user = result.user
+
+                } catch {
                     isLoading = false
-                    errorMessage = "Bu e-posta adresi (\(trimmedEmail)) zaten başka bir hesapta kullanılıyor. Lütfen farklı bir e-posta adresi deneyin veya mevcut hesabınızla giriş yapın."
+                    errorMessage = mapAuthError(error)
                     return
                 }
-            } catch {
-                isLoading = false
-                errorMessage = "E-posta kontrolü yapılırken bağlantı hatası oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
-                return
-            }
 
-            // 2) Telefon mükerrer kontrolü
-            do {
-                let phoneTaken = try await userRepo.isPhoneTaken(trimmedPhone)
-                if phoneTaken {
+                // 2) Check duplicate phone after authentication
+                do {
+                    let phoneTaken = try await userRepo.isPhoneTaken(trimmedPhone)
+
+                    if phoneTaken {
+                        // Remove the newly created Auth account
+                        do {
+                            try await user.delete()
+                        } catch {
+                            print(
+                                "⚠️ New Auth user could not be deleted after duplicate phone check:",
+                                error.localizedDescription
+                            )
+                        }
+
+                        isLoading = false
+                        errorMessage =
+                            "Bu telefon numarası (\(formatPhone(trimmedPhone))) zaten başka bir hesapta kayıtlı. Her telefon numarası yalnızca bir hesapta kullanılabilir."
+
+                        return
+                    }
+
+                } catch {
+                    // Clean up the newly created Auth account
+                    do {
+                        try await user.delete()
+                    } catch {
+                        print(
+                            "⚠️ New Auth user could not be deleted after phone check error:",
+                            error.localizedDescription
+                        )
+                    }
+
                     isLoading = false
-                    errorMessage = "Bu telefon numarası (\(formatPhone(trimmedPhone))) zaten başka bir hesapta kayıtlı. Her telefon numarası yalnızca bir hesapta kullanılabilir. Eğer bu numara size aitse mevcut hesabınızla giriş yapın."
+                    errorMessage =
+                        "Telefon numarası kontrol edilirken bir hata oluştu. Lütfen tekrar deneyin."
+
                     return
                 }
-            } catch {
-                isLoading = false
-                errorMessage = "Telefon numarası kontrolü yapılırken bağlantı hatası oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
-                return
-            }
 
-            // 3) Firebase Auth hesap oluşturma
-            let user: FirebaseAuth.User
-            do {
-                let result = try await Auth.auth().createUser(withEmail: trimmedEmail, password: password)
-                user = result.user
-            } catch {
-                isLoading = false
-                errorMessage = mapAuthError(error)
-                return
-            }
+                // 3) Update profile name
+                do {
+                    let changeRequest = user.createProfileChangeRequest()
+                    changeRequest.displayName = trimmedName
+                    try await changeRequest.commitChanges()
 
-            // 4) Profil adı güncelleme
-            do {
-                let changeRequest = user.createProfileChangeRequest()
-                changeRequest.displayName = trimmedName
-                try await changeRequest.commitChanges()
-            } catch {
+                } catch {
+                    isLoading = false
+                    errorMessage =
+                        "Hesabınız oluşturuldu ancak profil adınız kaydedilemedi. Profil sayfasından adınızı güncelleyebilirsiniz."
+                    didSignUp = true
+                    return
+                }
+
+                // 4) Create Firestore user document
+                do {
+                    try await userRepo.createUserDocument(
+                        uid: user.uid,
+                        displayName: trimmedName,
+                        email: trimmedEmail,
+                        phoneNumber: trimmedPhone
+                    )
+
+                } catch {
+                    isLoading = false
+                    errorMessage =
+                        "Hesabınız oluşturuldu ancak kullanıcı bilgileriniz veritabanına kaydedilemedi. Lütfen uygulamayı kapatıp tekrar açın, bilgileriniz otomatik olarak güncellenecektir."
+                    didSignUp = true
+                    return
+                }
+
                 isLoading = false
-                errorMessage = "Hesabınız oluşturuldu ancak profil adınız kaydedilemedi. Profil sayfasından adınızı güncelleyebilirsiniz."
                 didSignUp = true
-                return
             }
-
-            // 5) Firestore kullanıcı dokümanı oluşturma
-            do {
-                try await userRepo.createUserDocument(
-                    uid: user.uid,
-                    displayName: trimmedName,
-                    email: trimmedEmail,
-                    phoneNumber: trimmedPhone
-                )
-            } catch {
-                isLoading = false
-                errorMessage = "Hesabınız oluşturuldu ancak kullanıcı bilgileriniz veritabanına kaydedilemedi. Lütfen uygulamayı kapatıp tekrar açın, bilgileriniz otomatik olarak güncellenecektir."
-                didSignUp = true
-                return
-            }
-
-            isLoading = false
-            didSignUp = true
-        }
     }
 
     func clearError() {

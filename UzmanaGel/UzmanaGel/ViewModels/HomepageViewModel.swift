@@ -3,6 +3,8 @@ import Combine
 import FirebaseFirestore
 import FirebaseStorage
 
+///HomepageViewModel, ana sayfadaki servis yükleme, arama, filtreleme, sıralama, konum-mesafe, sesli arama, favori ve servis görselleri mantığını yönetir.
+
 @MainActor
 final class HomepageViewModel: ObservableObject {
 
@@ -10,6 +12,7 @@ final class HomepageViewModel: ObservableObject {
 
     @Published var searchText: String = ""
     @Published var isLoading = false
+    @Published var isLoadingNextPage = false
     @Published var errorMessage: String?
     @Published var filter = ServiceFilter()
     @Published var imageURLs: [String: URL] = [:]
@@ -125,6 +128,57 @@ final class HomepageViewModel: ObservableObject {
             await fetchServices()
             await fetchFavorites()
             print("🏠 load() tamamlandı — isLoading: \(isLoading), servis: \(allServices.count), filtre sonucu: \(filteredServices.count)")
+        }
+    }
+    
+    func loadNextPage() {
+        guard !isLoading else { return }
+        guard !isLoadingNextPage else { return }
+
+        Task {
+            isLoadingNextPage = true
+            defer { isLoadingNextPage = false }
+
+            do {
+                let nextServices = try await repo.fetchNextActiveServicesPage()
+
+                guard !nextServices.isEmpty else {
+                    print("📄 No more services")
+                    return
+                }
+
+                /// Avoid duplicate services
+                let existingIds = Set(allServices.map(\.serviceId))
+
+                let uniqueServices = nextServices.filter {
+                    !existingIds.contains($0.serviceId)
+                }
+
+                /// Add new services to the current list
+                allServices.append(contentsOf: uniqueServices)
+
+                // Use image URL from service data
+                for service in uniqueServices {
+                    guard !service.image.isEmpty,
+                          let url = URL(string: service.image) else {
+                        continue
+                    }
+
+                    imageURLs[service.serviceId] = url
+                }
+
+                /// Load missing images from Storage
+                for service in uniqueServices {
+                    loadImage(for: service.serviceId)
+                }
+
+                print("📄 New services: \(uniqueServices.count)")
+                print("📦 Total services: \(allServices.count)")
+
+            } catch {
+                print("⚠️ Next page error: \(error)")
+                errorMessage = error.localizedDescription
+            }
         }
     }
 

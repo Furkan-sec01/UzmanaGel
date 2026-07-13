@@ -5,6 +5,8 @@ import FirebaseFirestore
 import SwiftUI
 import PhotosUI
 
+///ExpertSignUpViewModel, uzman kayıt formunu, SMS telefon doğrulamasını, telefon hesabına email/şifre bağlamayı ve Firestore’da expert + service provider kayıtlarını oluşturmayı yönetiyor.
+
 @MainActor
 final class ExpertSignUpViewModel: ObservableObject {
 
@@ -236,6 +238,13 @@ final class ExpertSignUpViewModel: ObservableObject {
         errorMessage = nil
 
         PhoneAuthProvider.provider().verifyPhoneNumber(e164, uiDelegate: nil) { [weak self] verificationID, error in
+            if let error = error as NSError? {
+                print("PHONE AUTH ERROR") ///firebase billing mode is spark but it must be change to the blaze mode
+                print("Domain:", error.domain)
+                print("Code:", error.code)
+                print("Message:", error.localizedDescription)
+                print("UserInfo:", error.userInfo)
+            }
             guard let self else { return }
 
             Task { @MainActor in

@@ -5,6 +5,7 @@
 //  Production-ready Firebase Storage upload service.
 //  Paths: certificates/{uid}/{filename}, verification_documents/{uid}/{fixedFileName}
 //
+///StorageUploadService, sertifika, kimlik doğrulama belgesi, portföy ve ilan görsellerini Firebase Storage’a yükler, dosya path’lerini düzenler ve indirme URL’sini geri döndürür
 
 import Foundation
 import UIKit

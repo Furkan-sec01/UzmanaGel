@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 
+/// UserRepository, normal kullanıcı ve expert verilerini Firestore’da okuyan, yazan ve güncelleyen veri erişim katmanıdır.
 /// Firestore bağlantısı: GoogleService-Info.plist içindeki Firebase projesi kullanılır.
 /// Database location (eur3 vb.) proje oluşturulurken Console'da seçilir; istemci aynı projeye bağlanır.
 final class UserRepository {
@@ -34,6 +35,9 @@ final class UserRepository {
             .getDocuments()
         return !snapshot.documents.isEmpty
     }
+    
+    
+    
 
     // MARK: - Kullanıcı Oluştur
 
@@ -61,6 +65,15 @@ final class UserRepository {
     func fetchUser(uid: String) async throws -> AppUser {
         let snap = try await db.collection("users").document(uid).getDocument()
         return try snap.data(as: AppUser.self)
+    }
+    
+    func userDocumentExists(uid: String) async throws -> Bool {
+        let snapshot = try await db
+            .collection("users")
+            .document(uid)
+            .getDocument()
+
+        return snapshot.exists
     }
 
     // MARK: - Uzman İşlemleri

@@ -6,6 +6,14 @@ struct ServiceDetailPage: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: ServiceDetailViewModel
+    @StateObject private var messageVM = MessageViewModel()
+
+    @State private var selectedConversation: Conversation?
+    @State private var showChatDetail = false
+    @State private var isStartingConversation = false
+
+    @State private var chatErrorMessage = ""
+    @State private var showChatError = false
 
     init(service: Service, imageURL: URL?, isFavorite: Bool) {
         _vm = StateObject(wrappedValue: ServiceDetailViewModel(
@@ -47,6 +55,21 @@ struct ServiceDetailPage: View {
             }
         }
         .task { vm.load() }
+        .navigationDestination(isPresented: $showChatDetail) {
+            if let selectedConversation {
+                ChatDetailPage(
+                    conversation: selectedConversation
+                )
+            }
+        }
+        .alert(
+            "Mesajlaşma Hatası",
+            isPresented: $showChatError
+        ) {
+            Button("Tamam", role: .cancel) { }
+        } message: {
+            Text(chatErrorMessage)
+        }
     }
 }
 
@@ -532,24 +555,88 @@ private extension ServiceDetailPage {
 private extension ServiceDetailPage {
 
     var ctaButton: some View {
-        Button { } label: {
-            Text("Yardım Al")
+        Button {
+            startConversation()
+        } label: {
+            HStack(spacing: 8) {
+
+                if isStartingConversation {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Image(systemName: "message.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+
+                Text(
+                    isStartingConversation
+                    ? "Sohbet Açılıyor..."
+                    : "Mesaj Gönder"
+                )
                 .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color("PrimaryColor"))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color("PrimaryColor"))
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: 14,
+                    style: .continuous
+                )
+            )
         }
+        .disabled(isStartingConversation)
         .padding(.horizontal, 20)
         .padding(.bottom, 16)
         .background(
             LinearGradient(
-                colors: [Color("BackgroundColor"), Color("BackgroundColor").opacity(0.95)],
+                colors: [
+                    Color("BackgroundColor"),
+                    Color("BackgroundColor").opacity(0.95)
+                ],
                 startPoint: .bottom,
                 endPoint: .top
             )
             .ignoresSafeArea(edges: .bottom)
         )
+    }
+}
+// MARK: - Messaging
+
+private extension ServiceDetailPage {
+
+    func startConversation() {
+        guard !vm.service.providerId.isEmpty else {
+            chatErrorMessage = "Uzman bilgisi bulunamadı."
+            showChatError = true
+            return
+        }
+
+        isStartingConversation = true
+
+        let participantName =
+            vm.service.providerName.isEmpty
+            ? vm.service.title
+            : vm.service.providerName
+
+        Task {
+            do {
+                let conversation =
+                try await messageVM.getOrCreateConversation(
+                        participantId: vm.service.providerId,
+                        participantName: participantName
+                    )
+
+                selectedConversation = conversation
+                showChatDetail = true
+
+            } catch {
+                chatErrorMessage = error.localizedDescription
+                showChatError = true
+            }
+
+            isStartingConversation = false
+        }
     }
 }

@@ -13,50 +13,72 @@ struct SideMenuSheet: View {
     @StateObject private var vm = SideMenuViewModel()
 
     let onSignOut: () -> Void
+    let onMessagesTap: () -> Void///new
+    let onSettingsTap: () -> Void///new
     let onProfileTap: () -> Void
+    let onHomeTap: () -> Void ///new
 
     var body: some View {
         VStack(spacing: 0) {
 
+            // Keep content away from sheet corners
+                    Color("PrimaryColor")
+                        .frame(height: 28)
+
             // Header
             VStack(alignment: .leading, spacing: 8) {
 
-                // Foto (varsa)
-                if let urlString = vm.user?.photoURL, let url = URL(string: urlString) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let img):
-                            img.resizable().scaledToFill()
-                        default:
+                        if let urlString = vm.user?.photoURL,
+                           let url = URL(string: urlString) {
+
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .success(let img):
+                                    img
+                                        .resizable()
+                                        .scaledToFit()
+
+                                default:
+                                    Image(systemName: "person.crop.circle.fill")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .foregroundColor(.white.opacity(0.9))
+                                }
+                            }
+                            .frame(width: 56, height: 56)
+                            .clipShape(Circle())
+
+                        } else {
                             Image(systemName: "person.crop.circle.fill")
                                 .resizable()
-                                .scaledToFill()
+                                .scaledToFit()
+                                .frame(width: 56, height: 56)
                                 .foregroundColor(.white.opacity(0.9))
                         }
+
+                        Text(vm.user?.displayName ?? "Kullanıcı")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Text(vm.user?.email ?? "—")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.85))
                     }
-                    .frame(width: 56, height: 56)
-                    .clipShape(Circle())
-                } else {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 52))
-                        .foregroundColor(.white.opacity(0.9))
-                }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                    .background(Color("PrimaryColor"))
 
-                Text(vm.user?.displayName ?? "Kullanıcı")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-
-                Text(vm.user?.email ?? "—")
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.85))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background(Color("PrimaryColor"))
-
+            
             // Items
             VStack(spacing: 14) {
-                menuRow("Ana Sayfa", "house")
+                Button {
+                    onHomeTap()
+                } label: {
+                    menuRowContent("Ana Sayfa", "house")
+                }
+                .buttonStyle(.plain)
+                
                 Button {
                     onProfileTap()
                 } label: {
@@ -64,8 +86,19 @@ struct SideMenuSheet: View {
                 }
                 .buttonStyle(.plain)
 
-                menuRow("Mesajlar", "message")
-                menuRow("Ayarlar", "gearshape")
+                Button {
+                    onMessagesTap()
+                } label: {
+                    menuRowContent("Mesajlar", "message")
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    onSettingsTap()
+                } label: {
+                    menuRowContent("Ayarlar", "gearshape")
+                }
+                .buttonStyle(.plain)
 
                 Divider().padding(.vertical, 6)
 
@@ -79,12 +112,11 @@ struct SideMenuSheet: View {
                     }
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.red)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 20)
                     .padding(.vertical, 12)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.top, 16)
 
             Spacer()
         }
@@ -102,13 +134,26 @@ struct SideMenuSheet: View {
     }
 
     @ViewBuilder
-    private func menuRowContent(_ title: String, _ icon: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon).foregroundColor(.secondary)
-            Text(title).foregroundColor(.primary)
+    private func menuRowContent(
+        _ title: String,
+        _ icon: String
+    ) -> some View {
+
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 21))
+                .frame(width: 26)
+
+            Text(title)
+
             Spacer()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 20)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: 52,
+            alignment: .leading
+        )
+        .contentShape(Rectangle())
     }
 }

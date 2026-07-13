@@ -4,11 +4,21 @@ import PDFKit
 struct Kvkk: View {
 
     @Binding var hasRead: Bool
+    let showsAcceptance: Bool
+
     @Environment(\.dismiss) private var dismiss
 
     @State private var reachedLastPage = false
 
     private let pdfName = "kvkk"
+
+    init(
+        hasRead: Binding<Bool>,
+        showsAcceptance: Bool = true
+    ) {
+        self._hasRead = hasRead
+        self.showsAcceptance = showsAcceptance
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -17,36 +27,41 @@ struct Kvkk: View {
                 .font(.headline)
                 .padding(.top, 8)
 
-            PDFKitView(pdfName: pdfName, reachedLastPage: $reachedLastPage)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal)
+            PDFKitView(
+                pdfName: pdfName,
+                reachedLastPage: $reachedLastPage
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal)
 
-            Button {
-                // burada true dönüyor
-                hasRead = true
-                dismiss()
-            } label: {
-                Text("Okudum ve Kabul Ediyorum")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(reachedLastPage ? Color.blue : Color.gray)
-                    .cornerRadius(14)
-                    .padding(.horizontal)
+            if showsAcceptance {
+                Button {
+                    hasRead = true
+                    dismiss()
+                } label: {
+                    Text("Okudum ve Kabul Ediyorum")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(
+                            reachedLastPage
+                            ? Color.blue
+                            : Color.gray
+                        )
+                        .cornerRadius(14)
+                        .padding(.horizontal)
+                }
+                .disabled(!reachedLastPage)
             }
-            .disabled(!reachedLastPage)
-
-            
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-
-        //son sayfaya gelmeden sheet kapanmasın (aşağı çekme / X vs.)
-        .interactiveDismissDisabled(!reachedLastPage)
+        .interactiveDismissDisabled(
+            showsAcceptance && !reachedLastPage
+        )
     }
 }
-
 private struct PDFKitView: UIViewRepresentable {
 
     let pdfName: String

@@ -61,7 +61,6 @@ struct ExpertProfilePage: View {
             }
         }
         .task { await loadProfile() }
-        .onAppear { Task { await loadProfile() } }
         .onChange(of: photoPickerItem) { _, newItem in
             guard let newItem else { return }
             Task { await handlePhotoSelected(newItem) }

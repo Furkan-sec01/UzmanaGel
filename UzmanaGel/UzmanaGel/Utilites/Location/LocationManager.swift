@@ -2,6 +2,8 @@ import Foundation
 import CoreLocation
 import Combine
 
+///LocationManager, kullanıcının GPS veya manuel seçilen konumunu koordinata dönüştürür, koordinatı şehir/ilçe adına çevirir ve hizmetlere olan kuş uçuşu mesafeyi hesaplar.
+
 final class LocationManager: ObservableObject, @unchecked Sendable {
 
     // MARK: - Published

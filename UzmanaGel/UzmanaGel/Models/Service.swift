@@ -1,6 +1,8 @@
 import Foundation
 import FirebaseFirestore
 
+///Service, bir hizmet ilanını ve o hizmete sonradan eklenen uzman/provider bilgilerini temsil eden modeldir; Firestore’daki eksik ve farklı sayı tiplerini güvenli şekilde decode eder.
+
 struct Service: Identifiable, Codable, Hashable {
 
     static func == (lhs: Service, rhs: Service) -> Bool {

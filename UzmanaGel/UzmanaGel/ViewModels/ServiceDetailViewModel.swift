@@ -4,6 +4,8 @@ import FirebaseFirestore
 import FirebaseStorage
 import CoreLocation
 
+///ServiceDetailViewModel, müşteri hizmet detay ekranında uzman bilgilerini, portföyü, diğer ilanları, adresi, çalışma saatlerini, favori durumunu ve yol tarifini yönetir.
+
 @MainActor
 final class ServiceDetailViewModel: ObservableObject {
 
@@ -102,7 +104,11 @@ final class ServiceDetailViewModel: ObservableObject {
     private func fetchProviderServices() async {
         guard !service.providerId.isEmpty else { return }
         do {
-            providerServices = try await serviceRepo.fetchServicesByProviderId(service.providerId)
+            let services = try await serviceRepo.fetchServicesByProviderId(service.providerId)
+            
+            providerServices = services.filter{
+                $0.serviceId != service.serviceId
+            }
         } catch {
             print("⚠️ Provider servisleri yüklenemedi: \(error)")
         }

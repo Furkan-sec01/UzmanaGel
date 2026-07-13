@@ -10,8 +10,9 @@ import Combine
 import FirebaseAuth
 import FirebaseFirestore
 
+// oturum durumunu kontrol eder
 @MainActor
-final class SessionViewModel: ObservableObject {
+final class SessionViewModel: ObservableObject {// final bu sınıftan başka sınıf türetilmesini engeller
 
     @Published var isAuthenticated: Bool = false
     @Published var userId: String? = nil
@@ -34,7 +35,7 @@ final class SessionViewModel: ObservableObject {
     }
 
     func startListening() {
-        handle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+        handle = Auth.auth().addStateDidChangeListener { [weak self] _, user in //login ın,log out,kullanıcı degisikligi
             guard let self else { return }
             Task { @MainActor in
                 if let user {
@@ -53,7 +54,7 @@ final class SessionViewModel: ObservableObject {
 
     private func checkProfileCompletion(uid: String) async {
         isCheckingProfile = true
-        defer { isCheckingProfile = false }
+        defer { isCheckingProfile = false }// defer fonksiyon nasıl biterse bitsin en son calısır
 
         let isPhoneSignIn = isCurrentUserPhoneSignIn()
 
