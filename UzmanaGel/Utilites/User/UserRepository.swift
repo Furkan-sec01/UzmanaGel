@@ -35,6 +35,9 @@ final class UserRepository {
             .getDocuments()
         return !snapshot.documents.isEmpty
     }
+    
+    
+    
 
     // MARK: - Kullanıcı Oluştur
 
@@ -62,6 +65,15 @@ final class UserRepository {
     func fetchUser(uid: String) async throws -> AppUser {
         let snap = try await db.collection("users").document(uid).getDocument()
         return try snap.data(as: AppUser.self)
+    }
+    
+    func userDocumentExists(uid: String) async throws -> Bool {
+        let snapshot = try await db
+            .collection("users")
+            .document(uid)
+            .getDocument()
+
+        return snapshot.exists
     }
 
     // MARK: - Uzman İşlemleri

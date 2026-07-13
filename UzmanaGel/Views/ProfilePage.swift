@@ -16,9 +16,9 @@ struct ProfilePage: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var fullName: String = "Abdullah Başpınar"
-    @State private var email: String = "abdullah@gmail.com"
-    @State private var phone: String = "5513432910"
+    @State private var fullName: String = ""
+    @State private var email: String = ""
+    @State private var phone: String = ""
 
     @State private var ordersCount: Int = 0
     @State private var favoritesCount: Int = 0
@@ -50,7 +50,7 @@ struct ProfilePage: View {
         .navigationBarTitleDisplayMode(.inline)
        
         .onAppear {
-            loadPhotoURL()
+            loadCurrentUserProfile()
             loadFavoritesCount()
         }
         .onChange(of: selectedPhotoItem) { _, newItem in
@@ -351,24 +351,61 @@ struct ProfilePage: View {
         }
     }
 
-    private func loadPhotoURL() {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
+    private func loadCurrentUserProfile() {
+        guard let user = Auth.auth().currentUser else {
+            print("CURRENT USER BULUNAMADI")
+            return
+        }
 
+        print("AUTH UID:", user.uid)
+        print("AUTH NAME:", user.displayName ?? "nil")
+        print("AUTH EMAIL:", user.email ?? "nil")
+        print("AUTH PHONE:", user.phoneNumber ?? "nil")
+
+        /// First, the information of the user logged in via Firebase Auth
+        fullName = user.displayName ?? "Kullanıcı"
+        email = user.email ?? ""
+        phone = user.phoneNumber ?? ""
+
+        /// Then, the same user's Firestore record
         Firestore.firestore()
             .collection("users")
-            .document(uid)
+            .document(user.uid)
             .getDocument { snapshot, error in
+
                 if let error = error {
-                    print("LOAD PHOTO ERROR:", error.localizedDescription)
-                    return
+                                print("❌ LOAD PROFILE ERROR:", error.localizedDescription)
+                                return
+                            }
+
+                            guard let data = snapshot?.data() else {
+                                print("⚠️ FIRESTORE USER DOCUMENT YOK")
+                                return
+                            }
+
+                            print("FIRESTORE USER DATA:", data)
+
+                if let displayName = data["displayName"] as? String,
+                   !displayName.isEmpty {
+                    self.fullName = displayName
                 }
 
-                if let url = snapshot?.data()?["photoURL"] as? String {
-                    self.photoURL = url
+                if let email = data["email"] as? String,
+                   !email.isEmpty {
+                    self.email = email
+                }
+
+                if let phoneNumber = data["phoneNumber"] as? String,
+                   !phoneNumber.isEmpty {
+                    self.phone = phoneNumber
+                }
+
+                if let photoURL = data["photoURL"] as? String,
+                   !photoURL.isEmpty {
+                    self.photoURL = photoURL
                 }
             }
     }
-
     private func loadFavoritesCount() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
 

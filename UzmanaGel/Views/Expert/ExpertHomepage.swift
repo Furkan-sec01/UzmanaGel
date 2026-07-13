@@ -882,11 +882,7 @@ struct ExpertCreateListingView: View {
         }
     }
 
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(.secondary)
-    }
+   
 
     private var canPublish: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

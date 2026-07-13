@@ -8,12 +8,14 @@
 import SwiftUI
 
 struct SettingsPage: View {
-    
+        
     @AppStorage("notificationEnabled") /// kucuk kullanıcı tercihlerini cihazda saklar
     private var notificationEnabled = true
     
     @AppStorage("selectedAppearance")
     private var selectedAppearance = "system"
+    
+    @State private var hasReadKVKK = false///new
     
     var body: some View {
         List{
@@ -30,6 +32,16 @@ struct SettingsPage: View {
                     Label("Görünüm",systemImage: "paintbrush")
                 }
 
+            }
+            Section("Gizlilik"){
+                NavigationLink{
+                    Kvkk(hasRead: $hasReadKVKK,showsAcceptance: false)
+                } label:{
+                    Label(
+                        "KVKK ve Gizlilik",
+                        systemImage: "hand.raised"
+                        )
+                }
             }
             Section("Destek"){
                 NavigationLink{

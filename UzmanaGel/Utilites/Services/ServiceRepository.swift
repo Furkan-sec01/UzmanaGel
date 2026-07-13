@@ -6,20 +6,40 @@ import FirebaseFirestore
 final class ServiceRepository {
 
     private let db = Firestore.firestore()
+    
+    private let activeServicesPageSize = 25
+
+    private var lastActiveServicesDocument: DocumentSnapshot?
+    private var hasMoreActiveServices = true
 
     // MARK: - Public
 
-    /// Aktif tüm servisleri getir ve provider bilgileriyle birleştir
+    /// Retrieve the first 25 active services and join them with provider information.
     func fetchActiveServices() async throws -> [Service] {
+
+        /// Pagination resets when a new list is loaded.
+        lastActiveServicesDocument = nil
+        hasMoreActiveServices = true
+
         let snap = try await db.collection("services")
+            .whereField("isActive", isEqualTo: true)
+            .limit(to: activeServicesPageSize)
             .getDocuments()
+
+        /// Save the last document of the first page
+        lastActiveServicesDocument = snap.documents.last
+
+        /// If the count is less than 25, there are no further pages.
+        hasMoreActiveServices = snap.documents.count == activeServicesPageSize
 
         var services = snap.documents.compactMap { doc -> Service? in
             do {
                 var service = try doc.data(as: Service.self)
+
                 if service.serviceId.isEmpty {
                     service.serviceId = doc.documentID
                 }
+
                 return service
             } catch {
                 print("⚠️ Service decode hatası (\(doc.documentID)): \(error)")
@@ -27,17 +47,91 @@ final class ServiceRepository {
             }
         }
 
-        // Client-side isActive filtresi
-        services = services.filter { $0.isActive }
+        /// Fetch and merge provider information
+        let providerIds = Array(
+            Set(
+                services.compactMap {
+                    $0.providerId.isEmpty ? nil : $0.providerId
+                }
+            )
+        )
 
-        // Provider bilgilerini çek ve birleştir
-        let providerIds = Array(Set(services.compactMap { $0.providerId.isEmpty ? nil : $0.providerId }))
         if !providerIds.isEmpty {
             let providers = await fetchProviders(ids: providerIds)
-            services = services.map { mergeProviderData(service: $0, providers: providers) }
+
+            services = services.map {
+                mergeProviderData(service: $0, providers: providers)
+            }
         }
 
-        print("✅ Servis: \(services.count), Provider: \(providerIds.count)")
+        print("✅ İlk sayfa aktif servis: \(services.count)")
+        print("📄 Devam sayfası var mı: \(hasMoreActiveServices)")
+
+        return services
+    }
+   
+    /// Retrieve the next 25 records of active services
+    func fetchNextActiveServicesPage() async throws -> [Service] {
+
+        guard hasMoreActiveServices else {
+            print("📄 Yüklenecek başka aktif servis yok")
+            return []
+        }
+
+        guard let lastDocument = lastActiveServicesDocument else {
+            print("⚠️ Pagination cursor bulunamadı")
+            return []
+        }
+
+        let snap = try await db.collection("services")
+            .whereField("isActive", isEqualTo: true)
+            .start(afterDocument: lastDocument)
+            .limit(to: activeServicesPageSize)
+            .getDocuments()
+
+        /// Store the last document of the new page as the cursor
+        if let newLastDocument = snap.documents.last {
+            lastActiveServicesDocument = newLastDocument
+        }
+
+        /// If fewer than 25 were returned, there are no more pages.
+        hasMoreActiveServices = snap.documents.count == activeServicesPageSize
+
+        var services = snap.documents.compactMap { doc -> Service? in
+            do {
+                var service = try doc.data(as: Service.self)
+
+                if service.serviceId.isEmpty {
+                    service.serviceId = doc.documentID
+                }
+
+                return service
+            } catch {
+                print("⚠️ Service decode hatası (\(doc.documentID)): \(error)")
+                return nil
+            }
+        }
+
+        /// Only retrieve provider information from this new page
+        let providerIds = Array(
+            Set(
+                services.compactMap {
+                    $0.providerId.isEmpty ? nil : $0.providerId
+                }
+            )
+        )
+
+        if !providerIds.isEmpty {
+            let providers = await fetchProviders(ids: providerIds)
+
+            services = services.map {
+                mergeProviderData(service: $0, providers: providers)
+            }
+        }
+
+        print("✅ Sonraki sayfa servis: \(services.count)")
+        print("📄 Devam sayfası var mı: \(hasMoreActiveServices)")
+
         return services
     }
 

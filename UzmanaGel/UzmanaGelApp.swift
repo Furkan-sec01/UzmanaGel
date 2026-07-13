@@ -5,7 +5,7 @@ import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate {
 
-    func application(_ application: UIApplication, // uygulama ilk baslatıldıgında calısır
+    func application(_ application: UIApplication, /// uygulama ilk baslatıldıgında calısır
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
         application.registerForRemoteNotifications()
@@ -13,7 +13,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication,
-                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {//device token->APNs tarafından temsil edilen token
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {///device token->APNs tarafından temsil edilen token
         Auth.auth().setAPNSToken(deviceToken, type: .sandbox)
     }
 
@@ -36,24 +36,39 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct UzmanaGelApp: App {
 
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate // swiftuı uygulamasın Appdelegate sınıfını baglıyor
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate /// swiftuı uygulamasın Appdelegate sınıfını baglıyor
     @Environment(\.scenePhase) private var scenePhase
 
-    // Session
+    /// Session
     @StateObject private var session = SessionViewModel()
 
     @State private var showSplash = true
+    
+    @AppStorage("selectedAppearance")
+    private var selectedAppearance = "system"
+    
+    private var preferredColorScheme: ColorScheme?{
+        switch selectedAppearance{
+        case "light":
+            return .light
+        case "dark":
+            return .dark
+        default:
+            return nil
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
             ZStack {
                 RootView()
                     .environmentObject(session)
+                    .preferredColorScheme(preferredColorScheme)
 
                 if showSplash {
                     PreViewScreen()
                         .transition(.opacity)
-                        .zIndex(999)// bu view digerlerinin ustunde dursun
+                        .zIndex(999)/// bu view digerlerinin ustunde dursun
                 }
             }
             .onAppear {

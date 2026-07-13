@@ -39,18 +39,49 @@ struct ExpertListingsPage: View {
         Group {
             if isLoading {
                 VStack(spacing: 20) {
-                    ProgressView().scaleEffect(1.3).tint(Color("PrimaryColor"))
+                    ProgressView()
+                        .scaleEffect(1.3)
+                        .tint(Color("PrimaryColor"))
+
                     Text("İlanlar yükleniyor...")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            } else if let errorMessage { /// Error + Retry (newly added)
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.orange)
+
+                    Text("İlanlar yüklenemedi")
+                        .font(.system(size: 17, weight: .semibold))
+
+                    Text(errorMessage)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+
+                    Button("Tekrar Dene") {
+                        Task {
+                            await loadServices()
+                        }
+                    }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(Color("PrimaryColor"))
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
             } else if services.isEmpty {
                 emptyState
+
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 20) {
                         headerSection
+
                         LazyVStack(spacing: 14) {
                             ForEach(services) { svc in
                                 listingCard(svc)
@@ -128,7 +159,7 @@ struct ExpertListingsPage: View {
                 Text("Henüz ilanınız yok")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.primary)
-                Text("Sağ alttaki + butonu ile yeni ilan açabilir,\nmüşterilere hizmetlerinizi sunabilirsiniz.")
+                Text("Ana uzman ekranındaki + butonu ile yeni ilan açabilir,\nmüşterilere hizmetlerinizi sunabilirsiniz.")/// sag alt diyodu ana uzman ekranı ile degistirdik
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

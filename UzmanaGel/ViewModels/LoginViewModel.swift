@@ -22,8 +22,11 @@ final class LoginViewModel: ObservableObject {
     @Published var didLogin: Bool = false
 
     let attemptTracker = LoginAttemptTracker.shared //singleton pattern
+    private let userRepository = UserRepository()
 
     func signInWithGoogle(presenting: UIViewController) {
+        print("🟢 SIGN IN WITH GOOGLE ÇAĞRILDI")
+
         guard !attemptTracker.isLocked else {
             errorMessage = attemptTracker.lockMessage
             return
@@ -63,18 +66,61 @@ final class LoginViewModel: ObservableObject {
             let accessToken = user.accessToken.tokenString
             let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: accessToken)
 
-            Auth.auth().signIn(with: credential) { _, error in
-                self.isLoading = false
-
+            Auth.auth().signIn(with: credential) { authResult, error in
+                print("🟢 FIREBASE AUTH CALLBACK ÇALIŞTI")
                 if let error {
+                    self.isLoading = false
                     self.attemptTracker.recordFailure()
                     self.errorMessage = error.localizedDescription
                     return
                 }
 
-                self.attemptTracker.recordSuccess()
-                self.didLogin = true
-            }
+                guard let firebaseUser = authResult?.user else {
+                    self.isLoading = false
+                    self.errorMessage = "Firebase kullanıcı bilgisi alınamadı."
+                    return
+                }
+                Task {
+                    print("🟡 USER DOCUMENT TASK BAŞLADI")
+
+                       
+                    do {
+                        print("🟡 USER DOCUMENT KONTROL EDİLİYOR")
+                        print("🟡 UID:", firebaseUser.uid)
+
+                        let exists = try await self.userRepository
+                            .userDocumentExists(uid: firebaseUser.uid)
+
+                        print("🟡 DOCUMENT EXISTS:", exists)
+
+                        if !exists {
+                            print("🟠 USER DOCUMENT OLUŞTURULUYOR")
+
+                            try await self.userRepository.createUserDocument(
+                                uid: firebaseUser.uid,
+                                displayName: firebaseUser.displayName ?? "Kullanıcı",
+                                email: firebaseUser.email ?? "",
+                                phoneNumber: firebaseUser.phoneNumber
+                            )
+
+                            print("✅ USER DOCUMENT OLUŞTURULDU")
+                        } else {
+                            print("✅ USER DOCUMENT ZATEN VAR")
+                        }
+
+                        self.isLoading = false
+                        self.attemptTracker.recordSuccess()
+                        self.didLogin = true
+
+                    } catch {
+                        print("❌ USER DOCUMENT HATASI")
+                        print("❌ ERROR:", error.localizedDescription)
+                        print("❌ FULL ERROR:", error)
+
+                        self.isLoading = false
+                        self.errorMessage = "Kullanıcı profili hazırlanamadı: \(error.localizedDescription)"
+                    }
+                }            }
         }
     }
 

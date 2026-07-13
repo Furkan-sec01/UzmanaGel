@@ -298,28 +298,7 @@ struct FilterSheet: View {
         }
     }
 
-    private func chipButton(title: String, icon: String?, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 11, weight: .semibold))
-                }
-                Text(title)
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
-            .background(isSelected ? Color("PrimaryColor") : Color(.secondarySystemBackground))
-            .foregroundColor(isSelected ? .white : .primary)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(isSelected ? Color.clear : Color(.separator).opacity(0.5), lineWidth: 0.5)
-            )
-        }
-        .buttonStyle(.plain)
-    }
+    
 
     private func priceField(placeholder: String, text: Binding<String>) -> some View {
         HStack(spacing: 6) {

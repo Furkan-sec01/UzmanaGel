@@ -104,7 +104,11 @@ final class ServiceDetailViewModel: ObservableObject {
     private func fetchProviderServices() async {
         guard !service.providerId.isEmpty else { return }
         do {
-            providerServices = try await serviceRepo.fetchServicesByProviderId(service.providerId)
+            let services = try await serviceRepo.fetchServicesByProviderId(service.providerId)
+            
+            providerServices = services.filter{
+                $0.serviceId != service.serviceId
+            }
         } catch {
             print("⚠️ Provider servisleri yüklenemedi: \(error)")
         }
