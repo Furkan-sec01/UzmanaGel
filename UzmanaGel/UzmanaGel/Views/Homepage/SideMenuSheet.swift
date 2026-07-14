@@ -13,11 +13,11 @@ struct SideMenuSheet: View {
     @StateObject private var vm = SideMenuViewModel()
 
     let onSignOut: () -> Void
-    let onMessagesTap: () -> Void///new
-    let onSettingsTap: () -> Void///new
+    let onMessagesTap: () -> Void
+    let onSettingsTap: () -> Void
     let onProfileTap: () -> Void
-    let onHomeTap: () -> Void ///new
-
+    let onHomeTap: () -> Void
+    let onReservationsTap: () -> Void
     var body: some View {
         VStack(spacing: 0) {
 
@@ -92,6 +92,13 @@ struct SideMenuSheet: View {
                     menuRowContent("Mesajlar", "message")
                 }
                 .buttonStyle(.plain)
+                
+                Button {
+                        onReservationsTap()
+                } label: {
+                    menuRowContent("Rezervasyonlarım", "calendar.badge.clock")
+                }
+                    .buttonStyle(.plain)
 
                 Button {
                     onSettingsTap()

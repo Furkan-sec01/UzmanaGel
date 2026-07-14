@@ -75,6 +75,8 @@ struct ExpertHomepage: View {
                     ExpertPortfolioPage(userId: uid, profile: profile, onSave: { Task { await loadProfile() } })
                 } else if value == "listings", let uid = session.userId, let profile {
                     ExpertListingsPage(uid: uid, profile: profile, onRefresh: { Task { await loadProfile() } })
+                } else if value == "reservations" {
+                    ExpertReservationsPage()
                 }
             }
             .task {
@@ -350,6 +352,19 @@ private extension ExpertHomepage {
                     )
                 }
                 .buttonStyle(.plain)
+                
+                Button {
+                    showMenu = false
+                    expertProfilePath.append("reservations")
+                } label: {
+                    actionRowContent(
+                        icon: "calendar.badge.exclamationmark",
+                        title: "Gelen Rezervasyonlar",
+                        subtitle: "Bekleyen ve yaklaşan talepleri görüntüle",
+                        color: .orange
+                    )
+                }
+                .buttonStyle(.plain)
 
                 NavigationLink(value: "portfolio") {
                     actionRowContent(
@@ -437,6 +452,14 @@ private extension ExpertHomepage {
                 menuRow(icon: "doc.text.fill", title: "İlanlarım", subtitle: listingCount == 0 ? "İlanlarınızı yönetin" : "\(listingCount) ilan") {
                     showMenu = false
                     expertProfilePath.append("listings")
+                }
+                menuRow(
+                    icon: "calendar.badge.exclamationmark",
+                    title: "Gelen Rezervasyonlar",
+                    subtitle: "Müşteri taleplerini görüntüleyin"
+                ) {
+                    showMenu = false
+                    expertProfilePath.append("reservations")
                 }
                 Divider().padding(.horizontal, 20)
                 menuRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış Yap", subtitle: "Hesabınızdan çıkış yapın", isDestructive: true) {
