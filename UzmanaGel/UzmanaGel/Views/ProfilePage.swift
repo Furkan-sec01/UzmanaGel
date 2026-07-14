@@ -20,7 +20,7 @@ struct ProfilePage: View {
     @State private var email: String = "abdullah@gmail.com"
     @State private var phone: String = "5513432910"
 
-    @State private var ordersCount: Int = 0
+    @State private var reservationsCount: Int = 0
     @State private var favoritesCount: Int = 0
 
     @State private var isEmailVerified: Bool = false
@@ -68,7 +68,7 @@ struct ProfilePage: View {
         .onAppear {
             loadPhotoURL()
             loadFavoritesCount()
-            loadOrdersCount()
+            loadReservationsCount()
             loadUserData()
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDataUpdated)) { _ in
@@ -223,7 +223,12 @@ struct ProfilePage: View {
     // MARK: - Stats
     private var statsRow: some View {
         HStack(spacing: 12) {
-            statCard(value: ordersCount, title: "Siparişlerim")
+            NavigationLink {
+                MyReservationsPage()
+            } label: {
+                statCard(value: reservationsCount, title: "Rezervasyonlarım")
+            }
+            .buttonStyle(.plain)
 
             NavigationLink {
                 FavoritesPage()
@@ -375,9 +380,21 @@ struct ProfilePage: View {
     // MARK: - History & Favorites
     private var historySection: some View {
         profileSection(title: "GEÇMİŞ & FAVORİLER", icon: "clock.arrow.circlepath") {
-            navigationRow(icon: "bag.fill", tint: .indigo, title: "Sipariş Geçmişim", destination: AnyView(OrderHistoryPage()))
+            navigationRow(
+                icon: "calendar.badge.clock",
+                tint: .indigo,
+                title: "Rezervasyonlarım",
+                destination: AnyView(MyReservationsPage())
+            )
+
             divider()
-            navigationRow(icon: "heart.fill", tint: .red, title: "Favorilerim", destination: AnyView(FavoritesPage()))
+
+            navigationRow(
+                icon: "heart.fill",
+                tint: .red,
+                title: "Favorilerim",
+                destination: AnyView(FavoritesPage())
+            )
         }
     }
 
@@ -545,19 +562,19 @@ struct ProfilePage: View {
             }
     }
 
-    private func loadOrdersCount() {
+    private func loadReservationsCount() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
         Firestore.firestore()
-            .collection("users")
-            .document(uid)
-            .collection("orders")
+            .collection("reservations")
+            .whereField("customerId", isEqualTo: uid)
             .getDocuments { snap, error in
                 if let error = error {
-                    print("LOAD ORDERS COUNT ERROR:", error.localizedDescription)
+                    print("LOAD RESERVATIONS COUNT ERROR:", error.localizedDescription)
                     return
                 }
-                self.ordersCount = snap?.documents.count ?? 0
+
+                self.reservationsCount = snap?.documents.count ?? 0
             }
     }
 
