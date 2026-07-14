@@ -116,8 +116,7 @@ struct LoginPage: View {
                         Spacer()
 
                         NavigationLink {
-                            ForgotPasswordPage()
-                        } label: {
+                            ForgotPasswordPage(initialEmail: vm.email)                        } label: {
                             Text("Şifremi Unuttum")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(Color("PrimaryColor"))

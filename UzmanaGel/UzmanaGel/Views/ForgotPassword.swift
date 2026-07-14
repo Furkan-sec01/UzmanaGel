@@ -12,9 +12,16 @@ struct ForgotPasswordPage: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var email = ""
-    @State private var isLoading = false
+    @State private var email: String
 
+    init(initialEmail: String = "") {
+        _email = State(
+            initialValue: initialEmail
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+        )
+    }
+    @State private var isLoading = false
     @State private var showAlert = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
@@ -82,9 +89,8 @@ struct ForgotPasswordPage: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .disabled(isLoading || emailTrimmed.isEmpty)
-                .opacity((isLoading || emailTrimmed.isEmpty) ? 0.6 : 1)
-
+                .disabled(isLoading || !isEmailValid)
+                .opacity((isLoading || !isEmailValid) ? 0.6 : 1)
                 Button {
                     dismiss()
                 } label: {
@@ -115,8 +121,22 @@ struct ForgotPasswordPage: View {
     private var emailTrimmed: String {
         email.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+    
+    private var isEmailValid: Bool {
+        emailTrimmed.range(
+            of: #"^\S+@\S+\.\S+$"#,
+            options: .regularExpression
+        ) != nil
+    }
 
     private func sendReset() {
+        guard isEmailValid else {
+            alertTitle = "Geçersiz E-posta"
+            alertMessage = "Lütfen geçerli bir e-posta adresi girin."
+            showAlert = true
+            return
+        }
+
         isLoading = true
 
         Auth.auth().sendPasswordReset(withEmail: emailTrimmed) { error in

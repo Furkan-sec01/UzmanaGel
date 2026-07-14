@@ -6,12 +6,37 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct ReservationDetailPage: View {
 
-    let reservation: Reservation
+    @State private var reservation: Reservation
+
+    var onStatusChanged: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
+
+    @State private var chatConversation: Conversation?
+    @State private var showChat = false
+    @State private var isOpeningChat = false
+
+    @State private var isUpdatingStatus = false
+    @State private var showCancelConfirmation = false
+    @State private var showRejectConfirmation = false
+
+    @State private var errorMessage = ""
+    @State private var showError = false
+
+    private let messageRepository = MessageRepository()
+    private let reservationRepository = ReservationRepository()
+
+    init(
+        reservation: Reservation,
+        onStatusChanged: (() -> Void)? = nil
+    ) {
+        _reservation = State(initialValue: reservation)
+        self.onStatusChanged = onStatusChanged
+    }
 
     var body: some View {
         NavigationStack {
@@ -20,6 +45,7 @@ struct ReservationDetailPage: View {
                     headerCard
                     detailSection
                     noteSection
+                    actionSection
                 }
                 .padding(20)
             }
@@ -32,6 +58,46 @@ struct ReservationDetailPage: View {
                         dismiss()
                     }
                 }
+            }
+            .navigationDestination(isPresented: $showChat) {
+                if let chatConversation {
+                    ChatDetailPage(conversation: chatConversation)
+                }
+            }
+            .alert("Hata", isPresented: $showError) {
+                Button("Tamam", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+            .confirmationDialog(
+                "Rezervasyonu iptal et",
+                isPresented: $showCancelConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("İptal Et", role: .destructive) {
+                    Task {
+                        await cancelReservationFromDetail()
+                    }
+                }
+
+                Button("Vazgeç", role: .cancel) { }
+            } message: {
+                Text("Bu rezervasyonu iptal etmek istediğinizden emin misiniz?")
+            }
+            .confirmationDialog(
+                "Rezervasyonu reddet",
+                isPresented: $showRejectConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Reddet", role: .destructive) {
+                    Task {
+                        await updateReservationStatusFromDetail(.rejected)
+                    }
+                }
+
+                Button("Vazgeç", role: .cancel) { }
+            } message: {
+                Text("\(reservation.customerName) adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?")
             }
         }
     }
@@ -85,8 +151,6 @@ struct ReservationDetailPage: View {
                     value: reservation.serviceTitle
                 )
 
-        
-
                 infoRow(
                     icon: "clock",
                     title: "Oluşturulma Tarihi",
@@ -112,6 +176,137 @@ struct ReservationDetailPage: View {
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
+    }
+
+    private var actionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("İşlemler")
+                .font(.headline)
+
+            messageButton
+
+            if canProviderDecide {
+                providerDecisionButtons
+            }
+
+            if canCustomerCancel {
+                cancelButton
+            }
+        }
+    }
+
+    private var messageButton: some View {
+        Button {
+            Task {
+                await openChat()
+            }
+        } label: {
+            HStack(spacing: 10) {
+                if isOpeningChat {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Image(systemName: "message.fill")
+                }
+
+                Text("Mesaj Gönder")
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(Color("PrimaryColor"))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isOpeningChat || isUpdatingStatus)
+    }
+
+    private var providerDecisionButtons: some View {
+        HStack(spacing: 10) {
+            Button {
+                showRejectConfirmation = true
+            } label: {
+                Text("Reddet")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(Color.red.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(isUpdatingStatus)
+
+            Button {
+                Task {
+                    await updateReservationStatusFromDetail(.accepted)
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    if isUpdatingStatus {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .tint(.white)
+                    }
+
+                    Text("Kabul Et")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(Color.green)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(isUpdatingStatus)
+        }
+    }
+
+    private var cancelButton: some View {
+        Button {
+            showCancelConfirmation = true
+        } label: {
+            HStack(spacing: 8) {
+                if isUpdatingStatus {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .tint(.red)
+                }
+
+                Text("Rezervasyonu İptal Et")
+                    .font(.system(size: 14, weight: .bold))
+            }
+            .foregroundColor(.red)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(Color.red.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isUpdatingStatus)
+    }
+
+    private var canCustomerCancel: Bool {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            return false
+        }
+
+        return currentUserId == reservation.customerId
+            && (
+                reservation.status == .pending
+                || reservation.status == .accepted
+            )
+    }
+
+    private var canProviderDecide: Bool {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            return false
+        }
+
+        return currentUserId == reservation.providerId
+            && reservation.status == .pending
     }
 
     private func infoRow(
@@ -167,6 +362,117 @@ struct ReservationDetailPage: View {
         case .completed:
             return .blue
         }
+    }
+
+    private func openChat() async {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            errorMessage = "Oturum açmış kullanıcı bulunamadı."
+            showError = true
+            return
+        }
+
+        let currentUserName: String
+        let participantId: String
+        let participantName: String
+
+        if currentUserId == reservation.customerId {
+            currentUserName = reservation.customerName
+            participantId = reservation.providerId
+            participantName = reservation.providerName
+        } else if currentUserId == reservation.providerId {
+            currentUserName = reservation.providerName
+            participantId = reservation.customerId
+            participantName = reservation.customerName
+        } else {
+            errorMessage = "Bu rezervasyon için mesajlaşma yetkiniz yok."
+            showError = true
+            return
+        }
+
+        isOpeningChat = true
+        defer { isOpeningChat = false }
+
+        do {
+            chatConversation = try await messageRepository.getOrCreateConversation(
+                currentUserId: currentUserId,
+                currentUserName: currentUserName,
+                participantId: participantId,
+                participantName: participantName
+            )
+
+            showChat = true
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func updateReservationStatusFromDetail(
+        _ status: ReservationStatus
+    ) async {
+        guard canProviderDecide else {
+            errorMessage = "Bu rezervasyon için karar verme yetkiniz yok."
+            showError = true
+            return
+        }
+
+        isUpdatingStatus = true
+        defer { isUpdatingStatus = false }
+
+        do {
+            try await reservationRepository.updateReservationStatus(
+                reservationId: reservation.reservationId,
+                status: status
+            )
+
+            reservation = updatedReservation(status: status)
+            onStatusChanged?()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func cancelReservationFromDetail() async {
+        guard canCustomerCancel else {
+            errorMessage = "Bu rezervasyonu iptal edemezsiniz."
+            showError = true
+            return
+        }
+
+        isUpdatingStatus = true
+        defer { isUpdatingStatus = false }
+
+        do {
+            try await reservationRepository.cancelReservation(
+                reservationId: reservation.reservationId
+            )
+
+            reservation = updatedReservation(status: .cancelled)
+            onStatusChanged?()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func updatedReservation(
+        status: ReservationStatus
+    ) -> Reservation {
+        Reservation(
+            reservationId: reservation.reservationId,
+            serviceId: reservation.serviceId,
+            serviceTitle: reservation.serviceTitle,
+            providerId: reservation.providerId,
+            providerName: reservation.providerName,
+            customerId: reservation.customerId,
+            customerName: reservation.customerName,
+            reservationDate: reservation.reservationDate,
+            note: reservation.note,
+            status: status,
+            createdAt: reservation.createdAt,
+            updatedAt: Date()
+        )
     }
 
     private func formatDate(

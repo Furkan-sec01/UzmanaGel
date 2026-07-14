@@ -56,12 +56,12 @@ final class PhoneAuthViewModel: ObservableObject {
 
             Task { @MainActor in
                 self.isLoading = false
-
+                
                 if let error {
                     self.errorMessage = self.mapSendCodeError(error)
                     return
                 }
-
+                
                 guard let verificationID else {
                     self.errorMessage = "Doğrulama işlemi başlatılamadı. Lütfen tekrar deneyin."
                     return
@@ -94,7 +94,7 @@ final class PhoneAuthViewModel: ObservableObject {
                     self.errorMessage = self.mapSendCodeError(error)
                     return
                 }
-
+                
                 guard let verificationID else {
                     self.errorMessage = "Kod tekrar gönderilemedi. Lütfen birkaç dakika bekleyip tekrar deneyin."
                     return
@@ -184,7 +184,8 @@ final class PhoneAuthViewModel: ObservableObject {
     func clearError() {
         errorMessage = nil
     }
-
+    
+    
     // MARK: - Kod Gönderme Hataları
 
     private func mapSendCodeError(_ error: Error) -> String {

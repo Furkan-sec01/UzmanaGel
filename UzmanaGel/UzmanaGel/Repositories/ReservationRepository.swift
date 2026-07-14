@@ -154,6 +154,36 @@ final class ReservationRepository {
                 "updatedAt": Timestamp(date: Date())
             ])
     }
+    
+    func updateReservationStatus(
+        reservationId: String,
+        status: ReservationStatus
+    ) async throws {
+        guard Auth.auth().currentUser != nil else {
+            throw ReservationRepositoryError.userNotFound
+        }
+
+        let trimmedReservationId = reservationId.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmedReservationId.isEmpty else {
+            throw ReservationRepositoryError.invalidReservation
+        }
+
+        guard status == .accepted || status == .rejected else {
+            throw ReservationRepositoryError.invalidReservation
+        }
+
+        try await db
+            .collection(collectionName)
+            .document(trimmedReservationId)
+            .updateData([
+                "status": status.rawValue,
+                "updatedAt": Timestamp(date: Date())
+            ])
+    }
+    
     ///Firestore'dan gelen veriyi Swift modeline cevirir
     private func mapReservation(
         from document: QueryDocumentSnapshot

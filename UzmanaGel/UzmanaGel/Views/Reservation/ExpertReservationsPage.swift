@@ -33,7 +33,9 @@ struct ExpertReservationsPage: View {
 
     @StateObject private var viewModel = ExpertReservationsViewModel()
     @State private var selectedFilter: ExpertReservationFilter = .pending
-
+    @State private var reservationToReject: Reservation?
+    @State private var showRejectConfirmation = false
+    @State private var reservationToShowDetail: Reservation?
     private var filteredReservations: [Reservation] {
         switch selectedFilter {
         case .pending:
@@ -104,6 +106,33 @@ struct ExpertReservationsPage: View {
             Button("Tamam", role: .cancel) { }
         } message: {
             Text(viewModel.errorMessage)
+        }
+        .confirmationDialog(
+            "Rezervasyonu reddet",
+            isPresented: $showRejectConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reddet", role: .destructive) {
+                guard let reservation = reservationToReject else { return }
+
+                Task {
+                    await viewModel.rejectReservation(reservation)
+                    reservationToReject = nil
+                }
+            }
+
+            Button("Vazgeç", role: .cancel) {
+                reservationToReject = nil
+            }
+        } message: {
+            if let reservation = reservationToReject {
+                Text("\(reservation.customerName) adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?")
+            } else {
+                Text("Bu rezervasyonu reddetmek istediğinizden emin misiniz?")
+            }
+        }
+        .sheet(item: $reservationToShowDetail) { reservation in
+            ReservationDetailPage(reservation: reservation)
         }
     }
 
@@ -210,10 +239,15 @@ struct ExpertReservationsPage: View {
                     .foregroundColor(.secondary)
                     .lineLimit(2)
             }
-        }
+
+            detailButton(for: reservation)
+
+            if reservation.status == .pending {
+                pendingActionButtons(for: reservation)
+            }        }
         .padding(.vertical, 8)
     }
-
+    
     private func statusBadge(
         _ status: ReservationStatus
     ) -> some View {
@@ -225,6 +259,74 @@ struct ExpertReservationsPage: View {
             .background(statusColor(status).opacity(0.15))
             .foregroundColor(statusColor(status))
             .clipShape(Capsule())
+    }
+    
+    private func detailButton(
+        for reservation: Reservation
+    ) -> some View {
+        Button {
+            reservationToShowDetail = reservation
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "doc.text.magnifyingglass")
+                Text("Detayı Gör")
+                    .font(.system(size: 13, weight: .bold))
+            }
+            .foregroundColor(Color("PrimaryColor"))
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(Color("PrimaryColor").opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 4)
+    }
+    
+    private func pendingActionButtons(
+        for reservation: Reservation
+    ) -> some View {
+        let isUpdating = viewModel.updatingReservationId == reservation.reservationId
+
+        return HStack(spacing: 10) {
+            Button {
+                reservationToReject = reservation
+                showRejectConfirmation = true
+            } label: {
+                Text("Reddet")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(Color.red.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .disabled(isUpdating)
+
+            Button {
+                Task {
+                    await viewModel.acceptReservation(reservation)
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    if isUpdating {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    }
+
+                    Text("Kabul Et")
+                        .font(.system(size: 13, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .background(Color.green)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .disabled(isUpdating)
+        }
+        .padding(.top, 6)
     }
 
     private func statusColor(
