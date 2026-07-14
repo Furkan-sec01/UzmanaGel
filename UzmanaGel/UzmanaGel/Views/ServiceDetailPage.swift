@@ -11,6 +11,8 @@ struct ServiceDetailPage: View {
     @State private var selectedConversation: Conversation?
     @State private var showChatDetail = false
     @State private var isStartingConversation = false
+    
+    @State private var showReservationSheet = false
 
     @State private var chatErrorMessage = ""
     @State private var showChatError = false
@@ -54,13 +56,23 @@ struct ServiceDetailPage: View {
                 }
             }
         }
-        .task { vm.load() }
+        .task {
+            vm.load()
+        }
         .navigationDestination(isPresented: $showChatDetail) {
             if let selectedConversation {
                 ChatDetailPage(
                     conversation: selectedConversation
                 )
             }
+        }
+        .sheet(isPresented: $showReservationSheet) {
+            ReservationCreateSheet(
+                serviceId: vm.service.serviceId,
+                serviceTitle: vm.service.title,
+                providerId: vm.service.providerId,
+                providerName: vm.service.providerName
+            )
         }
         .alert(
             "Mesajlaşma Hatası",
@@ -555,38 +567,61 @@ private extension ServiceDetailPage {
 private extension ServiceDetailPage {
 
     var ctaButton: some View {
-        Button {
-            startConversation()
-        } label: {
-            HStack(spacing: 8) {
-
-                if isStartingConversation {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Image(systemName: "message.fill")
+        VStack(spacing: 10) {
+            Button {
+                showReservationSheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar.badge.plus")
                         .font(.system(size: 15, weight: .semibold))
-                }
 
-                Text(
-                    isStartingConversation
-                    ? "Sohbet Açılıyor..."
-                    : "Mesaj Gönder"
+                    Text("Rezervasyon Talebi Oluştur")
+                        .font(.system(size: 16, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.blue)
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: 14,
+                        style: .continuous
+                    )
                 )
-                .font(.system(size: 16, weight: .bold))
             }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color("PrimaryColor"))
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: 14,
-                    style: .continuous
+
+            Button {
+                startConversation()
+            } label: {
+                HStack(spacing: 8) {
+                    if isStartingConversation {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "message.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+
+                    Text(
+                        isStartingConversation
+                        ? "Sohbet Açılıyor..."
+                        : "Mesaj Gönder"
+                    )
+                    .font(.system(size: 16, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color("PrimaryColor"))
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: 14,
+                        style: .continuous
+                    )
                 )
-            )
+            }
+            .disabled(isStartingConversation)
         }
-        .disabled(isStartingConversation)
         .padding(.horizontal, 20)
         .padding(.bottom, 16)
         .background(
