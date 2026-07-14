@@ -219,19 +219,32 @@ Status meanings:
 - ExpertReservationsPage was added.
 - ExpertHomepage links to incoming reservations.
 - Customer-side reservation create/list/cancel flow was tested.
+- Expert-side incoming reservations page was tested.
+- Expert can accept pending reservations.
+- Expert can reject pending reservations.
+- Firestore reservation rules were updated manually in Firebase Console for customer cancel and expert accept/reject.
+- Expert reservation list includes a View Details action.
+- Reservation detail page includes a Send Message shortcut.
+- Customer can send a message from reservation detail.
+- Expert can send a message from reservation detail.
+- Customer can cancel pending/accepted reservations from reservation detail.
+- Expert can accept/reject pending reservations from reservation detail.
+- Reservation detail status updates locally after actions.
+- Expert reservation list refreshes after detail status changes.
 
 ### Partially Completed
-- Expert-side reservation page builds, but live test is pending.
-- Reservation system is currently MVP-level, not full guide-level.
+- Reservation system is now stronger than MVP-level, but still not full guide-level.
+- Status transitions exist for pending, accepted, rejected, and cancelled, but there is no completed flow yet.
+- Chat shortcut exists, but notification integration is not added yet.
+- Firestore reservation rules were updated manually, but they are not versioned in the repository yet.
 
 ### Blocked
-- Expert-side live testing is blocked until Blaze / OTP issue is solved.
+- No current blocker for basic reservation create/cancel/accept/reject/chat flows.
+- Real phone number OTP may still be temporarily throttled after repeated attempts, but Firebase test phone numbers work.
 
 ### Missing / To Do
-- Expert accept reservation.
-- Expert reject reservation.
 - Reject reason selection.
-- Reservation status transition validation.
+- Reservation status transition validation as a central helper/service.
 - Reservation detail timeline.
 - Address selection during reservation.
 - Time slot selection.
@@ -240,41 +253,57 @@ Status meanings:
 - Reservation success screen.
 - Calendar integration.
 - Reservation notification flow.
-- Chat shortcut from reservation detail.
 - Map/navigation shortcut from reservation detail.
+- Completion flow after service is done.
+- Customer review/rating flow after completed reservation.
 
----
-
-## 9. Messaging System
+## 9. Messaging
 
 ### Completed
-- Conversation model exists.
-- ChatMessage model exists.
-- MessageRepository exists.
-- MessageViewModel exists.
-- ChatDetailViewModel exists.
-- MessagesPage exists.
-- ChatDetailPage exists.
-- ServiceDetailPage can start a conversation.
-- Real Firestore messages are saved.
-- Conversations list shows last message.
-- Message persistence was tested.
-- Conversation security rules were improved.
+- Conversation model was added.
+- ChatMessage model was added.
+- MessageRepository was added.
+- MessageViewModel was added.
+- ChatDetailViewModel was added.
+- MessagesPage was added.
+- ChatDetailPage was added.
+- Firestore-based real messaging was implemented.
+- Customer can start a conversation from ServiceDetailPage.
+- Existing conversations are reused with deterministic conversation IDs.
+- Messages are stored under conversations/{conversationId}/messages.
+- Conversation list shows last message and unread count.
+- ChatDetailPage listens to messages in real time.
+- Message sending works between customer and expert.
+- Mark-as-read logic was added.
+- Firestore conversation/message rules were updated manually in Firebase Console.
+- Messaging rules now use nested conversations/{conversationId}/messages/{messageId}.
+- ExpertHomepage includes a Messages shortcut.
+- Expert side menu includes Messages.
+- Customer can send a message from reservation detail.
+- Expert can send a message from reservation detail.
+- Customer-to-expert and expert-to-customer messaging were tested successfully.
 
 ### Partially Completed
-- Read/unread logic exists but needs more real multi-user testing.
-- Message UI is basic.
+- Basic read/unread logic exists, but the UI does not clearly show read receipts yet.
+- Messaging works for text messages only.
+- Firestore rules were updated manually, but they are not versioned in the repository yet.
+- Message list works, but pagination is not added yet.
+
+### Blocked
+- No current blocker for basic customer-expert messaging.
+- Push notification integration is not implemented yet.
 
 ### Missing / To Do
 - Push notifications for new messages.
 - Typing indicator.
-- Media attachments.
-- Message delete/archive/mute.
-- Search conversations.
-- Online/presence indicator.
-- Pagination for long chats.
-
----
+- Read receipt UI.
+- Message pagination.
+- Conversation search.
+- Media/image attachment support.
+- Message delete/archive/mute actions.
+- Better empty state and loading state.
+- Support/contact conversation flow.
+- Notification preferences integration with message notifications.
 
 ## 10. Notifications
 
@@ -327,30 +356,50 @@ Status meanings:
 
 ---
 
-## 13. Settings and Preferences
+## 13. Settings / Preferences
 
 ### Completed
-- SettingsPage exists.
+- SettingsPage was added.
+- SideMenuSheet links to SettingsPage.
+- Appearance selection was added.
+- Selected appearance is stored with AppStorage.
+- Notification toggle exists.
+- NotificationPreferencesPage was added.
+- iOS notification permission status/check was added.
+- Notification categories were added:
+- Reservation notifications.
+- Message notifications.
+- System notifications.
+- Marketing notifications.
+- KVKK / Privacy page is linked from Settings.
+- Terms of Service page was added.
 - HelpPage exists.
+- HelpPage was expanded with more FAQ items.
 - AboutPage exists.
-- Theme / appearance setting exists.
-- KVKK page exists.
-- Side menu navigation was improved.
+- AboutPage now shows dynamic version and build number.
+- Settings, Help, About, KVKK, Terms, and Notification Preferences screens build and open successfully.
 
 ### Partially Completed
-- Legal/support pages are basic.
-- Settings structure can be expanded.
+- Notification preferences are currently stored locally with AppStorage.
+- iOS notification permission check exists, but real push notification backend integration is not added yet.
+- Legal pages exist, but final legal text should be reviewed before production.
+- Help page has basic FAQ content, but no real support/contact form yet.
+
+### Blocked
+- No current blocker for local settings features.
+- Real notification delivery depends on future Firebase Cloud Messaging / APNs setup.
 
 ### Missing / To Do
-- Notification preferences.
-- Privacy preferences.
-- Language settings.
-- App version display.
-- Delete account.
-- Data export.
-- Clear cache.
-
----
+- Real push notification backend integration.
+- Save notification preferences to Firestore if needed.
+- Language selection.
+- Account deletion flow.
+- Data export / privacy request flow.
+- Support/contact form.
+- App feedback/report problem flow.
+- Cache clear option.
+- More detailed privacy settings.
+- Terms/KVKK final legal review.
 
 ## 14. Location and Map Features
 
