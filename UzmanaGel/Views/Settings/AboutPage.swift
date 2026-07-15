@@ -9,6 +9,14 @@ import SwiftUI
 
 struct AboutPage: View {
 
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
+
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+
     var body: some View {
         VStack(spacing: 18) {
             Image(systemName: "person.2.circle.fill")
@@ -24,9 +32,16 @@ struct AboutPage: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
 
-            Text("Version 1.0")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
+            VStack(spacing: 6) {
+                Text("Version \(appVersion)")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+
+                Text("Build \(buildNumber)")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.top, 4)
 
             Spacer()
         }

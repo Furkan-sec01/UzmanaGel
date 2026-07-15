@@ -239,7 +239,6 @@ final class ExpertSignUpViewModel: ObservableObject {
 
         PhoneAuthProvider.provider().verifyPhoneNumber(e164, uiDelegate: nil) { [weak self] verificationID, error in
             if let error = error as NSError? {
-                print("PHONE AUTH ERROR") ///firebase billing mode is spark but it must be change to the blaze mode
                 print("Domain:", error.domain)
                 print("Code:", error.code)
                 print("Message:", error.localizedDescription)

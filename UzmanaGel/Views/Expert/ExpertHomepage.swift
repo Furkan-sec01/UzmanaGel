@@ -75,6 +75,11 @@ struct ExpertHomepage: View {
                     ExpertPortfolioPage(userId: uid, profile: profile, onSave: { Task { await loadProfile() } })
                 } else if value == "listings", let uid = session.userId, let profile {
                     ExpertListingsPage(uid: uid, profile: profile, onRefresh: { Task { await loadProfile() } })
+                } else if value == "reservations" {
+                    ExpertReservationsPage()
+                }
+                else if value == "messages" {
+                    MessagesPage()
                 }
             }
             .task {
@@ -350,6 +355,32 @@ private extension ExpertHomepage {
                     )
                 }
                 .buttonStyle(.plain)
+                
+                Button {
+                    showMenu = false
+                    expertProfilePath.append("reservations")
+                } label: {
+                    actionRowContent(
+                        icon: "calendar.badge.exclamationmark",
+                        title: "Gelen Rezervasyonlar",
+                        subtitle: "Bekleyen ve yaklaşan talepleri görüntüle",
+                        color: .orange
+                    )
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    showMenu = false
+                    expertProfilePath.append("messages")
+                } label: {
+                    actionRowContent(
+                        icon: "message.fill",
+                        title: "Mesajlar",
+                        subtitle: "Müşterilerle olan konuşmalarınızı görüntüleyin",
+                        color: .blue
+                    )
+                }
+                .buttonStyle(.plain)
 
                 NavigationLink(value: "portfolio") {
                     actionRowContent(
@@ -438,6 +469,23 @@ private extension ExpertHomepage {
                     showMenu = false
                     expertProfilePath.append("listings")
                 }
+                menuRow(
+                    icon: "calendar.badge.exclamationmark",
+                    title: "Gelen Rezervasyonlar",
+                    subtitle: "Müşteri taleplerini görüntüleyin"
+                ) {
+                    showMenu = false
+                    expertProfilePath.append("reservations")
+                }
+                menuRow(
+                    icon: "message.fill",
+                    title: "Mesajlar",
+                    subtitle: "Müşteri konuşmalarınızı görüntüleyin"
+                ) {
+                    showMenu = false
+                    expertProfilePath.append("messages")
+                }
+                
                 Divider().padding(.horizontal, 20)
                 menuRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış Yap", subtitle: "Hesabınızdan çıkış yapın", isDestructive: true) {
                     showMenu = false

@@ -117,7 +117,7 @@ struct LoginPage: View {
                         Spacer()
 
                         NavigationLink {
-                            ForgotPasswordPage()
+                            ForgotPasswordPage(initialEmail: vm.email)
                         } label: {
                             Text("Şifremi Unuttum".localized)
                                 .font(.system(size: 13, weight: .semibold))

@@ -10,9 +10,9 @@ struct Homepage: View {
     @State private var showFilter = false
     @State private var showProfilePage = false
     @State private var showLocationPicker = false
-    @State private var showMessagesPage = false ///new
-    @State private var showSettingsPage = false ///new
-    
+    @State private var showMessagesPage = false
+    @State private var showSettingsPage = false
+    @State private var showReservationsPage = false
     var body: some View {
         NavigationStack {
             ZStack {
@@ -263,6 +263,13 @@ struct Homepage: View {
                         },
                         onHomeTap: {
                             showMenu = false
+                        },
+                        onReservationsTap: {
+                            showMenu = false
+
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                showReservationsPage = true
+                            }
                         }
                     )
                     .presentationDetents([.fraction(0.75)])///ekranın %75'ini kapla
@@ -278,6 +285,10 @@ struct Homepage: View {
                 .navigationDestination(isPresented: $showSettingsPage) {
                     SettingsPage()
                 }
+                .navigationDestination(isPresented: $showReservationsPage) {
+                    MyReservationsPage()
+                }
+                
                 .sheet(isPresented: $showFilter) {
                     FilterSheet(
                         filter: $vm.filter,

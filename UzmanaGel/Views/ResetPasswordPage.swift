@@ -21,6 +21,7 @@ struct ResetPasswordPage: View {
     @State private var showConfirm = false
 
     @State private var isLoading = false
+    @State private var isSendingResetEmail = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
     @State private var alertSuggestion = ""
@@ -86,6 +87,24 @@ struct ResetPasswordPage: View {
                     .disabled(!isValid || isLoading)
                     .opacity(isValid && !isLoading ? 1 : 0.6)
                     .padding(.top, 6)
+                    
+                    Button {
+                        Task { await sendPasswordResetEmail() }
+                    } label: {
+                        HStack(spacing: 6) {
+                            if isSendingResetEmail {
+                                ProgressView()
+                            }
+
+                            Text("Mevcut şifreni mi unuttun?")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(Color("PrimaryColor"))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isSendingResetEmail)
 
                     if !newPassword.isEmpty {
                         passwordRequirementsView
@@ -359,7 +378,7 @@ struct ResetPasswordPage: View {
         showAlert = true
     }
 
-    // MARK: - Firebase Password Change
+    // MARK: - Firebase Password Change and Password Reset Mail
 
     private func changePassword() async {
         guard let user = Auth.auth().currentUser,
@@ -389,6 +408,30 @@ struct ResetPasswordPage: View {
             showSuccess(
                 title: "Şifre Güncellendi ✓",
                 message: "Şifreniz başarıyla değiştirildi. Bir sonraki girişinizde yeni şifrenizi kullanmanız gerekmektedir."
+            )
+        } catch {
+            mapFirebaseError(error, phase: .passwordUpdate)
+        }
+    }
+    private func sendPasswordResetEmail() async {
+        guard let email = Auth.auth().currentUser?.email else {
+            showError(
+                title: "E-posta Bulunamadı",
+                message: "Şifre sıfırlama bağlantısı göndermek için hesabınıza bağlı bir e-posta bulunamadı.",
+                suggestion: "Profil bilgilerinizden e-posta adresinizi kontrol edin."
+            )
+            return
+        }
+
+        isSendingResetEmail = true
+        defer { isSendingResetEmail = false }
+
+        do {
+            try await Auth.auth().sendPasswordReset(withEmail: email)
+
+            showSuccess(
+                title: "Sıfırlama E-postası Gönderildi",
+                message: "\(email) adresine şifre sıfırlama bağlantısı gönderildi."
             )
         } catch {
             mapFirebaseError(error, phase: .passwordUpdate)

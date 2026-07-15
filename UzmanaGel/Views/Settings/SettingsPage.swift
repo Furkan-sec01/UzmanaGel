@@ -25,6 +25,12 @@ struct SettingsPage: View {
                     Label("Bildirimler".localized, systemImage: "bell")
                 }
                 
+                NavigationLink {
+                    NotificationPreferencesPage()
+                } label: {
+                    Label("Bildirim Tercihleri", systemImage: "bell.badge")
+                }
+                
                 Picker(selection: $selectedAppearance){
                     Text("Sistem".localized).tag("system")
                     Text("Açık".localized).tag("light")
@@ -44,6 +50,15 @@ struct SettingsPage: View {
                         )
                 }
             }
+            NavigationLink {
+                TermsOfServicePage()
+            } label: {
+                Label(
+                    "Kullanım Şartları".localized,
+                    systemImage: "doc.text"
+                )
+            }
+            
             Section("Destek".localized){
                 NavigationLink{
                     HelpPage()
