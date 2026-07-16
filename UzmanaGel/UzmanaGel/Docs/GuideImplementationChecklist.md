@@ -21,17 +21,20 @@ Status meanings:
 - Firebase Storage is integrated.
 - NavigationStack is used in main flows.
 - The project uses Git and GitHub branch / PR workflow.
+- Feature branches and pull requests are used for safe development.
 
 ### Partially Completed
 - Project documentation is limited.
 - Architecture is understandable but still needs cleanup and standardization.
 - Some Firebase Security Rules were updated manually in Firebase Console.
+- New provider/customer feature screens were integrated, but some still need real data review.
 
 ### Missing / To Do
 - Add a detailed README architecture section.
 - Add feature status documentation.
 - Add Firebase rules versioning into the repository.
 - Add setup instructions for new developers.
+- Add a clear feature ownership / module documentation section.
 
 ---
 
@@ -43,14 +46,15 @@ Status meanings:
 - Firebase Storage is connected.
 - GoogleService-Info.plist is added.
 - Cloud Functions folder exists in the repository.
+- Firebase project was upgraded to Blaze plan.
+- Phone Auth / OTP flow was tested successfully with Firebase test phone numbers.
+- Firestore Security Rules were improved for users, services, service providers, conversations, messages, and reservations.
+- Reservation and conversation/message rules were updated manually in Firebase Console.
 
 ### Partially Completed
-- Firestore Security Rules were improved for users, services, service providers, conversations, messages, and reservations.
-- Reservation rules were updated manually in Firebase Console.
-- OTP / Phone Auth flow exists but cannot be fully tested yet.
-
-### Blocked
-- Firebase Blaze plan is needed for real phone OTP testing.
+- Real phone number OTP may still be temporarily throttled after repeated attempts.
+- Firestore Rules are improved but still not versioned in the repository.
+- Firebase backend setup works for current tested flows, but production notification/payment setup is not complete.
 
 ### Missing / To Do
 - Move current Firestore Rules into repository.
@@ -59,6 +63,7 @@ Status meanings:
 - Check Firebase Crashlytics setup.
 - Check Firebase Remote Config setup.
 - Check Firebase Cloud Messaging setup.
+- Review APNs setup for production Phone Auth / push notifications.
 
 ---
 
@@ -71,22 +76,27 @@ Status meanings:
 - User role handling exists.
 - Login attempt tracking exists.
 - Google login flow exists.
-
-### Partially Completed
-- Expert signup flow exists but OTP testing is blocked.
-- Phone duplicate check was adjusted after security rule changes.
+- Phone Auth / OTP flow works with Firebase test phone numbers.
+- Expert signup flow was tested with OTP.
+- Expert account can reach ExpertHomepage after manual Firestore approval.
+- Forgot password flow was improved.
+- Forgot password page pre-fills email from LoginPage.
+- Reset password email flow was tested successfully.
 - Profile loading was improved for current user data.
 
-### Blocked
-- Expert registration live test is blocked by Firebase Blaze / OTP issue.
+### Partially Completed
+- Real phone number OTP may still be temporarily throttled.
+- Expert approval is currently manual through Firestore.
+- Email verification flow exists but needs more review.
+- User type onboarding can be improved.
 
 ### Missing / To Do
 - Sign in with Apple review.
-- Password reset flow review.
-- Email verification flow review.
+- Email verification improvements.
 - Biometric login.
 - Full onboarding flow.
 - User type selection onboarding improvement.
+- Admin approval panel for expert applications.
 
 ---
 
@@ -95,14 +105,23 @@ Status meanings:
 ### Completed
 - Customer profile page exists.
 - Current user profile loading was fixed.
-- Address-related work was added by Baran and should be tracked as part of profile management.
+- Old “Orders” logic was removed from ProfilePage.
+- Profile reservation count is connected to real reservations.
+- My Reservations card opens MyReservationsPage.
+- Reservation row under History & Favorites works.
+- Baran’s CustomerAddressListView was connected from ProfilePage.
+- AddAddressView is reachable from CustomerAddressListView.
+- Baran’s PaymentMethodsView was connected from ProfilePage.
+- Baran’s PreferencesView was connected from ProfilePage.
+- Baran’s HistoryFavoritesView was connected from ProfilePage.
 - Settings page exists.
 - KVKK / privacy page exists.
 
 ### Partially Completed
-- Address management should be tested end-to-end.
-- Profile edit UX can be improved.
-- App version / legal links need review.
+- Address management screens are connected but still use the current implementation level from Baran’s feature files.
+- Payment methods screen is connected but full payment backend is not implemented.
+- Preferences screen is connected but may still need real backend integration depending on requirements.
+- Existing real ProfilePage was kept instead of replacing it with Baran’s mock-style CustomerProfileView.
 
 ### Missing / To Do
 - Multiple saved addresses flow review.
@@ -111,6 +130,7 @@ Status meanings:
 - Map-based address selection.
 - Profile photo update review.
 - Account deletion flow.
+- Decide whether CustomerProfileView should stay unused or be merged into the real ProfilePage.
 
 ---
 
@@ -125,20 +145,30 @@ Status meanings:
 - Expert profile completion logic exists.
 - Expert can publish listings.
 - Storage upload service supports expert/listing images.
+- Baran’s ProviderDashboardView was connected from ExpertHomepage.
+- Baran’s ScheduleView was connected from ExpertHomepage.
+- Baran’s FinanceView was connected from ExpertHomepage.
+- Baran’s ProviderStatsView was connected from ExpertHomepage.
+- Baran’s ProviderServicesView was connected from ExpertHomepage.
+- Baran’s PortfolioView was connected from ExpertHomepage.
+- Baran’s EditBusinessProfileView was connected from ExpertHomepage.
+- Expert feature screens were standardized with full-screen presentation and a single “Kapat” action.
+- NavigationPath crash was avoided by not pushing Baran’s new provider screens into the existing String navigation path.
 
 ### Partially Completed
-- Expert dashboard concept exists in the guide, but current project mainly uses ExpertHomepage.
-- Expert reservation listing screen was added at build level.
-- Expert live flows need Blaze/OTP testing.
+- Baran’s provider screens are connected and open correctly, but many of them still use mock/service-level data.
+- Expert dashboard, finance, stats, services, portfolio and business profile screens need real data integration review.
+- Existing expert profile/listing/reservation/message flows still work after integration.
 
 ### Missing / To Do
-- Full expert dashboard statistics.
+- Connect provider dashboard metrics to real Firestore data.
+- Connect finance screen to real payment/earnings data.
+- Connect provider stats to real reservations, ratings and revenue.
+- Review ProviderServicesView against existing ExpertListingsPage.
+- Review PortfolioView against existing ExpertPortfolioPage.
 - Availability toggle.
-- Working calendar.
-- Today’s appointments dashboard.
-- Earnings/statistics cards.
-- Expert accept/reject reservation actions.
-- Expert-side reservation detail page.
+- Working calendar real availability integration.
+- Today’s appointments dashboard with real reservations.
 
 ---
 
@@ -219,29 +249,38 @@ Status meanings:
 - ExpertReservationsPage was added.
 - ExpertHomepage links to incoming reservations.
 - Customer-side reservation create/list/cancel flow was tested.
+- Expert-side incoming reservations page was tested after Blaze/OTP issue was solved.
+- Expert can accept pending reservations.
+- Expert can reject pending reservations.
+- Reservation status updates correctly after expert accept/reject.
+- Firestore reservation rules were updated manually in Firebase Console.
+- Customer can cancel pending/accepted reservations from reservation detail.
+- Expert can accept/reject pending reservations from reservation detail.
+- Reservation detail page includes a Send Message shortcut.
+- Customer and expert can open the related chat from reservation detail.
+- Expert reservation list includes a View Details action.
+- Expert reservation list refreshes after detail status changes.
 
 ### Partially Completed
-- Expert-side reservation page builds, but live test is pending.
-- Reservation system is currently MVP-level, not full guide-level.
-
-### Blocked
-- Expert-side live testing is blocked until Blaze / OTP issue is solved.
+- Reservation system is stronger than MVP-level but still not full guide-level.
+- Status transitions exist for pending, accepted, rejected and cancelled, but there is no completed flow yet.
+- Firestore reservation rules were updated manually but are not versioned in the repository.
+- Calendar/schedule screen exists through Baran’s provider feature, but it is not yet connected to real reservation availability.
 
 ### Missing / To Do
-- Expert accept reservation.
-- Expert reject reservation.
 - Reject reason selection.
-- Reservation status transition validation.
+- Reservation status transition validation as a central helper/service.
 - Reservation detail timeline.
 - Address selection during reservation.
 - Time slot selection.
-- Provider availability calendar.
+- Real provider availability calendar.
 - Payment step.
 - Reservation success screen.
-- Calendar integration.
+- Calendar integration with real reservations.
 - Reservation notification flow.
-- Chat shortcut from reservation detail.
 - Map/navigation shortcut from reservation detail.
+- Completion flow after service is done.
+- Customer review/rating flow after completed reservation.
 
 ---
 
@@ -260,10 +299,19 @@ Status meanings:
 - Conversations list shows last message.
 - Message persistence was tested.
 - Conversation security rules were improved.
+- Messaging rules now use nested conversations/{conversationId}/messages/{messageId}.
+- ExpertHomepage includes Messages access.
+- Expert side menu includes Messages access.
+- Customer can send a message from reservation detail.
+- Expert can send a message from reservation detail.
+- Customer-to-expert and expert-to-customer messaging were tested successfully.
 
 ### Partially Completed
-- Read/unread logic exists but needs more real multi-user testing.
+- Read/unread logic exists but the UI does not clearly show read receipts yet.
 - Message UI is basic.
+- Messaging works for text messages only.
+- Firestore rules were updated manually but are not versioned in the repository.
+- Message pagination is not added yet.
 
 ### Missing / To Do
 - Push notifications for new messages.
@@ -273,41 +321,59 @@ Status meanings:
 - Search conversations.
 - Online/presence indicator.
 - Pagination for long chats.
+- Better unread/read receipt UI.
 
 ---
 
 ## 10. Notifications
 
 ### Completed
-- No complete notification system yet.
+- NotificationPreferencesPage was added.
+- iOS notification permission status/check was added.
+- Notification categories were added:
+  - Reservation notifications.
+  - Message notifications.
+  - System notifications.
+  - Marketing notifications.
+- User can request/check notification permission from the app.
+- Notification preferences screen opens from SettingsPage.
 
 ### Partially Completed
-- Notification-related Firebase/FCM may be present in project dependencies but needs verification.
+- Notification preferences are currently local/UI-level.
+- Real push notification delivery is not implemented yet.
+- Firebase Cloud Messaging / APNs setup still needs production review.
 
 ### Missing / To Do
-- Push notification permission request.
 - FCM token saving.
 - Reservation notification.
 - Message notification.
 - Provider accept/reject notification.
 - In-app notification center.
-- Notification preferences.
+- Connect notification preferences to real notification delivery.
+- Store notification preferences in Firestore if needed.
 
 ---
 
 ## 11. Payment System
 
 ### Completed
-- No full payment flow implemented yet.
+- Baran’s PaymentMethodsView was connected from ProfilePage.
+- Payment methods screen can be opened from the customer profile flow.
+
+### Partially Completed
+- Payment method UI exists at feature-screen level.
+- Full payment backend is not implemented yet.
+- Payment flow is not connected to reservation checkout yet.
 
 ### Missing / To Do
 - Apple Pay setup.
-- Payment method selection.
+- Payment method selection for reservation flow.
 - Payment summary.
 - Transaction model.
 - Refund flow.
 - Receipt display.
 - Payment security review.
+- Real payment provider integration.
 
 ---
 
@@ -336,19 +402,29 @@ Status meanings:
 - Theme / appearance setting exists.
 - KVKK page exists.
 - Side menu navigation was improved.
+- NotificationPreferencesPage was added.
+- TermsOfServicePage was added.
+- AboutPage now shows dynamic version and build number.
+- HelpPage was expanded with more FAQ items.
+- Forgot password/reset password flow was improved.
+- Settings, Help, About, KVKK, Terms and Notification Preferences screens build and open successfully.
+- Baran’s PreferencesView was connected from ProfilePage.
 
 ### Partially Completed
-- Legal/support pages are basic.
-- Settings structure can be expanded.
+- Legal/support pages are still basic and need final legal review.
+- Notification preferences exist but real push notification backend is not connected.
+- PreferencesView is connected but needs review for real data persistence.
 
 ### Missing / To Do
-- Notification preferences.
+- Real push notification backend integration.
 - Privacy preferences.
-- Language settings.
-- App version display.
+- Language settings review.
 - Delete account.
 - Data export.
 - Clear cache.
+- Support/contact form.
+- App feedback/report problem flow.
+- Final Terms/KVKK legal review.
 
 ---
 
@@ -359,9 +435,12 @@ Status meanings:
 - Reverse geocoding exists in service detail logic.
 - Apple Maps direction opening exists.
 - Address-related work exists and needs end-to-end verification.
+- Baran’s CustomerAddressListView was connected from ProfilePage.
+- AddAddressView is reachable from CustomerAddressListView.
 
 ### Partially Completed
 - Location is used but not a full map-based flow.
+- Address screens exist, but map-based selection is not implemented yet.
 
 ### Missing / To Do
 - Map-based provider search.
@@ -370,6 +449,7 @@ Status meanings:
 - Map-based address selection.
 - Route preview.
 - Provider service area visualization.
+- Default address integration with reservation flow.
 
 ---
 
@@ -381,9 +461,12 @@ Status meanings:
 - Listing image upload exists.
 - Expert portfolio image upload exists.
 - Certificate / verification document upload support exists.
+- Baran’s provider portfolio screen was connected from ExpertHomepage.
 
 ### Partially Completed
 - Media upload exists but can be improved.
+- Portfolio-related screens need review against existing ExpertPortfolioPage.
+- Chat media upload is not implemented yet.
 
 ### Missing / To Do
 - Image compression review.
@@ -392,6 +475,7 @@ Status meanings:
 - Media cache.
 - Chat media upload.
 - Review photo upload.
+- Portfolio screen real data integration review.
 
 ---
 
@@ -403,12 +487,15 @@ Status meanings:
 - Message writes are restricted to sender.
 - Services and service providers use ownership-based write rules.
 - Reservation create/cancel rules were added manually.
+- Reservation accept/reject rules were added manually.
 - Negative security tests were performed for conversations, users, services, and service providers.
+- Local GoogleService-Info.plist / signing / bundle ID changes were excluded from commits.
 
 ### Partially Completed
 - Users read access is still broad for phone duplicate check.
 - Firestore rules are not fully versioned in repo.
-- Reservation rules should be reviewed by the team.
+- Reservation and conversation/message rules should be reviewed by the team.
+- Storage security rules still need review.
 
 ### Missing / To Do
 - Move final Firestore rules into repo.
@@ -417,21 +504,30 @@ Status meanings:
 - Storage security rules review.
 - App privacy labels.
 - Data deletion / GDPR flow.
+- Account deletion flow.
 
 ---
 
 ## 17. Analytics and Reporting
 
 ### Completed
-- No full analytics dashboard implemented yet.
+- Baran’s ProviderDashboardView was connected from ExpertHomepage.
+- Baran’s ProviderStatsView was connected from ExpertHomepage.
+- Provider dashboard/statistics screens can be opened from the expert side.
+
+### Partially Completed
+- Provider dashboard and stats screens currently need real data integration review.
+- No complete Firebase Analytics event system exists yet.
+- Reporting screens exist at UI/feature level but are not fully connected to production metrics.
 
 ### Missing / To Do
 - Firebase Analytics events.
 - Booking creation event.
 - Message sent event.
 - Search event.
-- Provider dashboard metrics.
-- Reservation statistics.
+- Provider dashboard metrics from real data.
+- Reservation statistics from real data.
+- Revenue/statistics calculation.
 - Crashlytics integration check.
 
 ---
@@ -442,10 +538,12 @@ Status meanings:
 - Lazy containers are used in several screens.
 - Pagination was added for services.
 - Async/await is used.
+- Build and phone tests were completed after provider/customer feature screen integration.
 
 ### Partially Completed
 - Some screens still need performance review.
 - Firestore query optimization needs review.
+- Baran’s newly connected feature screens should be reviewed for performance with real data.
 
 ### Missing / To Do
 - Firestore indexes review.
@@ -453,6 +551,7 @@ Status meanings:
 - Cache strategy.
 - Instruments performance test.
 - Memory leak review.
+- Performance test for provider dashboard/statistics screens.
 
 ---
 
@@ -466,10 +565,25 @@ Status meanings:
   - Messaging
   - Favorites
   - Reservation create/list/cancel
+  - Reservation detail actions
+  - Expert accept/reject reservation
+  - Customer-to-expert messaging
+  - Expert-to-customer messaging
   - Settings navigation
+  - Notification permission screen
+  - Password reset email flow
+  - Expert provider screens integrated from Baran’s work
+  - Customer profile feature screens integrated from Baran’s work
+- Security negative tests were performed manually for important Firestore access cases.
+- Build and phone tests were completed after provider/customer feature screen integration.
+- Existing expert screens were tested after new full-screen presentation changes.
+- Customer profile menu links were tested after connecting Baran’s customer feature screens.
 
 ### Partially Completed
-- Security negative tests were performed manually.
+- Multi-device and multi-user testing should continue.
+- Baran’s provider/customer feature screens open correctly, but real data integration still needs separate testing.
+- Security rules were manually tested but should be versioned and reviewed.
+- Regression testing should continue after each merge.
 
 ### Missing / To Do
 - Unit tests.
@@ -479,6 +593,7 @@ Status meanings:
 - End-to-end booking tests.
 - Multi-device testing.
 - Regression checklist.
+- Automated smoke test checklist.
 
 ---
 
@@ -487,6 +602,11 @@ Status meanings:
 ### Completed
 - Project builds locally.
 - GitHub PR workflow is used.
+- Feature branches are used before merging into main.
+
+### Partially Completed
+- App version/build display was improved in AboutPage.
+- Local development signing/plist differences are managed carefully and excluded from commits.
 
 ### Missing / To Do
 - TestFlight setup.
