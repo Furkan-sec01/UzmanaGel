@@ -15,6 +15,9 @@ final class ReservationViewModel: ObservableObject {
     @Published var reservationDate: Date = ReservationViewModel.defaultReservationDate()
     @Published var selectedTimeString = "09:00"
     @Published var note = ""
+    @Published var bookedTimeStrings: Set<String> = []
+    @Published var didLoadBookedSlots = false
+    @Published var isLoadingBookedSlots = false
     @Published var isSubmitting = false
     @Published var errorMessage = ""
     @Published var showError = false
@@ -35,13 +38,50 @@ final class ReservationViewModel: ObservableObject {
 
     private let repository = ReservationRepository()
 
-    func setSelectedDate(_ date: Date) {
+    func loadBookedSlots(providerId: String) async {
+        isLoadingBookedSlots = true
+        didLoadBookedSlots = false
+
+        defer {
+            isLoadingBookedSlots = false
+        }
+
+        do {
+            bookedTimeStrings = try await repository.fetchBookedTimeStrings(
+                providerId: providerId,
+                date: reservationDate
+            )
+
+            didLoadBookedSlots = true
+
+            if bookedTimeStrings.contains(selectedTimeString) {
+                selectedTimeString = availableTimeSlots.first {
+                    !bookedTimeStrings.contains($0)
+                } ?? selectedTimeString
+
+                reservationDate = dateWithSelectedTime(reservationDate)
+            }
+
+        } catch {
+            bookedTimeStrings = []
+            didLoadBookedSlots = false
+            errorMessage = "Dolu saatler kontrol edilemedi. Lütfen tekrar deneyin."
+            showError = true
+        }
+    }
+
+    func setSelectedDate(_ date: Date, providerId: String) async {
         reservationDate = dateWithSelectedTime(date)
+        await loadBookedSlots(providerId: providerId)
     }
 
     func setSelectedTime(_ timeString: String) {
         selectedTimeString = timeString
         reservationDate = dateWithSelectedTime(reservationDate)
+    }
+
+    func isBooked(_ timeString: String) -> Bool {
+        bookedTimeStrings.contains(timeString)
     }
 
     func createReservation(
@@ -51,6 +91,20 @@ final class ReservationViewModel: ObservableObject {
         providerName: String
     ) async {
         guard !isSubmitting else { return }
+
+        await loadBookedSlots(providerId: providerId)
+
+        guard didLoadBookedSlots else {
+            errorMessage = "Dolu saatler kontrol edilemediği için rezervasyon oluşturulamadı."
+            showError = true
+            return
+        }
+
+        guard !bookedTimeStrings.contains(selectedTimeString) else {
+            errorMessage = "Seçtiğiniz saat dolu. Lütfen başka bir saat seçin."
+            showError = true
+            return
+        }
 
         let customerName = getCurrentCustomerName()
 
@@ -91,12 +145,24 @@ final class ReservationViewModel: ObservableObject {
             note = ""
             reservationDate = Self.defaultReservationDate()
             selectedTimeString = "09:00"
+            bookedTimeStrings = []
             isSuccess = true
 
         } catch {
             errorMessage = error.localizedDescription
             showError = true
         }
+    }
+
+    private func isBlockingStatus(_ status: ReservationStatus) -> Bool {
+        status == .pending || status == .accepted
+    }
+
+    private func timeString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
     }
 
     private func dateWithSelectedTime(_ date: Date) -> Date {

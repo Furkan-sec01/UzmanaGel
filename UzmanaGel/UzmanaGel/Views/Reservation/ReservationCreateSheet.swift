@@ -32,12 +32,26 @@ struct ReservationCreateSheet: View {
                                 viewModel.reservationDate
                             },
                             set: { newDate in
-                                viewModel.setSelectedDate(newDate)
+                                Task {
+                                    await viewModel.setSelectedDate(
+                                        newDate,
+                                        providerId: providerId
+                                    )
+                                }
                             }
                         ),
                         in: minimumReservationDate...,
                         displayedComponents: [.date]
                     )
+
+                    if viewModel.isLoadingBookedSlots {
+                        HStack {
+                            ProgressView()
+                            Text("Dolu saatler kontrol ediliyor...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
 
                     Picker(
                         "Randevu Saati",
@@ -51,8 +65,9 @@ struct ReservationCreateSheet: View {
                         )
                     ) {
                         ForEach(viewModel.availableTimeSlots, id: \.self) { time in
-                            Text(time)
+                            Text(viewModel.isBooked(time) ? "\(time) - Dolu" : time)
                                 .tag(time)
+                                .disabled(viewModel.isBooked(time))
                         }
                     }
                     .pickerStyle(.menu)
@@ -84,7 +99,11 @@ struct ReservationCreateSheet: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .disabled(viewModel.isSubmitting)
+                    .disabled(
+                        viewModel.isSubmitting ||
+                        viewModel.isLoadingBookedSlots ||
+                        viewModel.isBooked(viewModel.selectedTimeString)
+                    )
                 }
             }
             .navigationTitle("Rezervasyon")
@@ -95,6 +114,9 @@ struct ReservationCreateSheet: View {
                         dismiss()
                     }
                 }
+            }
+            .task {
+                await viewModel.loadBookedSlots(providerId: providerId)
             }
             .alert("Hata", isPresented: $viewModel.showError) {
                 Button("Tamam", role: .cancel) { }
