@@ -4,6 +4,7 @@
 //
 //  Created by Halil Keremoğlu on 13.07.2026.
 //
+
 import SwiftUI
 
 struct ReservationCreateSheet: View {
@@ -16,16 +17,45 @@ struct ReservationCreateSheet: View {
     let providerId: String
     let providerName: String
 
+    private var minimumReservationDate: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section("Randevu Bilgileri") {
                     DatePicker(
-                        "Randevu Tarihi",
-                        selection: $viewModel.reservationDate,
-                        in: Date()...,
-                        displayedComponents: [.date, .hourAndMinute]
+                        "Randevu Günü",
+                        selection: Binding(
+                            get: {
+                                viewModel.reservationDate
+                            },
+                            set: { newDate in
+                                viewModel.setSelectedDate(newDate)
+                            }
+                        ),
+                        in: minimumReservationDate...,
+                        displayedComponents: [.date]
                     )
+
+                    Picker(
+                        "Randevu Saati",
+                        selection: Binding(
+                            get: {
+                                viewModel.selectedTimeString
+                            },
+                            set: { newTime in
+                                viewModel.setSelectedTime(newTime)
+                            }
+                        )
+                    ) {
+                        ForEach(viewModel.availableTimeSlots, id: \.self) { time in
+                            Text(time)
+                                .tag(time)
+                        }
+                    }
+                    .pickerStyle(.menu)
 
                     TextField(
                         "Not ekle",

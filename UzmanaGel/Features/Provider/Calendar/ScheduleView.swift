@@ -174,15 +174,18 @@ struct ScheduleView: View {
         NavigationStack {
             ZStack {
                 Color.themeBackground.ignoresSafeArea()
-                
+
                 VStack(spacing: Constants.spacingL) {
                     Text(dateHeaderString(for: selectedDate))
                         .font(.title3)
                         .fontWeight(.bold)
                         .padding(.top)
-                    
-                    if let slot = viewModel.availabilitySlots.first(where: { calendar.isDate($0.date, inSameDayAs: selectedDate) }) {
+
+                    if let slot = viewModel.availabilitySlots.first(where: {
+                        calendar.isDate($0.date, inSameDayAs: selectedDate)
+                    }) {
                         let dayReservations = viewModel.reservations(for: selectedDate)
+
                         CardView {
                             Toggle("Bugün Hizmete Açık", isOn: Binding(
                                 get: { slot.isAvailable },
@@ -197,15 +200,14 @@ struct ScheduleView: View {
                             .fontWeight(.semibold)
                         }
                         .padding(.horizontal)
-                        
-                        // Time slots list
+
                         VStack(alignment: .leading, spacing: Constants.spacingS) {
                             Text("Saat Dilimleri")
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(Color.themeSecondaryText)
                                 .padding(.horizontal)
-                            
+
                             ScrollView {
                                 VStack(spacing: 10) {
                                     ForEach(slot.timeSlots, id: \.timeString) { tSlot in
@@ -213,10 +215,14 @@ struct ScheduleView: View {
                                             Text(tSlot.timeString)
                                                 .font(.subheadline)
                                                 .fontWeight(.bold)
+
                                             Spacer()
-                                            
+
                                             Button {
-                                                viewModel.toggleSlotBooking(slotId: slot.id, timeString: tSlot.timeString)
+                                                viewModel.toggleSlotBooking(
+                                                    slotId: slot.id,
+                                                    timeString: tSlot.timeString
+                                                )
                                             } label: {
                                                 Text(tSlot.isBooked ? "Dolu (Randevu Alındı)" : "Müsait")
                                                     .font(.caption2)
@@ -232,121 +238,77 @@ struct ScheduleView: View {
                                         .padding()
                                         .background(Color.themeCardBackground)
                                         .cornerRadius(10)
-                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.themeBorder, lineWidth: 1))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color.themeBorder, lineWidth: 1)
+                                        )
                                     }
                                 }
                                 .padding(.horizontal)
                             }
-                            if !dayReservations.isEmpty {
-                                VStack(alignment: .leading, spacing: Constants.spacingS) {
-                                    Text("Günün Rezervasyonları")
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(Color.themeSecondaryText)
-                                        .padding(.horizontal)
+                        }
 
-                                    VStack(spacing: 10) {
-                                        ForEach(dayReservations) { reservation in
-                                            HStack(alignment: .top, spacing: 12) {
-                                                Image(systemName: "calendar.badge.clock")
-                                                    .foregroundColor(viewModel.statusColor(for: reservation.status))
-                                                    .frame(width: 28, height: 28)
-
-                                                VStack(alignment: .leading, spacing: 4) {
-                                                    Text(reservation.serviceTitle)
-                                                        .font(.subheadline)
-                                                        .fontWeight(.semibold)
-                                                        .foregroundColor(Color.themeText)
-
-                                                    Text(reservation.customerName)
-                                                        .font(.caption)
-                                                        .foregroundColor(Color.themeSecondaryText)
-
-                                                    Text(dateTimeString(for: reservation.reservationDate))
-                                                        .font(.caption2)
-                                                        .foregroundColor(Color.themeSecondaryText)
-                                                }
-
-                                                Spacer()
-
-                                                Text(reservation.status.title)
-                                                    .font(.caption2)
-                                                    .fontWeight(.bold)
-                                                    .foregroundColor(.white)
-                                                    .padding(.horizontal, 8)
-                                                    .padding(.vertical, 5)
-                                                    .background(viewModel.statusColor(for: reservation.status))
-                                                    .clipShape(Capsule())
-                                            }
-                                            .padding()
-                                            .background(Color.themeCardBackground)
-                                            .cornerRadius(10)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(Color.themeBorder, lineWidth: 1)
-                                            )
-                                        }
-                                    }
+                        if !dayReservations.isEmpty {
+                            VStack(alignment: .leading, spacing: Constants.spacingS) {
+                                Text("Günün Rezervasyonları")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Color.themeSecondaryText)
                                     .padding(.horizontal)
-                                }
-                            };if !dayReservations.isEmpty {
-                                VStack(alignment: .leading, spacing: Constants.spacingS) {
-                                    Text("Günün Rezervasyonları")
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(Color.themeSecondaryText)
-                                        .padding(.horizontal)
 
-                                    VStack(spacing: 10) {
-                                        ForEach(dayReservations) { reservation in
-                                            HStack(alignment: .top, spacing: 12) {
-                                                Image(systemName: "calendar.badge.clock")
-                                                    .foregroundColor(viewModel.statusColor(for: reservation.status))
-                                                    .frame(width: 28, height: 28)
+                                VStack(spacing: 10) {
+                                    ForEach(dayReservations) { reservation in
+                                        HStack(alignment: .top, spacing: 12) {
+                                            Image(systemName: "calendar.badge.clock")
+                                                .foregroundColor(viewModel.statusColor(for: reservation.status))
+                                                .frame(width: 28, height: 28)
 
-                                                VStack(alignment: .leading, spacing: 4) {
-                                                    Text(reservation.serviceTitle)
-                                                        .font(.subheadline)
-                                                        .fontWeight(.semibold)
-                                                        .foregroundColor(Color.themeText)
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(reservation.serviceTitle)
+                                                    .font(.subheadline)
+                                                    .fontWeight(.semibold)
+                                                    .foregroundColor(Color.themeText)
 
-                                                    Text(reservation.customerName)
-                                                        .font(.caption)
-                                                        .foregroundColor(Color.themeSecondaryText)
+                                                Text(reservation.customerName)
+                                                    .font(.caption)
+                                                    .foregroundColor(Color.themeSecondaryText)
 
-                                                    Text(dateTimeString(for: reservation.reservationDate))
-                                                        .font(.caption2)
-                                                        .foregroundColor(Color.themeSecondaryText)
-                                                }
-
-                                                Spacer()
-
-                                                Text(reservation.status.title)
+                                                Text(dateTimeString(for: reservation.reservationDate))
                                                     .font(.caption2)
-                                                    .fontWeight(.bold)
-                                                    .foregroundColor(.white)
-                                                    .padding(.horizontal, 8)
-                                                    .padding(.vertical, 5)
-                                                    .background(viewModel.statusColor(for: reservation.status))
-                                                    .clipShape(Capsule())
+                                                    .foregroundColor(Color.themeSecondaryText)
                                             }
-                                            .padding()
-                                            .background(Color.themeCardBackground)
-                                            .cornerRadius(10)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(Color.themeBorder, lineWidth: 1)
-                                            )
+
+                                            Spacer()
+
+                                            Text(reservation.status.title)
+                                                .font(.caption2)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 5)
+                                                .background(viewModel.statusColor(for: reservation.status))
+                                                .clipShape(Capsule())
                                         }
+                                        .padding()
+                                        .background(Color.themeCardBackground)
+                                        .cornerRadius(10)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color.themeBorder, lineWidth: 1)
+                                        )
                                     }
-                                    .padding(.horizontal)
                                 }
+                                .padding(.horizontal)
                             }
                         }
                     } else {
-                        EmptyStateView(iconName: "calendar.badge.clock", title: "Müsaitlik Girilmemiş", message: "Bu gün için çalışma planı bulunmamaktadır.")
+                        EmptyStateView(
+                            iconName: "calendar.badge.clock",
+                            title: "Müsaitlik Girilmemiş",
+                            message: "Bu gün için çalışma planı bulunmamaktadır."
+                        )
                     }
-                    
+
                     Spacer()
                 }
             }
@@ -361,7 +323,14 @@ struct ScheduleView: View {
             }
         }
     }
-    
+
+    private func dateTimeString(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "dd MMM yyyy HH:mm"
+        return formatter.string(from: date)
+    }
+
     private var batchSettingsSheet: some View {
         NavigationStack {
             ZStack {
@@ -534,12 +503,7 @@ struct ScheduleView: View {
         return days
     }
     
-    private func dateTimeString(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "dd MMM yyyy HH:mm"
-        return formatter.string(from: date)
-    }
+    
     
     private func dayOfWeekName(for day: Int) -> String {
         let names = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
