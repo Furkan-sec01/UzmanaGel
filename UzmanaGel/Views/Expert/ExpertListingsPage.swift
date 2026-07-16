@@ -99,10 +99,8 @@ struct ExpertListingsPage: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(Color("PrimaryColor"))
+                Button("Kapat") {
+                    dismiss()
                 }
             }
         }
