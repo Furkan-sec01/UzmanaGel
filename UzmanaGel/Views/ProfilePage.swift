@@ -387,11 +387,30 @@ struct ProfilePage: View {
     // MARK: - Account
     private var accountSection: some View {
         profileSection(title: "HESAP AYARLARI", icon: "person.fill") {
-            navigationRow(icon: "person", tint: Color("TertiaryColor"), title: "Kullanıcı Bilgileri", destination: AnyView(UserInfoEditView()))
+            navigationRow(
+                icon: "person",
+                tint: Color("TertiaryColor"),
+                title: "Kullanıcı Bilgileri",
+                destination: AnyView(UserInfoEditView())
+            )
+
             divider()
-            navigationRow(icon: "mappin.and.ellipse", tint: .red, title: "Adreslerim", destination: AnyView(AddressListView()))
+
+            navigationRow(
+                icon: "mappin.and.ellipse",
+                tint: .red,
+                title: "Adreslerim",
+                destination: AnyView(CustomerAddressListView())
+            )
+
             divider()
-            navigationRow(icon: "creditcard.fill", tint: .blue, title: "Ödeme Yöntemleri", destination: AnyView(PaymentMethodsPage()))
+
+            navigationRow(
+                icon: "creditcard.fill",
+                tint: .blue,
+                title: "Ödeme Yöntemleri",
+                destination: AnyView(PaymentMethodsView())
+            )
         }
     }
 
@@ -413,13 +432,27 @@ struct ProfilePage: View {
                 title: "Favorilerim",
                 destination: AnyView(FavoritesPage())
             )
+
+            divider()
+
+            navigationRow(
+                icon: "clock.arrow.circlepath",
+                tint: .orange,
+                title: "Geçmiş Özeti",
+                destination: AnyView(HistoryFavoritesView())
+            )
         }
     }
 
     // MARK: - Preferences
     private var preferencesSection: some View {
         profileSection(title: "TERCİHLER", icon: "slider.horizontal.3") {
-            navigationRow(icon: "slider.horizontal.3", tint: .purple, title: "Tercihler", destination: AnyView(PreferencesPage()))
+            navigationRow(
+                icon: "slider.horizontal.3",
+                tint: .purple,
+                title: "Tercihler",
+                destination: AnyView(PreferencesView())
+            )
         }
     }
 

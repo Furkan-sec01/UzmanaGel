@@ -36,7 +36,6 @@ struct ExpertProfilePage: View {
     @State private var photoPickerItem: PhotosPickerItem?
     @State private var isUploadingPhoto = false
     @State private var isSubmittingForApproval = false
-
     var body: some View {
         Group {
             if isLoading {
@@ -51,16 +50,9 @@ struct ExpertProfilePage: View {
         .navigationTitle("Profilim")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(Color("PrimaryColor"))
-                }
-            }
+        .task {
+            await loadProfile()
         }
-        .task { await loadProfile() }
         .onChange(of: photoPickerItem) { _, newItem in
             guard let newItem else { return }
             Task { await handlePhotoSelected(newItem) }

@@ -19,15 +19,28 @@ struct ExpertHomepage: View {
     @State private var isLoading = true
     @State private var loadError: String?
     @State private var showMenu = false
-    @State private var expertProfilePath: [String] = []
     @State private var showCreateListingSheet = false
     @State private var listingCount = 0
 
+    @State private var showListingsPage = false
+    @State private var showProfilePage = false
+    @State private var showReservationsPage = false
+    @State private var showMessagesPage = false
+    @State private var showExpertPortfolioPage = false
+
+    @State private var showProviderDashboard = false
+    @State private var showSchedule = false
+    @State private var showEditBusinessProfile = false
+    @State private var showProviderPortfolio = false
+    @State private var showFinance = false
+    @State private var showProviderStats = false
+    @State private var showProviderServices = false
+   
     private let userRepo = UserRepository()
     private let serviceRepo = ServiceRepository()
 
     var body: some View {
-        NavigationStack(path: $expertProfilePath) {
+        NavigationStack {
             ZStack(alignment: .bottomTrailing) {
                 Color("BackgroundColor")
                     .ignoresSafeArea()
@@ -68,26 +81,148 @@ struct ExpertHomepage: View {
                     )
                 }
             }
-            .navigationDestination(for: String.self) { value in
-                if value == "profile", let uid = session.userId {
-                    ExpertProfilePage(userId: uid, onRefresh: { Task { await loadProfile() } })
-                } else if value == "portfolio", let uid = session.userId, let profile {
-                    ExpertPortfolioPage(userId: uid, profile: profile, onSave: { Task { await loadProfile() } })
-                } else if value == "listings", let uid = session.userId, let profile {
-                    ExpertListingsPage(uid: uid, profile: profile, onRefresh: { Task { await loadProfile() } })
-                } else if value == "reservations" {
-                    ExpertReservationsPage()
-                }
-                else if value == "messages" {
-                    MessagesPage()
-                }
-            }
             .task {
                 await loadProfile()
             }
             .refreshable {
                 await loadProfile()
             }
+            .fullScreenCover(isPresented: $showListingsPage) {
+                if let uid = session.userId, let profile {
+                    NavigationStack {
+                        ExpertListingsPage(uid: uid, profile: profile, onRefresh: { Task { await loadProfile() } })
+                    }
+                }
+            }
+            
+            .fullScreenCover(isPresented: $showProfilePage) {
+                if let uid = session.userId {
+                    NavigationStack {
+                        ExpertProfilePage(userId: uid, onRefresh: { Task { await loadProfile() } })
+                            .toolbar {
+                                ToolbarItem(placement: .topBarLeading) {
+                                    Button("Kapat") {
+                                        showProfilePage = false
+                                    }
+                                }
+                            }
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showReservationsPage) {
+                NavigationStack {
+                    ExpertReservationsPage()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showReservationsPage = false
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showMessagesPage) {
+                NavigationStack {
+                    MessagesPage()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showMessagesPage = false
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showExpertPortfolioPage) {
+                if let uid = session.userId, let profile {
+                    NavigationStack {
+                        ExpertPortfolioPage(userId: uid, profile: profile, onSave: { Task { await loadProfile() } })
+                            .toolbar {
+                                ToolbarItem(placement: .topBarLeading) {
+                                    Button("Kapat") {
+                                        showExpertPortfolioPage = false
+                                    }
+                                }
+                            }
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showProviderDashboard) {
+                NavigationStack {
+                    ProviderDashboardView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showProviderDashboard = false
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showSchedule) {
+                NavigationStack {
+                    ScheduleView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showSchedule = false
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showFinance) {
+                NavigationStack {
+                    FinanceView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showFinance = false
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showProviderStats) {
+                NavigationStack {
+                    ProviderStatsView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showProviderStats = false
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showProviderServices) {
+                NavigationStack {
+                    ProviderServicesView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showProviderServices = false
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showProviderPortfolio) {
+                NavigationStack {
+                    PortfolioView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showProviderPortfolio = false
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showEditBusinessProfile) {
+                EditBusinessProfileView()
+            }
+
         }
     }
 
@@ -331,7 +466,7 @@ private extension ExpertHomepage {
             VStack(spacing: ExpertHomeDesign.rowSpacing) {
                 Button {
                     showMenu = false
-                    expertProfilePath.append("listings")
+                    showListingsPage = true
                 } label: {
                     actionRowContent(
                         icon: "doc.text.fill",
@@ -345,7 +480,7 @@ private extension ExpertHomepage {
 
                 Button {
                     showMenu = false
-                    expertProfilePath.append("profile")
+                    showProfilePage = true
                 } label: {
                     actionRowContent(
                         icon: "person.crop.rectangle.fill",
@@ -355,10 +490,10 @@ private extension ExpertHomepage {
                     )
                 }
                 .buttonStyle(.plain)
-                
+
                 Button {
                     showMenu = false
-                    expertProfilePath.append("reservations")
+                    showReservationsPage = true
                 } label: {
                     actionRowContent(
                         icon: "calendar.badge.exclamationmark",
@@ -368,10 +503,10 @@ private extension ExpertHomepage {
                     )
                 }
                 .buttonStyle(.plain)
-                
+
                 Button {
                     showMenu = false
-                    expertProfilePath.append("messages")
+                    showMessagesPage = true
                 } label: {
                     actionRowContent(
                         icon: "message.fill",
@@ -382,7 +517,101 @@ private extension ExpertHomepage {
                 }
                 .buttonStyle(.plain)
 
-                NavigationLink(value: "portfolio") {
+                Button {
+                    showMenu = false
+                    showProviderDashboard = true
+                } label: {
+                    actionRowContent(
+                        icon: "chart.bar.fill",
+                        title: "Panel",
+                        subtitle: "Genel durum ve performans özeti",
+                        color: .purple
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showMenu = false
+                    showSchedule = true
+                } label: {
+                    actionRowContent(
+                        icon: "calendar",
+                        title: "Takvim",
+                        subtitle: "Çalışma programınızı görüntüleyin",
+                        color: .green
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showMenu = false
+                    showFinance = true
+                } label: {
+                    actionRowContent(
+                        icon: "creditcard.fill",
+                        title: "Finans",
+                        subtitle: "Kazanç ve ödeme bilgilerini görüntüleyin",
+                        color: .mint
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showMenu = false
+                    showProviderStats = true
+                } label: {
+                    actionRowContent(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: "İstatistikler",
+                        subtitle: "Performans ve hizmet istatistikleri",
+                        color: .indigo
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showMenu = false
+                    showProviderServices = true
+                } label: {
+                    actionRowContent(
+                        icon: "wrench.and.screwdriver.fill",
+                        title: "Hizmet Yönetimi",
+                        subtitle: "Hizmetlerinizi görüntüleyin",
+                        color: .orange
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showMenu = false
+                    showProviderPortfolio = true
+                } label: {
+                    actionRowContent(
+                        icon: "photo.stack.fill",
+                        title: "Yeni Portföy",
+                        subtitle: "Portföy ekranını görüntüleyin",
+                        color: Color("PrimaryColor")
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showMenu = false
+                    showEditBusinessProfile = true
+                } label: {
+                    actionRowContent(
+                        icon: "building.2.fill",
+                        title: "İş Profili",
+                        subtitle: "İşletme profilinizi düzenleyin",
+                        color: Color("TertiaryColor")
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showMenu = false
+                    showExpertPortfolioPage = true
+                } label: {
                     actionRowContent(
                         icon: "photo.on.rectangle.angled",
                         title: "Portföy",
@@ -460,41 +689,95 @@ private extension ExpertHomepage {
             .padding(.top, 20)
             .padding(.bottom, 16)
 
-            VStack(spacing: 8) {
-                menuRow(icon: "person.circle.fill", title: "Profilim", subtitle: "Bilgilerinizi düzenleyin") {
-                    showMenu = false
-                    expertProfilePath.append("profile")
-                }
-                menuRow(icon: "doc.text.fill", title: "İlanlarım", subtitle: listingCount == 0 ? "İlanlarınızı yönetin" : "\(listingCount) ilan") {
-                    showMenu = false
-                    expertProfilePath.append("listings")
-                }
-                menuRow(
-                    icon: "calendar.badge.exclamationmark",
-                    title: "Gelen Rezervasyonlar",
-                    subtitle: "Müşteri taleplerini görüntüleyin"
-                ) {
-                    showMenu = false
-                    expertProfilePath.append("reservations")
-                }
-                menuRow(
-                    icon: "message.fill",
-                    title: "Mesajlar",
-                    subtitle: "Müşteri konuşmalarınızı görüntüleyin"
-                ) {
-                    showMenu = false
-                    expertProfilePath.append("messages")
-                }
-                
-                Divider().padding(.horizontal, 20)
-                menuRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış Yap", subtitle: "Hesabınızdan çıkış yapın", isDestructive: true) {
-                    showMenu = false
-                    session.signOut()
-                }
-            }
-            .padding(.bottom, 24)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 8) {
+                    menuRow(icon: "person.circle.fill", title: "Profilim", subtitle: "Bilgilerinizi düzenleyin") {
+                        showMenu = false
+                        showProfilePage = true
+                    }
 
-            Spacer()
+                    menuRow(icon: "doc.text.fill", title: "İlanlarım", subtitle: listingCount == 0 ? "İlanlarınızı yönetin" : "\(listingCount) ilan") {
+                        showMenu = false
+                        showListingsPage = true
+                    }
+
+                    menuRow(
+                        icon: "calendar.badge.exclamationmark",
+                        title: "Gelen Rezervasyonlar",
+                        subtitle: "Müşteri taleplerini görüntüleyin"
+                    ) {
+                        showMenu = false
+                        showReservationsPage = true
+                    }
+
+                    menuRow(
+                        icon: "message.fill",
+                        title: "Mesajlar",
+                        subtitle: "Müşteri konuşmalarınızı görüntüleyin"
+                    ) {
+                        showMenu = false
+                        showMessagesPage = true
+                    }
+
+                    menuRow(icon: "photo.on.rectangle.angled", title: "Portföy", subtitle: "Portföyünüzü yönetin") {
+                        showMenu = false
+                        showExpertPortfolioPage = true
+                    }
+
+                    Divider().padding(.horizontal, 20)
+
+                    menuRow(
+                        icon: "chart.bar.fill",
+                        title: "Panel",
+                        subtitle: "Genel durum ve performans özeti"
+                    ) {
+                        showMenu = false
+                        showProviderDashboard = true
+                    }
+
+                    menuRow(
+                        icon: "calendar",
+                        title: "Takvim",
+                        subtitle: "Çalışma programınızı görüntüleyin"
+                    ) {
+                        showMenu = false
+                        showSchedule = true
+                    }
+
+                    menuRow(icon: "creditcard.fill", title: "Finans", subtitle: "Kazanç ve ödeme bilgileri") {
+                        showMenu = false
+                        showFinance = true
+                    }
+
+                    menuRow(icon: "chart.line.uptrend.xyaxis", title: "İstatistikler", subtitle: "Performans verileri") {
+                        showMenu = false
+                        showProviderStats = true
+                    }
+
+                    menuRow(icon: "wrench.and.screwdriver.fill", title: "Hizmet Yönetimi", subtitle: "Hizmetlerinizi görüntüleyin") {
+                        showMenu = false
+                        showProviderServices = true
+                    }
+
+                    menuRow(icon: "photo.stack.fill", title: "Yeni Portföy", subtitle: "Portföy ekranını görüntüleyin") {
+                        showMenu = false
+                        showProviderPortfolio = true
+                    }
+
+                    menuRow(icon: "building.2.fill", title: "İş Profili", subtitle: "İşletme profilinizi düzenleyin") {
+                        showMenu = false
+                        showEditBusinessProfile = true
+                    }
+
+                    Divider().padding(.horizontal, 20)
+
+                    menuRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış Yap", subtitle: "Hesabınızdan çıkış yapın", isDestructive: true) {
+                        showMenu = false
+                        session.signOut()
+                    }
+                }
+                .padding(.bottom, 24)
+            }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
