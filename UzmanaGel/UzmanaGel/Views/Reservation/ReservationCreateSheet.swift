@@ -19,16 +19,16 @@ struct ReservationCreateSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Randevu Bilgileri") {
+                Section("Randevu Bilgileri".localized) {
                     DatePicker(
-                        "Randevu Tarihi",
+                        "Randevu Tarihi".localized,
                         selection: $viewModel.reservationDate,
                         in: Date()...,
                         displayedComponents: [.date, .hourAndMinute]
                     )
 
                     TextField(
-                        "Not ekle",
+                        "Not ekle".localized,
                         text: $viewModel.note,
                         axis: .vertical
                     )
@@ -50,33 +50,33 @@ struct ReservationCreateSheet: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("Rezervasyon Talebi Oluştur")
+                            Text("Rezervasyon Talebi Oluştur".localized)
                                 .frame(maxWidth: .infinity)
                         }
                     }
                     .disabled(viewModel.isSubmitting)
                 }
             }
-            .navigationTitle("Rezervasyon")
+            .navigationTitle("Rezervasyon".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         dismiss()
                     }
                 }
             }
-            .alert("Hata", isPresented: $viewModel.showError) {
-                Button("Tamam", role: .cancel) { }
+            .alert("Hata".localized, isPresented: $viewModel.showError) {
+                Button("Tamam".localized, role: .cancel) { }
             } message: {
                 Text(viewModel.errorMessage)
             }
-            .alert("Başarılı", isPresented: $viewModel.isSuccess) {
-                Button("Tamam") {
+            .alert("Başarılı".localized, isPresented: $viewModel.isSuccess) {
+                Button("Tamam".localized) {
                     dismiss()
                 }
             } message: {
-                Text("Rezervasyon talebiniz oluşturuldu.")
+                Text("Rezervasyon talebiniz oluşturuldu.".localized)
             }
         }
     }

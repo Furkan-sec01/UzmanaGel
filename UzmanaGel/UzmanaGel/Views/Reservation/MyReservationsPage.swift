@@ -17,11 +17,11 @@ private enum ReservationFilter: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .active:
-            return "Aktif"
+            return "Aktif".localized
         case .past:
-            return "Geçmiş"
+            return "Geçmiş".localized
         case .cancelled:
-            return "İptal"
+            return "İptal Edildi".localized
         }
     }
 }
@@ -52,7 +52,7 @@ struct MyReservationsPage: View {
     var body: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView("Rezervasyonlar yükleniyor...")
+                ProgressView("Rezervasyonlar yükleniyor...".localized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 VStack(spacing: 12) {
@@ -66,7 +66,7 @@ struct MyReservationsPage: View {
                 }
             }
         }
-        .navigationTitle("Rezervasyonlarım")
+        .navigationTitle("Rezervasyonlarım".localized)
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.loadReservations()
@@ -74,24 +74,24 @@ struct MyReservationsPage: View {
         .refreshable {
             await viewModel.loadReservations()
         }
-        .alert("Hata", isPresented: $viewModel.showError) {
-            Button("Tamam", role: .cancel) { }
+        .alert("Hata".localized, isPresented: $viewModel.showError) {
+            Button("Tamam".localized, role: .cancel) { }
         } message: {
             Text(viewModel.errorMessage)
         }
         .alert(
-            "Rezervasyonu İptal Et",
+            "Rezervasyonu İptal Et".localized,
             isPresented: $viewModel.showCancelConfirmation
         ) {
-            Button("Vazgeç", role: .cancel) { }
+            Button("Vazgeç".localized, role: .cancel) { }
 
-            Button("İptal Et", role: .destructive) {
+            Button("İptal Et".localized, role: .destructive) {
                 Task {
                     await viewModel.cancelSelectedReservation()
                 }
             }
         } message: {
-            Text("Bu rezervasyon talebini iptal etmek istediğinize emin misiniz?")
+            Text("Bu rezervasyon talebini iptal etmek istediğinize emin misiniz?".localized)
         }
         .sheet(item: $selectedReservation) { reservation in
             ReservationDetailPage(reservation: reservation)
@@ -99,7 +99,7 @@ struct MyReservationsPage: View {
     }
 
     private var filterPicker: some View {
-        Picker("Rezervasyon filtresi", selection: $selectedFilter) {
+        Picker("Rezervasyon filtresi".localized, selection: $selectedFilter) {
             ForEach(ReservationFilter.allCases) { filter in
                 Text(filter.title)
                     .tag(filter)
@@ -144,22 +144,22 @@ struct MyReservationsPage: View {
     private var emptyStateTitle: String {
         switch selectedFilter {
         case .active:
-            return "Aktif rezervasyon yok"
+            return "Aktif rezervasyon yok".localized
         case .past:
-            return "Geçmiş rezervasyon yok"
+            return "Geçmiş rezervasyon yok".localized
         case .cancelled:
-            return "İptal edilen rezervasyon yok"
+            return "İptal edilen rezervasyon yok".localized
         }
     }
 
     private var emptyStateSubtitle: String {
         switch selectedFilter {
         case .active:
-            return "Bir hizmet detayından rezervasyon talebi oluşturabilirsiniz."
+            return "Bir hizmet detayından rezervasyon talebi oluşturabilirsiniz.".localized
         case .past:
-            return "Tamamlanan veya reddedilen rezervasyonlar burada görünür."
+            return "Tamamlanan veya reddedilen rezervasyonlar burada görünür.".localized
         case .cancelled:
-            return "İptal edilen rezervasyonlar burada görünür."
+            return "İptal edilen rezervasyonlar burada görünür.".localized
         }
     }
 
@@ -203,7 +203,7 @@ struct MyReservationsPage: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle")
-                    Text("Detay")
+                    Text("Detay".localized)
                 }
                 .font(.subheadline)
                 .fontWeight(.semibold)
@@ -217,7 +217,7 @@ struct MyReservationsPage: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "xmark.circle")
-                        Text("İptal Et")
+                        Text("İptal Et".localized)
                     }
                     .font(.subheadline)
                     .fontWeight(.semibold)
@@ -270,7 +270,7 @@ struct MyReservationsPage: View {
         _ date: Date
     ) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.locale = Locale(identifier: LanguageManager.shared.languageCode == "en" ? "en_US" : "tr_TR")
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)

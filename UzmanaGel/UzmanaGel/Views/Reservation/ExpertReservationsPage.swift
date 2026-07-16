@@ -18,13 +18,13 @@ private enum ExpertReservationFilter: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .pending:
-            return "Bekleyen"
+            return "Bekleyen".localized
         case .today:
-            return "Bugün"
+            return "Bugün".localized
         case .upcoming:
-            return "Yaklaşan"
+            return "Yaklaşan".localized
         case .past:
-            return "Geçmiş"
+            return "Geçmiş".localized
         }
     }
 }
@@ -80,7 +80,7 @@ struct ExpertReservationsPage: View {
     var body: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView("Rezervasyonlar yükleniyor...")
+                ProgressView("Rezervasyonlar yükleniyor...".localized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 VStack(spacing: 12) {
@@ -94,7 +94,7 @@ struct ExpertReservationsPage: View {
                 }
             }
         }
-        .navigationTitle("Gelen Rezervasyonlar")
+        .navigationTitle("Gelen Rezervasyonlar".localized)
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.loadReservations()
@@ -102,17 +102,17 @@ struct ExpertReservationsPage: View {
         .refreshable {
             await viewModel.loadReservations()
         }
-        .alert("Hata", isPresented: $viewModel.showError) {
-            Button("Tamam", role: .cancel) { }
+        .alert("Hata".localized, isPresented: $viewModel.showError) {
+            Button("Tamam".localized, role: .cancel) { }
         } message: {
             Text(viewModel.errorMessage)
         }
         .confirmationDialog(
-            "Rezervasyonu reddet",
+            "Rezervasyonu reddet".localized,
             isPresented: $showRejectConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Reddet", role: .destructive) {
+            Button("Reddet".localized, role: .destructive) {
                 guard let reservation = reservationToReject else { return }
 
                 Task {
@@ -121,14 +121,14 @@ struct ExpertReservationsPage: View {
                 }
             }
 
-            Button("Vazgeç", role: .cancel) {
+            Button("Vazgeç".localized, role: .cancel) {
                 reservationToReject = nil
             }
         } message: {
             if let reservation = reservationToReject {
-                Text("\(reservation.customerName) adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?")
+                Text(String(format: "%@ adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?".localized, reservation.customerName))
             } else {
-                Text("Bu rezervasyonu reddetmek istediğinizden emin misiniz?")
+                Text("Bu rezervasyonu reddetmek istediğinizden emin misiniz?".localized)
             }
         }
         .sheet(item: $reservationToShowDetail) { reservation in
@@ -137,7 +137,7 @@ struct ExpertReservationsPage: View {
     }
 
     private var filterPicker: some View {
-        Picker("Rezervasyon filtresi", selection: $selectedFilter) {
+        Picker("Rezervasyon filtresi".localized, selection: $selectedFilter) {
             ForEach(ExpertReservationFilter.allCases) { filter in
                 Text(filter.title)
                     .tag(filter)
@@ -182,26 +182,26 @@ struct ExpertReservationsPage: View {
     private var emptyStateTitle: String {
         switch selectedFilter {
         case .pending:
-            return "Bekleyen rezervasyon yok"
+            return "Bekleyen rezervasyon yok".localized
         case .today:
-            return "Bugün için rezervasyon yok"
+            return "Bugün için rezervasyon yok".localized
         case .upcoming:
-            return "Yaklaşan rezervasyon yok"
+            return "Yaklaşan rezervasyon yok".localized
         case .past:
-            return "Geçmiş rezervasyon yok"
+            return "Geçmiş rezervasyon yok".localized
         }
     }
 
     private var emptyStateSubtitle: String {
         switch selectedFilter {
         case .pending:
-            return "Müşterilerden gelen yeni rezervasyon talepleri burada görünür."
+            return "Müşterilerden gelen yeni rezervasyon talepleri burada görünür.".localized
         case .today:
-            return "Bugünkü aktif rezervasyonlar burada görünür."
+            return "Bugünkü aktif rezervasyonlar burada görünür.".localized
         case .upcoming:
-            return "Bugünden sonraki aktif rezervasyonlar burada görünür."
+            return "Bugünden sonraki aktif rezervasyonlar burada görünür.".localized
         case .past:
-            return "Tamamlanan, reddedilen veya iptal edilen rezervasyonlar burada görünür."
+            return "Tamamlanan, reddedilen veya iptal edilen rezervasyonlar burada görünür.".localized
         }
     }
 
@@ -269,7 +269,7 @@ struct ExpertReservationsPage: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "doc.text.magnifyingglass")
-                Text("Detayı Gör")
+                Text("Detayı Gör".localized)
                     .font(.system(size: 13, weight: .bold))
             }
             .foregroundColor(Color("PrimaryColor"))
@@ -292,7 +292,7 @@ struct ExpertReservationsPage: View {
                 reservationToReject = reservation
                 showRejectConfirmation = true
             } label: {
-                Text("Reddet")
+                Text("Reddet".localized)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.red)
                     .frame(maxWidth: .infinity)
@@ -314,7 +314,7 @@ struct ExpertReservationsPage: View {
                             .scaleEffect(0.8)
                     }
 
-                    Text("Kabul Et")
+                    Text("Kabul Et".localized)
                         .font(.system(size: 13, weight: .bold))
                 }
                 .foregroundColor(.white)
@@ -356,7 +356,7 @@ struct ExpertReservationsPage: View {
         _ date: Date
     ) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.locale = Locale(identifier: LanguageManager.shared.languageCode == "en" ? "en_US" : "tr_TR")
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)

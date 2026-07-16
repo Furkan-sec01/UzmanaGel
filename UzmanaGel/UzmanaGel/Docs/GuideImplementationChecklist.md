@@ -409,6 +409,7 @@ Status meanings:
 - Forgot password/reset password flow was improved.
 - Settings, Help, About, KVKK, Terms and Notification Preferences screens build and open successfully.
 - Baran’s PreferencesView was connected from ProfilePage.
+- Rezervasyon, Şifre Değiştirme ve Konum Seçici ekranları Türkçe ve İngilizce dillerini destekleyecek şekilde yerelleştirildi (Language Manager entegrasyonu).
 
 ### Partially Completed
 - Legal/support pages are still basic and need final legal review.
@@ -418,7 +419,6 @@ Status meanings:
 ### Missing / To Do
 - Real push notification backend integration.
 - Privacy preferences.
-- Language settings review.
 - Delete account.
 - Data export.
 - Clear cache.

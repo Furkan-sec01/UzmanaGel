@@ -196,37 +196,39 @@ struct LoginPage: View {
 
                     // Sign up + Expert
                     VStack(spacing: 10) {
-                        HStack(spacing: 6) {
-                            Text("Hesabın yok mu?".localized)
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
+                        NavigationLink {
+                            SignUp()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Hesabın yok mu?".localized)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
 
-                            NavigationLink {
-                                SignUp()
-                            } label: {
                                 Text("Kayıt Ol".localized)
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(Color("PrimaryColor"))
                             }
-                            .buttonStyle(.plain)
+                            .contentShape(Rectangle())
+                            .background(Color.black.opacity(0.0001))
                         }
+                        .buttonStyle(.plain)
                         .padding(.top, 20)
 
-                        HStack {
+                        HStack(spacing: 6) {
                             Text("Uzman mısın?".localized)
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(.orange)
 
-                            Button {
-                                session.startExpertSignup()
-                                path.append(ExpertSignupDestination.flow)
-                            } label: {
-                                Text("Başvuru Yap".localized)
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundColor(.orange)
-                                    .underline()
-                            }
-                            .buttonStyle(.plain)
+                            Text("Başvuru Yap".localized)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.orange)
+                                .underline()
+                        }
+                        .contentShape(Rectangle())
+                        .background(Color.black.opacity(0.0001))
+                        .onTapGesture {
+                            session.startExpertSignup()
+                            path.append(ExpertSignupDestination.flow)
                         }
                         .padding(.top, 10)
                     }

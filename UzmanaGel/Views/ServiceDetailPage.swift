@@ -575,7 +575,7 @@ private extension ServiceDetailPage {
                     Image(systemName: "calendar.badge.plus")
                         .font(.system(size: 15, weight: .semibold))
 
-                    Text("Rezervasyon Talebi Oluştur")
+                    Text("Rezervasyon Talebi Oluştur".localized)
                         .font(.system(size: 16, weight: .bold))
                 }
                 .foregroundColor(.white)

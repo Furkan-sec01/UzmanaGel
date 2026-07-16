@@ -17,15 +17,15 @@ enum ReservationStatus: String, Codable, CaseIterable {
     var title: String {
         switch self {
         case .pending:
-            return "Beklemede"
+            return "Beklemede".localized
         case .accepted:
-            return "Onaylandı"
+            return "Onaylandı".localized
         case .rejected:
-            return "Reddedildi"
+            return "Reddedildi".localized
         case .cancelled:
-            return "İptal Edildi"
+            return "İptal Edildi".localized
         case .completed:
-            return "Tamamlandı"
+            return "Tamamlandı".localized
         }
     }
 }
