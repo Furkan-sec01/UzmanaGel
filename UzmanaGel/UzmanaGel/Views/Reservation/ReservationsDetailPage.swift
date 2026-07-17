@@ -153,6 +153,20 @@ struct ReservationDetailPage: View {
                     value: reservation.serviceTitle
                 )
 
+                if !reservation.serviceDuration.isEmpty {
+                    infoRow(
+                        icon: "timer",
+                        title: "Süre".localized,
+                        value: reservation.serviceDuration
+                    )
+                }
+
+                infoRow(
+                    icon: "turkishlirasign.circle",
+                    title: "Tahmini Ücret".localized,
+                    value: "\(reservation.servicePrice) ₺"
+                )
+
                 infoRow(
                     icon: "clock",
                     title: "Oluşturulma Tarihi".localized,
@@ -480,6 +494,8 @@ struct ReservationDetailPage: View {
             reservationId: reservation.reservationId,
             serviceId: reservation.serviceId,
             serviceTitle: reservation.serviceTitle,
+            servicePrice: reservation.servicePrice,
+            serviceDuration: reservation.serviceDuration,
             providerId: reservation.providerId,
             providerName: reservation.providerName,
             customerId: reservation.customerId,

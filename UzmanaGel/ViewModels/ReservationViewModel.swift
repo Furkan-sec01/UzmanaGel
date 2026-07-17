@@ -88,6 +88,8 @@ final class ReservationViewModel: ObservableObject {
     func createReservation(
         serviceId: String,
         serviceTitle: String,
+        servicePrice: Int,
+        serviceDuration: String,
         providerId: String,
         providerName: String
     ) async {
@@ -146,6 +148,8 @@ final class ReservationViewModel: ObservableObject {
             _ = try await repository.createReservation(
                 serviceId: serviceId,
                 serviceTitle: serviceTitle,
+                servicePrice: servicePrice,
+                serviceDuration: serviceDuration,
                 providerId: providerId,
                 providerName: providerName,
                 customerName: customerName,

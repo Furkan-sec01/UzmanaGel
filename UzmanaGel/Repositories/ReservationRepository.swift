@@ -44,6 +44,8 @@ final class ReservationRepository {
     func createReservation(
         serviceId: String,
         serviceTitle: String,
+        servicePrice: Int,
+        serviceDuration: String,
         providerId: String,
         providerName: String,
         customerName: String,
@@ -58,6 +60,7 @@ final class ReservationRepository {
 
         let trimmedServiceId = serviceId.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedServiceTitle = serviceTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedServiceDuration = serviceDuration.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedProviderId = providerId.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedProviderName = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCustomerName = customerName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -104,6 +107,8 @@ final class ReservationRepository {
             "reservationId": documentRef.documentID,
             "serviceId": trimmedServiceId,
             "serviceTitle": trimmedServiceTitle,
+            "servicePrice": servicePrice,
+            "serviceDuration": trimmedServiceDuration,
             "providerId": trimmedProviderId,
             "providerName": trimmedProviderName,
             "customerId": currentUser.uid,
@@ -392,11 +397,23 @@ final class ReservationRepository {
 
         let reservationId = data["reservationId"] as? String ?? document.documentID
         let addressText = data["addressText"] as? String ?? ""
+        let serviceDuration = data["serviceDuration"] as? String ?? ""
+
+        let servicePrice: Int
+        if let intValue = data["servicePrice"] as? Int {
+            servicePrice = intValue
+        } else if let doubleValue = data["servicePrice"] as? Double {
+            servicePrice = Int(doubleValue)
+        } else {
+            servicePrice = 0
+        }
 
         return Reservation(
             reservationId: reservationId,
             serviceId: serviceId,
             serviceTitle: serviceTitle,
+            servicePrice: servicePrice,
+            serviceDuration: serviceDuration,
             providerId: providerId,
             providerName: providerName,
             customerId: customerId,

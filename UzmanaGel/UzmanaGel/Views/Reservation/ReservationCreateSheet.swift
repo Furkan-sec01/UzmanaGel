@@ -129,6 +129,8 @@ struct ReservationCreateSheet: View {
                             await viewModel.createReservation(
                                 serviceId: serviceId,
                                 serviceTitle: serviceTitle,
+                                servicePrice: servicePrice,
+                                serviceDuration: serviceDuration,
                                 providerId: providerId,
                                 providerName: providerName
                             )

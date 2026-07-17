@@ -35,6 +35,8 @@ struct Reservation: Identifiable, Codable, Hashable {
 
     let serviceId: String
     let serviceTitle: String
+    let servicePrice: Int
+    let serviceDuration: String
 
     let providerId: String
     let providerName: String
