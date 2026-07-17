@@ -24,6 +24,14 @@ struct ReservationDetailPage: View {
     @State private var showCancelConfirmation = false
     @State private var showRejectConfirmation = false
 
+    private let rejectionReasons = [
+        "Takvimim bu saat için uygun değil",
+        "Bu hizmet bölgesi dışında",
+        "Müşteri bilgileri eksik",
+        "Yoğunluk nedeniyle kabul edemiyorum",
+        "Diğer"
+    ]
+
     @State private var errorMessage = ""
     @State private var showError = false
 
@@ -88,19 +96,24 @@ struct ReservationDetailPage: View {
                 Text("Bu rezervasyonu iptal etmek istediğinizden emin misiniz?".localized)
             }
             .confirmationDialog(
-                "Rezervasyonu reddet".localized,
+                "Red nedeni seç".localized,
                 isPresented: $showRejectConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Reddet".localized, role: .destructive) {
-                    Task {
-                        await updateReservationStatusFromDetail(.rejected)
+                ForEach(rejectionReasons, id: \.self) { reason in
+                    Button(reason.localized, role: .destructive) {
+                        Task {
+                            await updateReservationStatusFromDetail(
+                                .rejected,
+                                rejectionReason: reason
+                            )
+                        }
                     }
                 }
 
                 Button("Vazgeç".localized, role: .cancel) { }
             } message: {
-                Text(String(format: "%@ adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?".localized, reservation.customerName))
+                Text(String(format: "%@ adlı müşterinin rezervasyon talebini neden reddetmek istiyorsunuz?".localized, reservation.customerName))
             }
         }
     }
@@ -458,7 +471,8 @@ struct ReservationDetailPage: View {
     }
 
     private func updateReservationStatusFromDetail(
-        _ status: ReservationStatus
+        _ status: ReservationStatus,
+        rejectionReason: String? = nil
     ) async {
         guard canProviderDecide else {
             errorMessage = "Bu rezervasyon için karar verme yetkiniz yok.".localized
@@ -472,10 +486,14 @@ struct ReservationDetailPage: View {
         do {
             try await reservationRepository.updateReservationStatus(
                 reservationId: reservation.reservationId,
-                status: status
+                status: status,
+                rejectionReason: rejectionReason
             )
 
-            reservation = updatedReservation(status: status)
+            reservation = updatedReservation(
+                status: status,
+                rejectionReason: rejectionReason
+            )
             onStatusChanged?()
         } catch {
             errorMessage = error.localizedDescription
@@ -507,7 +525,8 @@ struct ReservationDetailPage: View {
     }
 
     private func updatedReservation(
-        status: ReservationStatus
+        status: ReservationStatus,
+        rejectionReason: String? = nil
     ) -> Reservation {
         Reservation(
             reservationId: reservation.reservationId,
@@ -523,7 +542,7 @@ struct ReservationDetailPage: View {
             addressText: reservation.addressText,
             note: reservation.note,
             status: status,
-            rejectionReason: reservation.rejectionReason,
+            rejectionReason: rejectionReason ?? reservation.rejectionReason,
             createdAt: reservation.createdAt,
             updatedAt: Date()
         )
