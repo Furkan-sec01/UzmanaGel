@@ -53,6 +53,7 @@ struct ReservationDetailPage: View {
                     detailSection
 
             addressSection
+                    rejectionReasonSection
                     noteSection
                     actionSection
                 }
