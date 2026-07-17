@@ -23,6 +23,7 @@ final class ReservationViewModel: ObservableObject {
     @Published var errorMessage = ""
     @Published var showError = false
     @Published var isSuccess = false
+    @Published var createdReservationId = ""
 
     let availableTimeSlots = [
         "09:00",
@@ -139,13 +140,14 @@ final class ReservationViewModel: ObservableObject {
         errorMessage = ""
         showError = false
         isSuccess = false
+        createdReservationId = ""
 
         defer {
             isSubmitting = false
         }
 
         do {
-            _ = try await repository.createReservation(
+            let reservationId = try await repository.createReservation(
                 serviceId: serviceId,
                 serviceTitle: serviceTitle,
                 servicePrice: servicePrice,
@@ -162,6 +164,7 @@ final class ReservationViewModel: ObservableObject {
             reservationDate = Self.defaultReservationDate()
             selectedTimeString = "09:00"
             bookedTimeStrings = []
+            createdReservationId = reservationId
             isSuccess = true
 
         } catch {

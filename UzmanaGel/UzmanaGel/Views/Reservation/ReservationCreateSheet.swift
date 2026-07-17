@@ -186,10 +186,21 @@ struct ReservationCreateSheet: View {
                     dismiss()
                 }
             } message: {
-                Text("Rezervasyon talebiniz oluşturuldu.".localized)
+                Text(successAlertMessage)
             }
         }
     }
+    private var successAlertMessage: String {
+        let baseMessage = "Rezervasyon talebiniz oluşturuldu.".localized
+
+        guard !viewModel.createdReservationId.isEmpty else {
+            return baseMessage
+        }
+
+        let shortReservationCode = String(viewModel.createdReservationId.suffix(6)).uppercased()
+        return "\(baseMessage)\n\("Rezervasyon No".localized): #RZV-\(shortReservationCode)"
+    }
+
     private func reservationSummaryRow(
         title: String,
         value: String
