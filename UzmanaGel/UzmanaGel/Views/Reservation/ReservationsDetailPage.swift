@@ -52,6 +52,8 @@ struct ReservationDetailPage: View {
                     headerCard
                     detailSection
 
+                    timelineSection
+
             addressSection
                     rejectionReasonSection
                     noteSection
@@ -180,6 +182,152 @@ struct ReservationDetailPage: View {
                     .stroke(accentYellow.opacity(0.25), lineWidth: 1)
             )
         }
+    }
+
+    private var timelineSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Durum Geçmişi".localized)
+                .font(.headline)
+                .foregroundColor(primaryColor)
+
+            VStack(alignment: .leading, spacing: 0) {
+                timelineItem(
+                    icon: "plus.circle.fill",
+                    title: "Oluşturuldu".localized,
+                    subtitle: "Rezervasyon talebi oluşturuldu.".localized,
+                    date: reservation.createdAt,
+                    color: primaryColor
+                )
+
+                timelineConnector(isActive: true)
+
+                timelineItem(
+                    icon: "clock.fill",
+                    title: "Beklemede".localized,
+                    subtitle: "Rezervasyon talebi uzmana iletildi.".localized,
+                    date: reservation.createdAt,
+                    color: .orange
+                )
+
+                timelineConnector(isActive: reservation.status != .pending)
+
+                if reservation.status == .pending {
+                    timelineItem(
+                        icon: "hourglass",
+                        title: "Uzman Yanıtı Bekleniyor".localized,
+                        subtitle: "Uzman rezervasyon talebinizi henüz yanıtlamadı.".localized,
+                        date: nil,
+                        color: .gray
+                    )
+                } else {
+                    timelineItem(
+                        icon: finalTimelineIcon,
+                        title: finalTimelineTitle,
+                        subtitle: finalTimelineSubtitle,
+                        date: reservation.updatedAt,
+                        color: statusColor(reservation.status)
+                    )
+                }
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.98))
+            .environment(\.colorScheme, .light)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(accentYellow.opacity(0.25), lineWidth: 1)
+            )
+        }
+    }
+
+    private var finalTimelineIcon: String {
+        switch reservation.status {
+        case .accepted:
+            return "checkmark.circle.fill"
+        case .rejected:
+            return "xmark.circle.fill"
+        case .cancelled:
+            return "minus.circle.fill"
+        case .completed:
+            return "flag.checkered.circle.fill"
+        case .pending:
+            return "hourglass"
+        }
+    }
+
+    private var finalTimelineTitle: String {
+        switch reservation.status {
+        case .accepted:
+            return "Kabul Edildi".localized
+        case .rejected:
+            return "Reddedildi".localized
+        case .cancelled:
+            return "İptal Edildi".localized
+        case .completed:
+            return "Tamamlandı".localized
+        case .pending:
+            return "Beklemede".localized
+        }
+    }
+
+    private var finalTimelineSubtitle: String {
+        switch reservation.status {
+        case .accepted:
+            return "Uzman rezervasyon talebini kabul etti.".localized
+        case .rejected:
+            return "Uzman rezervasyon talebini reddetti.".localized
+        case .cancelled:
+            return "Rezervasyon iptal edildi.".localized
+        case .completed:
+            return "Rezervasyon tamamlandı.".localized
+        case .pending:
+            return "Rezervasyon yanıt bekliyor.".localized
+        }
+    }
+
+    private func timelineItem(
+        icon: String,
+        title: String,
+        subtitle: String,
+        date: Date?,
+        color: Color
+    ) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(color)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(primaryColor)
+
+                    Spacer()
+
+                    if let date {
+                        Text(formatDate(date))
+                            .font(.caption2)
+                            .foregroundColor(cardSecondaryTextColor)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(cardSecondaryTextColor)
+            }
+        }
+    }
+
+    private func timelineConnector(isActive: Bool) -> some View {
+        Rectangle()
+            .fill(isActive ? accentYellow.opacity(0.6) : Color.gray.opacity(0.25))
+            .frame(width: 2, height: 18)
+            .padding(.leading, 11)
+            .padding(.vertical, 3)
     }
 
     private var addressSection: some View {
