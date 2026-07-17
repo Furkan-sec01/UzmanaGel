@@ -44,6 +44,8 @@ struct ReservationDetailPage: View {
                 VStack(alignment: .leading, spacing: 16) {
                     headerCard
                     detailSection
+
+            addressSection
                     noteSection
                     actionSection
                 }
@@ -151,6 +153,20 @@ struct ReservationDetailPage: View {
                     value: reservation.serviceTitle
                 )
 
+                if !reservation.serviceDuration.isEmpty {
+                    infoRow(
+                        icon: "timer",
+                        title: "Süre".localized,
+                        value: reservation.serviceDuration
+                    )
+                }
+
+                infoRow(
+                    icon: "turkishlirasign.circle",
+                    title: "Tahmini Ücret".localized,
+                    value: "\(reservation.servicePrice) ₺"
+                )
+
                 infoRow(
                     icon: "clock",
                     title: "Oluşturulma Tarihi".localized,
@@ -160,6 +176,21 @@ struct ReservationDetailPage: View {
             .padding(16)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    private var addressSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Adres".localized)
+                .font(.headline)
+
+            Text(reservation.addressText.isEmpty ? "Adres eklenmemiş.".localized : reservation.addressText)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 
@@ -463,11 +494,14 @@ struct ReservationDetailPage: View {
             reservationId: reservation.reservationId,
             serviceId: reservation.serviceId,
             serviceTitle: reservation.serviceTitle,
+            servicePrice: reservation.servicePrice,
+            serviceDuration: reservation.serviceDuration,
             providerId: reservation.providerId,
             providerName: reservation.providerName,
             customerId: reservation.customerId,
             customerName: reservation.customerName,
             reservationDate: reservation.reservationDate,
+            addressText: reservation.addressText,
             note: reservation.note,
             status: status,
             createdAt: reservation.createdAt,

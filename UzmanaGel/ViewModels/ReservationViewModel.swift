@@ -14,6 +14,7 @@ final class ReservationViewModel: ObservableObject {
 
     @Published var reservationDate: Date = ReservationViewModel.defaultReservationDate()
     @Published var selectedTimeString = "09:00"
+    @Published var addressText = ""
     @Published var note = ""
     @Published var bookedTimeStrings: Set<String> = []
     @Published var didLoadBookedSlots = false
@@ -22,6 +23,7 @@ final class ReservationViewModel: ObservableObject {
     @Published var errorMessage = ""
     @Published var showError = false
     @Published var isSuccess = false
+    @Published var createdReservationId = ""
 
     let availableTimeSlots = [
         "09:00",
@@ -87,6 +89,8 @@ final class ReservationViewModel: ObservableObject {
     func createReservation(
         serviceId: String,
         serviceTitle: String,
+        servicePrice: Int,
+        serviceDuration: String,
         providerId: String,
         providerName: String
     ) async {
@@ -114,6 +118,16 @@ final class ReservationViewModel: ObservableObject {
             return
         }
 
+        let trimmedAddressText = addressText.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmedAddressText.isEmpty else {
+            errorMessage = "Adres bilgisi boş bırakılamaz."
+            showError = true
+            return
+        }
+
         let finalReservationDate = dateWithSelectedTime(reservationDate)
 
         guard finalReservationDate > Date() else {
@@ -126,19 +140,23 @@ final class ReservationViewModel: ObservableObject {
         errorMessage = ""
         showError = false
         isSuccess = false
+        createdReservationId = ""
 
         defer {
             isSubmitting = false
         }
 
         do {
-            _ = try await repository.createReservation(
+            let reservationId = try await repository.createReservation(
                 serviceId: serviceId,
                 serviceTitle: serviceTitle,
+                servicePrice: servicePrice,
+                serviceDuration: serviceDuration,
                 providerId: providerId,
                 providerName: providerName,
                 customerName: customerName,
                 reservationDate: finalReservationDate,
+                addressText: trimmedAddressText,
                 note: note
             )
 
@@ -146,6 +164,7 @@ final class ReservationViewModel: ObservableObject {
             reservationDate = Self.defaultReservationDate()
             selectedTimeString = "09:00"
             bookedTimeStrings = []
+            createdReservationId = reservationId
             isSuccess = true
 
         } catch {

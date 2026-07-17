@@ -11,19 +11,50 @@ struct ReservationCreateSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ReservationViewModel()
+    @State private var hasAcceptedTerms = false
 
     let serviceId: String
     let serviceTitle: String
     let providerId: String
     let providerName: String
+    let servicePrice: Int
+    let serviceDuration: String
 
     private var minimumReservationDate: Date {
         Calendar.current.startOfDay(for: Date())
     }
 
+    private var formattedServicePrice: String {
+        "\(servicePrice) ₺"
+    }
+
     var body: some View {
         NavigationStack {
             Form {
+                Section("Hizmet Özeti".localized) {
+                    reservationSummaryRow(
+                        title: "Hizmet".localized,
+                        value: serviceTitle
+                    )
+
+                    reservationSummaryRow(
+                        title: "Uzman".localized,
+                        value: providerName
+                    )
+
+                    if !serviceDuration.isEmpty {
+                        reservationSummaryRow(
+                            title: "Süre".localized,
+                            value: serviceDuration
+                        )
+                    }
+
+                    reservationSummaryRow(
+                        title: "Tahmini Ücret".localized,
+                        value: formattedServicePrice
+                    )
+                }
+
                 Section("Randevu Bilgileri".localized) {
                     DatePicker(
                         "Randevu Günü".localized,
@@ -72,6 +103,19 @@ struct ReservationCreateSheet: View {
                     }
                     .pickerStyle(.menu)
 
+                    Section("Adres Bilgisi".localized) {
+                        TextField(
+                            "Adresinizi veya kısa konum notunuzu yazın".localized,
+                            text: $viewModel.addressText,
+                            axis: .vertical
+                        )
+                        .lineLimit(2...5)
+
+                        Text("Uzmanın sizi doğru konumda bulabilmesi için açık adres veya kısa konum notu girin.".localized)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
                     TextField(
                         "Not ekle".localized,
                         text: $viewModel.note,
@@ -80,12 +124,25 @@ struct ReservationCreateSheet: View {
                     .lineLimit(3...6)
                 }
 
+                Section("İnceleme ve Onay".localized) {
+                    Toggle(
+                        "Kullanım şartlarını ve iptal koşullarını kabul ediyorum.".localized,
+                        isOn: $hasAcceptedTerms
+                    )
+
+                    Text("Rezervasyon talebiniz uzmana iletilecek. Uzman kabul edene kadar randevu beklemede kalır.".localized)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 Section {
                     Button {
                         Task {
                             await viewModel.createReservation(
                                 serviceId: serviceId,
                                 serviceTitle: serviceTitle,
+                                servicePrice: servicePrice,
+                                serviceDuration: serviceDuration,
                                 providerId: providerId,
                                 providerName: providerName
                             )
@@ -95,14 +152,15 @@ struct ReservationCreateSheet: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("Rezervasyon Talebi Oluştur".localized)
+                            Text("Rezervasyonu Tamamla".localized)
                                 .frame(maxWidth: .infinity)
                         }
                     }
                     .disabled(
                         viewModel.isSubmitting ||
                         viewModel.isLoadingBookedSlots ||
-                        viewModel.isBooked(viewModel.selectedTimeString)
+                        viewModel.isBooked(viewModel.selectedTimeString) ||
+                        !hasAcceptedTerms
                     )
                 }
             }
@@ -128,8 +186,35 @@ struct ReservationCreateSheet: View {
                     dismiss()
                 }
             } message: {
-                Text("Rezervasyon talebiniz oluşturuldu.".localized)
+                Text(successAlertMessage)
             }
         }
     }
+    private var successAlertMessage: String {
+        let baseMessage = "Rezervasyon talebiniz oluşturuldu.".localized
+
+        guard !viewModel.createdReservationId.isEmpty else {
+            return baseMessage
+        }
+
+        let shortReservationCode = String(viewModel.createdReservationId.suffix(6)).uppercased()
+        return "\(baseMessage)\n\("Rezervasyon No".localized): #RZV-\(shortReservationCode)"
+    }
+
+    private func reservationSummaryRow(
+        title: String,
+        value: String
+    ) -> some View {
+        HStack {
+            Text(title)
+                .foregroundColor(.secondary)
+
+            Spacer()
+
+            Text(value)
+                .fontWeight(.medium)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
 }

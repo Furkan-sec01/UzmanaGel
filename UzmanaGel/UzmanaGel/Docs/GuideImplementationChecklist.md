@@ -260,23 +260,31 @@ Status meanings:
 - Customer and expert can open the related chat from reservation detail.
 - Expert reservation list includes a View Details action.
 - Expert reservation list refreshes after detail status changes.
+- Provider schedule is connected to real reservation data.
+- Customer can select reservation date and time.
+- Duplicate reservations for the same provider, date and time are blocked.
+- Booked slot status is synced when reservations are accepted, rejected or cancelled.
+- Firestore rules for provider_booked_slots were tightened manually in Firebase Console.
+- ReservationCreateSheet shows service, provider, duration and estimated price summary.
+- Reservation creation saves addressText, servicePrice and serviceDuration.
+- Reservation detail page shows address, duration and estimated price.
+- Reservation creation requires confirmation consent before submit.
+- Reservation success alert shows a short reservation code.
 
 ### Partially Completed
 - Reservation system is stronger than MVP-level but still not full guide-level.
 - Status transitions exist for pending, accepted, rejected and cancelled, but there is no completed flow yet.
 - Firestore reservation rules were updated manually but are not versioned in the repository.
-- Calendar/schedule screen exists through Baran’s provider feature, but it is not yet connected to real reservation availability.
+- Calendar/schedule screen is connected to real reservation data, but full working-hour availability rules still need improvement.
+- Reservation success feedback exists as an alert, but a full success screen with actions is not implemented yet.
 
 ### Missing / To Do
 - Reject reason selection.
 - Reservation status transition validation as a central helper/service.
 - Reservation detail timeline.
-- Address selection during reservation.
-- Time slot selection.
-- Real provider availability calendar.
+- Working-hour based availability rules.
 - Payment step.
-- Reservation success screen.
-- Calendar integration with real reservations.
+- Full reservation success screen with actions.
 - Reservation notification flow.
 - Map/navigation shortcut from reservation detail.
 - Completion flow after service is done.

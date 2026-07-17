@@ -44,10 +44,13 @@ final class ReservationRepository {
     func createReservation(
         serviceId: String,
         serviceTitle: String,
+        servicePrice: Int,
+        serviceDuration: String,
         providerId: String,
         providerName: String,
         customerName: String,
         reservationDate: Date,
+        addressText: String,
         note: String
     ) async throws -> String {
 
@@ -57,9 +60,11 @@ final class ReservationRepository {
 
         let trimmedServiceId = serviceId.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedServiceTitle = serviceTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedServiceDuration = serviceDuration.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedProviderId = providerId.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedProviderName = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCustomerName = customerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedAddressText = addressText.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedServiceId.isEmpty && !trimmedServiceTitle.isEmpty else {
@@ -102,11 +107,14 @@ final class ReservationRepository {
             "reservationId": documentRef.documentID,
             "serviceId": trimmedServiceId,
             "serviceTitle": trimmedServiceTitle,
+            "servicePrice": servicePrice,
+            "serviceDuration": trimmedServiceDuration,
             "providerId": trimmedProviderId,
             "providerName": trimmedProviderName,
             "customerId": currentUser.uid,
             "customerName": trimmedCustomerName,
             "reservationDate": Timestamp(date: reservationDate),
+            "addressText": trimmedAddressText,
             "note": trimmedNote,
             "status": ReservationStatus.pending.rawValue,
             "createdAt": Timestamp(date: now),
@@ -324,6 +332,9 @@ final class ReservationRepository {
             .collection("times")
             .document(timeKey)
 
+        let bookedSlotSnapshot = try await bookedSlotRef.getDocument()
+        let bookedSlotReservationId = bookedSlotSnapshot.data()?["reservationId"] as? String
+
         let batch = db.batch()
 
         batch.updateData([
@@ -331,15 +342,18 @@ final class ReservationRepository {
             "updatedAt": Timestamp(date: now)
         ], forDocument: reservationRef)
 
-        // Keep slot status in sync with reservation status.
-        batch.setData([
-            "providerId": providerId,
-            "dateKey": dateKey,
-            "timeString": timeString,
-            "status": status.rawValue,
-            "reservationId": reservationId,
-            "updatedAt": Timestamp(date: now)
-        ], forDocument: bookedSlotRef, merge: true)
+        // Sync slot only if this reservation owns the booked slot.
+        // Old duplicate reservations may point to the same time slot.
+        if bookedSlotSnapshot.exists && bookedSlotReservationId == reservationId {
+            batch.setData([
+                "providerId": providerId,
+                "dateKey": dateKey,
+                "timeString": timeString,
+                "status": status.rawValue,
+                "reservationId": reservationId,
+                "updatedAt": Timestamp(date: now)
+            ], forDocument: bookedSlotRef, merge: true)
+        }
 
         try await batch.commit()
     }
@@ -382,16 +396,30 @@ final class ReservationRepository {
         }
 
         let reservationId = data["reservationId"] as? String ?? document.documentID
+        let addressText = data["addressText"] as? String ?? ""
+        let serviceDuration = data["serviceDuration"] as? String ?? ""
+
+        let servicePrice: Int
+        if let intValue = data["servicePrice"] as? Int {
+            servicePrice = intValue
+        } else if let doubleValue = data["servicePrice"] as? Double {
+            servicePrice = Int(doubleValue)
+        } else {
+            servicePrice = 0
+        }
 
         return Reservation(
             reservationId: reservationId,
             serviceId: serviceId,
             serviceTitle: serviceTitle,
+            servicePrice: servicePrice,
+            serviceDuration: serviceDuration,
             providerId: providerId,
             providerName: providerName,
             customerId: customerId,
             customerName: customerName,
             reservationDate: reservationDateTimestamp.dateValue(),
+            addressText: addressText,
             note: note,
             status: status,
             createdAt: createdAtTimestamp.dateValue(),
