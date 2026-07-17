@@ -13,6 +13,7 @@ final class ReservationRepository {
 
     private let db = Firestore.firestore()
     private let collectionName = "reservations"
+    private let bookedSlotsCollectionName = "provider_booked_slots"
 
     enum ReservationRepositoryError: LocalizedError {
         case userNotFound
@@ -20,6 +21,7 @@ final class ReservationRepository {
         case invalidProvider
         case invalidCustomerName
         case invalidReservation
+        case slotUnavailable
 
         var errorDescription: String? {
             switch self {
@@ -33,6 +35,8 @@ final class ReservationRepository {
                 return "Müşteri adı eksik."
             case .invalidReservation:
                 return "Rezervasyon bilgisi eksik."
+            case .slotUnavailable:
+                return "Seçtiğiniz saat dolu. Lütfen başka bir saat seçin."
             }
         }
     }
@@ -73,6 +77,27 @@ final class ReservationRepository {
         let documentRef = db.collection(collectionName).document()
         let now = Date()
 
+        let dateKey = bookedSlotDateKey(from: reservationDate)
+        let timeString = bookedSlotTimeString(from: reservationDate)
+        let timeKey = timeString.replacingOccurrences(of: ":", with: "")
+
+        let bookedSlotRef = db
+            .collection(bookedSlotsCollectionName)
+            .document(trimmedProviderId)
+            .collection("dates")
+            .document(dateKey)
+            .collection("times")
+            .document(timeKey)
+
+        let existingSlot = try await bookedSlotRef.getDocument()
+
+        if let existingData = existingSlot.data(),
+           let existingStatus = existingData["status"] as? String,
+           existingStatus == ReservationStatus.pending.rawValue ||
+           existingStatus == ReservationStatus.accepted.rawValue {
+            throw ReservationRepositoryError.slotUnavailable
+        }
+
         let data: [String: Any] = [
             "reservationId": documentRef.documentID,
             "serviceId": trimmedServiceId,
@@ -88,11 +113,71 @@ final class ReservationRepository {
             "updatedAt": Timestamp(date: now)
         ]
 
+        let bookedSlotData: [String: Any] = [
+            "providerId": trimmedProviderId,
+            "dateKey": dateKey,
+            "timeString": timeString,
+            "status": ReservationStatus.pending.rawValue,
+            "reservationId": documentRef.documentID,
+            "createdAt": Timestamp(date: now),
+            "updatedAt": Timestamp(date: now)
+        ]
+
         try await documentRef.setData(data)
+        try await bookedSlotRef.setData(bookedSlotData)
 
         return documentRef.documentID
     }
     
+    func fetchBookedTimeStrings(
+        providerId: String,
+        date: Date
+    ) async throws -> Set<String> {
+        guard Auth.auth().currentUser != nil else {
+            throw ReservationRepositoryError.userNotFound
+        }
+
+        let trimmedProviderId = providerId.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmedProviderId.isEmpty else {
+            throw ReservationRepositoryError.invalidProvider
+        }
+
+        let dateKey = bookedSlotDateKey(from: date)
+
+        let snapshot = try await db
+            .collection(bookedSlotsCollectionName)
+            .document(trimmedProviderId)
+            .collection("dates")
+            .document(dateKey)
+            .collection("times")
+            .getDocuments()
+
+        let bookedTimes = snapshot.documents.compactMap { document -> String? in
+            let data = document.data()
+
+            guard
+                let timeString = data["timeString"] as? String,
+                let statusRawValue = data["status"] as? String
+            else {
+                return nil
+            }
+
+            guard
+                statusRawValue == ReservationStatus.pending.rawValue ||
+                statusRawValue == ReservationStatus.accepted.rawValue
+            else {
+                return nil
+            }
+
+            return timeString
+        }
+
+        return Set(bookedTimes)
+    }
+
     func fetchMyReservations() async throws -> [Reservation] {
         guard let currentUser = Auth.auth().currentUser else {
             throw ReservationRepositoryError.userNotFound
@@ -131,6 +216,35 @@ final class ReservationRepository {
         }
     }
     
+    func fetchReservationsForProvider(
+        providerId: String
+    ) async throws -> [Reservation] {
+        guard Auth.auth().currentUser != nil else {
+            throw ReservationRepositoryError.userNotFound
+        }
+
+        let trimmedProviderId = providerId.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmedProviderId.isEmpty else {
+            throw ReservationRepositoryError.invalidProvider
+        }
+
+        let snapshot = try await db
+            .collection(collectionName)
+            .whereField("providerId", isEqualTo: trimmedProviderId)
+            .getDocuments()
+
+        let reservations = snapshot.documents.compactMap { document in
+            mapReservation(from: document)
+        }
+
+        return reservations.sorted {
+            $0.reservationDate < $1.reservationDate
+        }
+    }
+
     func cancelReservation(
         reservationId: String
     ) async throws {
@@ -146,13 +260,10 @@ final class ReservationRepository {
             throw ReservationRepositoryError.invalidReservation
         }
 
-        try await db
-            .collection(collectionName)
-            .document(trimmedReservationId)
-            .updateData([
-                "status": ReservationStatus.cancelled.rawValue,
-                "updatedAt": Timestamp(date: Date())
-            ])
+        try await updateReservationAndBookedSlotStatus(
+            reservationId: trimmedReservationId,
+            status: .cancelled
+        )
     }
     
     func updateReservationStatus(
@@ -175,15 +286,78 @@ final class ReservationRepository {
             throw ReservationRepositoryError.invalidReservation
         }
 
-        try await db
-            .collection(collectionName)
-            .document(trimmedReservationId)
-            .updateData([
-                "status": status.rawValue,
-                "updatedAt": Timestamp(date: Date())
-            ])
+        try await updateReservationAndBookedSlotStatus(
+            reservationId: trimmedReservationId,
+            status: status
+        )
     }
     
+    private func updateReservationAndBookedSlotStatus(
+        reservationId: String,
+        status: ReservationStatus
+    ) async throws {
+        let reservationRef = db
+            .collection(collectionName)
+            .document(reservationId)
+
+        let snapshot = try await reservationRef.getDocument()
+
+        guard
+            let data = snapshot.data(),
+            let providerId = data["providerId"] as? String,
+            let reservationDateTimestamp = data["reservationDate"] as? Timestamp
+        else {
+            throw ReservationRepositoryError.invalidReservation
+        }
+
+        let reservationDate = reservationDateTimestamp.dateValue()
+        let now = Date()
+        let dateKey = bookedSlotDateKey(from: reservationDate)
+        let timeString = bookedSlotTimeString(from: reservationDate)
+        let timeKey = timeString.replacingOccurrences(of: ":", with: "")
+
+        let bookedSlotRef = db
+            .collection(bookedSlotsCollectionName)
+            .document(providerId)
+            .collection("dates")
+            .document(dateKey)
+            .collection("times")
+            .document(timeKey)
+
+        let batch = db.batch()
+
+        batch.updateData([
+            "status": status.rawValue,
+            "updatedAt": Timestamp(date: now)
+        ], forDocument: reservationRef)
+
+        // Keep slot status in sync with reservation status.
+        batch.setData([
+            "providerId": providerId,
+            "dateKey": dateKey,
+            "timeString": timeString,
+            "status": status.rawValue,
+            "reservationId": reservationId,
+            "updatedAt": Timestamp(date: now)
+        ], forDocument: bookedSlotRef, merge: true)
+
+        try await batch.commit()
+    }
+
+    private func bookedSlotDateKey(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.string(from: date)
+    }
+
+    private func bookedSlotTimeString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
     ///Firestore'dan gelen veriyi Swift modeline cevirir
     private func mapReservation(
         from document: QueryDocumentSnapshot

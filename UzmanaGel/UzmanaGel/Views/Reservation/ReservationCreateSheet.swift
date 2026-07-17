@@ -4,6 +4,7 @@
 //
 //  Created by Halil Keremoğlu on 13.07.2026.
 //
+
 import SwiftUI
 
 struct ReservationCreateSheet: View {
@@ -16,16 +17,60 @@ struct ReservationCreateSheet: View {
     let providerId: String
     let providerName: String
 
+    private var minimumReservationDate: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section("Randevu Bilgileri".localized) {
                     DatePicker(
-                        "Randevu Tarihi".localized,
-                        selection: $viewModel.reservationDate,
-                        in: Date()...,
-                        displayedComponents: [.date, .hourAndMinute]
+                        "Randevu Günü".localized,
+                        selection: Binding(
+                            get: {
+                                viewModel.reservationDate
+                            },
+                            set: { newDate in
+                                Task {
+                                    await viewModel.setSelectedDate(
+                                        newDate,
+                                        providerId: providerId
+                                    )
+                                }
+                            }
+                        ),
+                        in: minimumReservationDate...,
+                        displayedComponents: [.date]
                     )
+
+                    if viewModel.isLoadingBookedSlots {
+                        HStack {
+                            ProgressView()
+                            Text("Dolu saatler kontrol ediliyor...".localized)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    Picker(
+                        "Randevu Saati".localized,
+                        selection: Binding(
+                            get: {
+                                viewModel.selectedTimeString
+                            },
+                            set: { newTime in
+                                viewModel.setSelectedTime(newTime)
+                            }
+                        )
+                    ) {
+                        ForEach(viewModel.availableTimeSlots, id: \.self) { time in
+                            Text(viewModel.isBooked(time) ? "\(time) - \("Dolu".localized)" : time)
+                                .tag(time)
+                                .disabled(viewModel.isBooked(time))
+                        }
+                    }
+                    .pickerStyle(.menu)
 
                     TextField(
                         "Not ekle".localized,
@@ -54,7 +99,11 @@ struct ReservationCreateSheet: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .disabled(viewModel.isSubmitting)
+                    .disabled(
+                        viewModel.isSubmitting ||
+                        viewModel.isLoadingBookedSlots ||
+                        viewModel.isBooked(viewModel.selectedTimeString)
+                    )
                 }
             }
             .navigationTitle("Rezervasyon".localized)
@@ -65,6 +114,9 @@ struct ReservationCreateSheet: View {
                         dismiss()
                     }
                 }
+            }
+            .task {
+                await viewModel.loadBookedSlots(providerId: providerId)
             }
             .alert("Hata".localized, isPresented: $viewModel.showError) {
                 Button("Tamam".localized, role: .cancel) { }
