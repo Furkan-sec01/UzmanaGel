@@ -48,6 +48,7 @@ final class ReservationRepository {
         providerName: String,
         customerName: String,
         reservationDate: Date,
+        addressText: String,
         note: String
     ) async throws -> String {
 
@@ -60,6 +61,7 @@ final class ReservationRepository {
         let trimmedProviderId = providerId.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedProviderName = providerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCustomerName = customerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedAddressText = addressText.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedServiceId.isEmpty && !trimmedServiceTitle.isEmpty else {
@@ -107,6 +109,7 @@ final class ReservationRepository {
             "customerId": currentUser.uid,
             "customerName": trimmedCustomerName,
             "reservationDate": Timestamp(date: reservationDate),
+            "addressText": trimmedAddressText,
             "note": trimmedNote,
             "status": ReservationStatus.pending.rawValue,
             "createdAt": Timestamp(date: now),
@@ -382,6 +385,7 @@ final class ReservationRepository {
         }
 
         let reservationId = data["reservationId"] as? String ?? document.documentID
+        let addressText = data["addressText"] as? String ?? ""
 
         return Reservation(
             reservationId: reservationId,
@@ -392,6 +396,7 @@ final class ReservationRepository {
             customerId: customerId,
             customerName: customerName,
             reservationDate: reservationDateTimestamp.dateValue(),
+            addressText: addressText,
             note: note,
             status: status,
             createdAt: createdAtTimestamp.dateValue(),

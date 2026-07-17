@@ -468,6 +468,7 @@ struct ReservationDetailPage: View {
             customerId: reservation.customerId,
             customerName: reservation.customerName,
             reservationDate: reservation.reservationDate,
+            addressText: reservation.addressText,
             note: reservation.note,
             status: status,
             createdAt: reservation.createdAt,

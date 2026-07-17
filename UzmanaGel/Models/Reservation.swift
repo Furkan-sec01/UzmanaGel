@@ -43,6 +43,7 @@ struct Reservation: Identifiable, Codable, Hashable {
     let customerName: String
 
     let reservationDate: Date
+    let addressText: String
     let note: String
     let status: ReservationStatus
 

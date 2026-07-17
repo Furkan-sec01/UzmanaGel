@@ -11,7 +11,6 @@ struct ReservationCreateSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ReservationViewModel()
-    @State private var addressText = ""
 
     let serviceId: String
     let serviceTitle: String
@@ -106,12 +105,12 @@ struct ReservationCreateSheet: View {
                     Section("Adres Bilgisi".localized) {
                         TextField(
                             "Adresinizi veya kısa konum notunuzu yazın".localized,
-                            text: $addressText,
+                            text: $viewModel.addressText,
                             axis: .vertical
                         )
                         .lineLimit(2...5)
 
-                        Text("Bu alan şimdilik yalnızca rezervasyon ekranı hazırlığı içindir. Sonraki adımda rezervasyon verisine bağlanacak.".localized)
+                        Text("Uzmanın sizi doğru konumda bulabilmesi için açık adres veya kısa konum notu girin.".localized)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

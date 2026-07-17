@@ -14,6 +14,7 @@ final class ReservationViewModel: ObservableObject {
 
     @Published var reservationDate: Date = ReservationViewModel.defaultReservationDate()
     @Published var selectedTimeString = "09:00"
+    @Published var addressText = ""
     @Published var note = ""
     @Published var bookedTimeStrings: Set<String> = []
     @Published var didLoadBookedSlots = false
@@ -114,6 +115,16 @@ final class ReservationViewModel: ObservableObject {
             return
         }
 
+        let trimmedAddressText = addressText.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmedAddressText.isEmpty else {
+            errorMessage = "Adres bilgisi boş bırakılamaz."
+            showError = true
+            return
+        }
+
         let finalReservationDate = dateWithSelectedTime(reservationDate)
 
         guard finalReservationDate > Date() else {
@@ -139,6 +150,7 @@ final class ReservationViewModel: ObservableObject {
                 providerName: providerName,
                 customerName: customerName,
                 reservationDate: finalReservationDate,
+                addressText: trimmedAddressText,
                 note: note
             )
 
