@@ -11,6 +11,7 @@ struct ReservationCreateSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ReservationViewModel()
+    @State private var hasAcceptedTerms = false
 
     let serviceId: String
     let serviceTitle: String
@@ -123,6 +124,17 @@ struct ReservationCreateSheet: View {
                     .lineLimit(3...6)
                 }
 
+                Section("İnceleme ve Onay".localized) {
+                    Toggle(
+                        "Kullanım şartlarını ve iptal koşullarını kabul ediyorum.".localized,
+                        isOn: $hasAcceptedTerms
+                    )
+
+                    Text("Rezervasyon talebiniz uzmana iletilecek. Uzman kabul edene kadar randevu beklemede kalır.".localized)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 Section {
                     Button {
                         Task {
@@ -140,14 +152,15 @@ struct ReservationCreateSheet: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("Rezervasyon Talebi Oluştur".localized)
+                            Text("Rezervasyonu Tamamla".localized)
                                 .frame(maxWidth: .infinity)
                         }
                     }
                     .disabled(
                         viewModel.isSubmitting ||
                         viewModel.isLoadingBookedSlots ||
-                        viewModel.isBooked(viewModel.selectedTimeString)
+                        viewModel.isBooked(viewModel.selectedTimeString) ||
+                        !hasAcceptedTerms
                     )
                 }
             }
