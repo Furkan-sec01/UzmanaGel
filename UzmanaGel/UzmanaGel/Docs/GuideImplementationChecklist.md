@@ -270,6 +270,11 @@ Status meanings:
 - Reservation detail page shows address, duration and estimated price.
 - Reservation creation requires confirmation consent before submit.
 - Reservation success alert shows a short reservation code.
+- Expert can select a rejection reason when rejecting from the reservation list.
+- Expert can select a rejection reason when rejecting from reservation detail.
+- Rejection reason is saved to Firestore.
+- Rejection reason is shown to both customer and expert in reservation detail.
+- Firestore reservation rules were updated manually to allow rejectionReason on provider rejection.
 
 ### Partially Completed
 - Reservation system is stronger than MVP-level but still not full guide-level.
@@ -279,7 +284,6 @@ Status meanings:
 - Reservation success feedback exists as an alert, but a full success screen with actions is not implemented yet.
 
 ### Missing / To Do
-- Reject reason selection.
 - Reservation status transition validation as a central helper/service.
 - Reservation detail timeline.
 - Working-hour based availability rules.

@@ -45,16 +45,21 @@ final class ExpertReservationsViewModel: ObservableObject {
         )
     }
 
-    func rejectReservation(_ reservation: Reservation) async {
+    func rejectReservation(
+        _ reservation: Reservation,
+        reason: String
+    ) async {
         await updateReservationStatus(
             reservation,
-            status: .rejected
+            status: .rejected,
+            rejectionReason: reason
         )
     }
 
     private func updateReservationStatus(
         _ reservation: Reservation,
-        status: ReservationStatus
+        status: ReservationStatus,
+        rejectionReason: String? = nil
     ) async {
         guard updatingReservationId == nil else { return }
 
@@ -69,7 +74,8 @@ final class ExpertReservationsViewModel: ObservableObject {
         do {
             try await repository.updateReservationStatus(
                 reservationId: reservation.reservationId,
-                status: status
+                status: status,
+                rejectionReason: rejectionReason
             )
 
             reservations = try await repository.fetchProviderReservations()

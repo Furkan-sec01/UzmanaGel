@@ -33,8 +33,17 @@ struct ExpertReservationsPage: View {
     @State private var showRejectConfirmation = false
     @State private var reservationToShowDetail: Reservation?
 
+    private let rejectionReasons = [
+        "Takvimim bu saat için uygun değil",
+        "Bu hizmet bölgesi dışında",
+        "Müşteri bilgileri eksik",
+        "Yoğunluk nedeniyle kabul edemiyorum",
+        "Diğer"
+    ]
+
     private let accentYellow = Color("TertiaryColor")
     private let bgColor      = Color("BackgroundColor")
+    private let cardSecondaryTextColor = Color.black.opacity(0.62)
 
     private var filteredReservations: [Reservation] {
         switch selectedFilter {
@@ -100,22 +109,30 @@ struct ExpertReservationsPage: View {
         } message: {
             Text(viewModel.errorMessage)
         }
-        .confirmationDialog("Rezervasyonu reddet".localized,
-                            isPresented: $showRejectConfirmation,
-                            titleVisibility: .visible) {
-            Button("Reddet".localized, role: .destructive) {
-                guard let reservation = reservationToReject else { return }
-                Task {
-                    await viewModel.rejectReservation(reservation)
-                    reservationToReject = nil
+        .confirmationDialog(
+            "Red nedeni seç".localized,
+            isPresented: $showRejectConfirmation,
+            titleVisibility: .visible
+        ) {
+            ForEach(rejectionReasons, id: \.self) { reason in
+                Button(reason.localized, role: .destructive) {
+                    guard let reservation = reservationToReject else { return }
+
+                    Task {
+                        await viewModel.rejectReservation(reservation, reason: reason)
+                        reservationToReject = nil
+                    }
                 }
             }
-            Button("Vazgeç".localized, role: .cancel) { reservationToReject = nil }
+
+            Button("Vazgeç".localized, role: .cancel) {
+                reservationToReject = nil
+            }
         } message: {
             if let reservation = reservationToReject {
-                Text(String(format: "%@ adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?".localized, reservation.customerName))
+                Text(String(format: "%@ adlı müşterinin rezervasyon talebini neden reddetmek istiyorsunuz?".localized, reservation.customerName))
             } else {
-                Text("Bu rezervasyonu reddetmek istediğinizden emin misiniz?".localized)
+                Text("Bu rezervasyonu neden reddetmek istiyorsunuz?".localized)
             }
         }
         .sheet(item: $reservationToShowDetail) { reservation in
@@ -150,6 +167,7 @@ struct ExpertReservationsPage: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(accentYellow.opacity(0.4), lineWidth: 1)
         )
+        .frame(height: 44)
     }
 
     // MARK: - Reservations List
@@ -186,7 +204,7 @@ struct ExpertReservationsPage: View {
                     .foregroundColor(Color("PrimaryColor"))
                 Text(emptyStateSubtitle)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(cardSecondaryTextColor)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -228,7 +246,7 @@ struct ExpertReservationsPage: View {
                             .foregroundColor(accentYellow)
                         Text(reservation.customerName)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(cardSecondaryTextColor)
                     }
                 }
                 Spacer()
@@ -253,7 +271,7 @@ struct ExpertReservationsPage: View {
                         .foregroundColor(accentYellow.opacity(0.7))
                     Text(reservation.note)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(cardSecondaryTextColor)
                         .lineLimit(2)
                 }
             }
@@ -281,7 +299,8 @@ struct ExpertReservationsPage: View {
             }
         }
         .padding(16)
-        .background(Color.white.opacity(0.9))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)

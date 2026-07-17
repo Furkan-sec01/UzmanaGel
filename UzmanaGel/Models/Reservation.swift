@@ -48,6 +48,7 @@ struct Reservation: Identifiable, Codable, Hashable {
     let addressText: String
     let note: String
     let status: ReservationStatus
+    let rejectionReason: String
 
     let createdAt: Date
     let updatedAt: Date

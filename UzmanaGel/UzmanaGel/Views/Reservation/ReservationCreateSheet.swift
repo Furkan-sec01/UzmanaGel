@@ -31,6 +31,7 @@ struct ReservationCreateSheet: View {
     private let accentYellow = Color("TertiaryColor")
     private let bgColor      = Color("BackgroundColor")
     private let primaryColor = Color("PrimaryColor")
+    private let cardSecondaryTextColor = Color.black.opacity(0.62)
 
     var body: some View {
         NavigationStack {
@@ -107,7 +108,7 @@ struct ReservationCreateSheet: View {
                             .foregroundColor(accentYellow)
                         Text(providerName)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(cardSecondaryTextColor)
                     }
                     if !serviceDuration.isEmpty {
                         HStack(spacing: 4) {
@@ -116,7 +117,7 @@ struct ReservationCreateSheet: View {
                                 .foregroundColor(accentYellow)
                             Text(serviceDuration)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(cardSecondaryTextColor)
                         }
                     }
                 }
@@ -128,7 +129,8 @@ struct ReservationCreateSheet: View {
             }
         }
         .padding(16)
-        .background(Color.white.opacity(0.95))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -163,11 +165,12 @@ struct ReservationCreateSheet: View {
                 displayedComponents: [.date]
             )
             .datePickerStyle(.graphical)
-            .tint(accentYellow)
+            .tint(primaryColor)
             .labelsHidden()
         }
         .padding(16)
-        .background(Color.white.opacity(0.95))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -207,10 +210,11 @@ struct ReservationCreateSheet: View {
                 }
             }
             .pickerStyle(.menu)
-            .tint(accentYellow)
+            .tint(primaryColor)
         }
         .padding(16)
-        .background(Color.white.opacity(0.95))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -246,10 +250,11 @@ struct ReservationCreateSheet: View {
             )
             Text("Uzmanın sizi doğru konumda bulabilmesi için açık adres veya kısa konum notu girin.".localized)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(cardSecondaryTextColor)
         }
         .padding(16)
-        .background(Color.white.opacity(0.95))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -285,7 +290,8 @@ struct ReservationCreateSheet: View {
             )
         }
         .padding(16)
-        .background(Color.white.opacity(0.95))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -300,15 +306,16 @@ struct ReservationCreateSheet: View {
                 "Kullanım şartlarını ve iptal koşullarını kabul ediyorum.".localized,
                 isOn: $hasAcceptedTerms
             )
-            .tint(accentYellow)
+            .tint(primaryColor)
             .font(.subheadline)
             
             Text("Rezervasyon talebiniz uzmana iletilecek. Uzman kabul edene kadar randevu beklemede kalır.".localized)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(cardSecondaryTextColor)
         }
         .padding(16)
-        .background(Color.white.opacity(0.95))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)

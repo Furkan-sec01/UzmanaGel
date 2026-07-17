@@ -21,6 +21,14 @@ struct ReservationDetailPage: View {
     @State private var isUpdatingStatus = false
     @State private var showCancelConfirmation = false
     @State private var showRejectConfirmation = false
+
+    private let rejectionReasons = [
+        "Takvimim bu saat için uygun değil",
+        "Bu hizmet bölgesi dışında",
+        "Müşteri bilgileri eksik",
+        "Yoğunluk nedeniyle kabul edemiyorum",
+        "Diğer"
+    ]
     @State private var errorMessage = ""
     @State private var showError = false
 
@@ -30,6 +38,7 @@ struct ReservationDetailPage: View {
     private let accentYellow = Color("TertiaryColor")
     private let bgColor      = Color("BackgroundColor")
     private let primaryColor = Color("PrimaryColor")
+    private let cardSecondaryTextColor = Color.black.opacity(0.62)
 
     init(reservation: Reservation, onStatusChanged: (() -> Void)? = nil) {
         _reservation = State(initialValue: reservation)
@@ -76,15 +85,25 @@ struct ReservationDetailPage: View {
             } message: {
                 Text("Bu rezervasyonu iptal etmek istediğinizden emin misiniz?".localized)
             }
-            .confirmationDialog("Rezervasyonu reddet".localized,
-                                isPresented: $showRejectConfirmation,
-                                titleVisibility: .visible) {
-                Button("Reddet".localized, role: .destructive) {
-                    Task { await updateReservationStatusFromDetail(.rejected) }
+            .confirmationDialog(
+                "Red nedeni seç".localized,
+                isPresented: $showRejectConfirmation,
+                titleVisibility: .visible
+            ) {
+                ForEach(rejectionReasons, id: \.self) { reason in
+                    Button(reason.localized, role: .destructive) {
+                        Task {
+                            await updateReservationStatusFromDetail(
+                                .rejected,
+                                rejectionReason: reason
+                            )
+                        }
+                    }
                 }
+
                 Button("Vazgeç".localized, role: .cancel) { }
             } message: {
-                Text(String(format: "%@ adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?".localized, reservation.customerName))
+                Text(String(format: "%@ adlı müşterinin rezervasyon talebini neden reddetmek istiyorsunuz?".localized, reservation.customerName))
             }
         }
     }
@@ -111,7 +130,7 @@ struct ReservationDetailPage: View {
 
                     Text(reservation.providerName)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(cardSecondaryTextColor)
                 }
 
                 Spacer()
@@ -123,7 +142,8 @@ struct ReservationDetailPage: View {
             infoRow(icon: "calendar", title: "Randevu Tarihi".localized, value: formatDate(reservation.reservationDate))
         }
         .padding(16)
-        .background(Color.white.opacity(0.95))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -151,7 +171,8 @@ struct ReservationDetailPage: View {
                 infoRow(icon: "clock", title: "Oluşturulma Tarihi".localized, value: formatDate(reservation.createdAt))
             }
             .padding(16)
-            .background(Color.white.opacity(0.95))
+            .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -166,10 +187,11 @@ struct ReservationDetailPage: View {
 
             Text(reservation.addressText.isEmpty ? "Adres eklenmemiş.".localized : reservation.addressText)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(cardSecondaryTextColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
-                .background(Color.white.opacity(0.95))
+                .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -179,16 +201,36 @@ struct ReservationDetailPage: View {
     }
 
     // MARK: - Note Section
+    @ViewBuilder
+    private var rejectionReasonSection: some View {
+        if reservation.status == .rejected && !reservation.rejectionReason.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Red Sebebi".localized)
+                    .font(.headline)
+
+                Text(reservation.rejectionReason)
+                    .font(.subheadline)
+                    .foregroundColor(cardSecondaryTextColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(Color.white.opacity(0.98))
+                .environment(\.colorScheme, .light)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+        }
+    }
+
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader(icon: "note.text", title: "Not".localized)
 
             Text(reservation.note.isEmpty ? "Not eklenmemiş.".localized : reservation.note)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(cardSecondaryTextColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
-                .background(Color.white.opacity(0.95))
+                .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -335,7 +377,7 @@ struct ReservationDetailPage: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(cardSecondaryTextColor)
                 Text(value)
                     .font(.subheadline)
                     .foregroundColor(primaryColor)
@@ -421,7 +463,10 @@ struct ReservationDetailPage: View {
         }
     }
 
-    private func updateReservationStatusFromDetail(_ status: ReservationStatus) async {
+    private func updateReservationStatusFromDetail(
+        _ status: ReservationStatus,
+        rejectionReason: String? = nil
+    ) async {
         guard canProviderDecide else {
             errorMessage = "Bu rezervasyon için karar verme yetkiniz yok.".localized
             showError = true
@@ -432,7 +477,10 @@ struct ReservationDetailPage: View {
         do {
             try await reservationRepository.updateReservationStatus(
                 reservationId: reservation.reservationId, status: status)
-            reservation = updatedReservation(status: status)
+            reservation = updatedReservation(
+                status: status,
+                rejectionReason: rejectionReason
+            )
             onStatusChanged?()
         } catch {
             errorMessage = error.localizedDescription
@@ -458,7 +506,10 @@ struct ReservationDetailPage: View {
         }
     }
 
-    private func updatedReservation(status: ReservationStatus) -> Reservation {
+    private func updatedReservation(
+        status: ReservationStatus,
+        rejectionReason: String? = nil
+    ) -> Reservation {
         Reservation(
             reservationId: reservation.reservationId,
             serviceId: reservation.serviceId,
@@ -473,6 +524,7 @@ struct ReservationDetailPage: View {
             addressText: reservation.addressText,
             note: reservation.note,
             status: status,
+            rejectionReason: rejectionReason ?? reservation.rejectionReason,
             createdAt: reservation.createdAt,
             updatedAt: Date()
         )
