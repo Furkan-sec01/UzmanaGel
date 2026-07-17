@@ -16,14 +16,44 @@ struct ReservationCreateSheet: View {
     let serviceTitle: String
     let providerId: String
     let providerName: String
+    let servicePrice: Int
+    let serviceDuration: String
 
     private var minimumReservationDate: Date {
         Calendar.current.startOfDay(for: Date())
     }
 
+    private var formattedServicePrice: String {
+        "\(servicePrice) ₺"
+    }
+
     var body: some View {
         NavigationStack {
             Form {
+                Section("Hizmet Özeti".localized) {
+                    reservationSummaryRow(
+                        title: "Hizmet".localized,
+                        value: serviceTitle
+                    )
+
+                    reservationSummaryRow(
+                        title: "Uzman".localized,
+                        value: providerName
+                    )
+
+                    if !serviceDuration.isEmpty {
+                        reservationSummaryRow(
+                            title: "Süre".localized,
+                            value: serviceDuration
+                        )
+                    }
+
+                    reservationSummaryRow(
+                        title: "Tahmini Ücret".localized,
+                        value: formattedServicePrice
+                    )
+                }
+
                 Section("Randevu Bilgileri".localized) {
                     DatePicker(
                         "Randevu Günü".localized,
@@ -132,4 +162,20 @@ struct ReservationCreateSheet: View {
             }
         }
     }
+    private func reservationSummaryRow(
+        title: String,
+        value: String
+    ) -> some View {
+        HStack {
+            Text(title)
+                .foregroundColor(.secondary)
+
+            Spacer()
+
+            Text(value)
+                .fontWeight(.medium)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
 }

@@ -71,7 +71,9 @@ struct ServiceDetailPage: View {
                 serviceId: vm.service.serviceId,
                 serviceTitle: vm.service.title,
                 providerId: vm.service.providerId,
-                providerName: vm.service.providerName
+                providerName: vm.service.providerName,
+                servicePrice: vm.service.price,
+                serviceDuration: vm.service.duration
             )
         }
         .alert(
