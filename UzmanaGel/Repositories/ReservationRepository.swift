@@ -327,6 +327,9 @@ final class ReservationRepository {
             .collection("times")
             .document(timeKey)
 
+        let bookedSlotSnapshot = try await bookedSlotRef.getDocument()
+        let bookedSlotReservationId = bookedSlotSnapshot.data()?["reservationId"] as? String
+
         let batch = db.batch()
 
         batch.updateData([
@@ -334,15 +337,18 @@ final class ReservationRepository {
             "updatedAt": Timestamp(date: now)
         ], forDocument: reservationRef)
 
-        // Keep slot status in sync with reservation status.
-        batch.setData([
-            "providerId": providerId,
-            "dateKey": dateKey,
-            "timeString": timeString,
-            "status": status.rawValue,
-            "reservationId": reservationId,
-            "updatedAt": Timestamp(date: now)
-        ], forDocument: bookedSlotRef, merge: true)
+        // Sync slot only if this reservation owns the booked slot.
+        // Old duplicate reservations may point to the same time slot.
+        if bookedSlotSnapshot.exists && bookedSlotReservationId == reservationId {
+            batch.setData([
+                "providerId": providerId,
+                "dateKey": dateKey,
+                "timeString": timeString,
+                "status": status.rawValue,
+                "reservationId": reservationId,
+                "updatedAt": Timestamp(date: now)
+            ], forDocument: bookedSlotRef, merge: true)
+        }
 
         try await batch.commit()
     }
