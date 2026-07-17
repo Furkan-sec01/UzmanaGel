@@ -38,6 +38,7 @@ struct ReservationDetailPage: View {
     private let accentYellow = Color("TertiaryColor")
     private let bgColor      = Color("BackgroundColor")
     private let primaryColor = Color("PrimaryColor")
+    private let cardSecondaryTextColor = Color.black.opacity(0.62)
 
     init(reservation: Reservation, onStatusChanged: (() -> Void)? = nil) {
         _reservation = State(initialValue: reservation)
@@ -129,7 +130,7 @@ struct ReservationDetailPage: View {
 
                     Text(reservation.providerName)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(cardSecondaryTextColor)
                 }
 
                 Spacer()
@@ -141,7 +142,8 @@ struct ReservationDetailPage: View {
             infoRow(icon: "calendar", title: "Randevu Tarihi".localized, value: formatDate(reservation.reservationDate))
         }
         .padding(16)
-        .background(Color.white.opacity(0.95))
+        .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -169,7 +171,8 @@ struct ReservationDetailPage: View {
                 infoRow(icon: "clock", title: "Oluşturulma Tarihi".localized, value: formatDate(reservation.createdAt))
             }
             .padding(16)
-            .background(Color.white.opacity(0.95))
+            .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -184,10 +187,11 @@ struct ReservationDetailPage: View {
 
             Text(reservation.addressText.isEmpty ? "Adres eklenmemiş.".localized : reservation.addressText)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(cardSecondaryTextColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
-                .background(Color.white.opacity(0.95))
+                .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -206,10 +210,11 @@ struct ReservationDetailPage: View {
 
                 Text(reservation.rejectionReason)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(cardSecondaryTextColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
-                    .background(Color(.secondarySystemBackground))
+                    .background(Color.white.opacity(0.98))
+                .environment(\.colorScheme, .light)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
@@ -221,10 +226,11 @@ struct ReservationDetailPage: View {
 
             Text(reservation.note.isEmpty ? "Not eklenmemiş.".localized : reservation.note)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(cardSecondaryTextColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
-                .background(Color.white.opacity(0.95))
+                .background(Color.white.opacity(0.98))
+        .environment(\.colorScheme, .light)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -371,7 +377,7 @@ struct ReservationDetailPage: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(cardSecondaryTextColor)
                 Text(value)
                     .font(.subheadline)
                     .foregroundColor(primaryColor)

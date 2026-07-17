@@ -48,6 +48,10 @@ struct MyReservationsPage: View {
     // MARK: - Yellow accent
     private let accentYellow = Color("TertiaryColor")
     private let bgColor      = Color("BackgroundColor")
+    private let primaryColor = Color("PrimaryColor")
+    private let cardSecondaryTextColor = Color.black.opacity(0.65)
+    private let cardDividerColor = Color.black.opacity(0.16)
+    private let cardBackground = Color.white.opacity(0.98)
 
     private var filteredReservations: [Reservation] {
         switch selectedFilter {
@@ -227,7 +231,7 @@ struct MyReservationsPage: View {
             VStack(spacing: 8) {
                 Text(emptyStateTitle)
                     .font(.headline)
-                    .foregroundColor(Color("PrimaryColor"))
+                    .foregroundColor(primaryColor)
                 Text(emptyStateSubtitle)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
@@ -264,7 +268,7 @@ struct MyReservationsPage: View {
                     Text(reservation.serviceTitle)
                         .font(.subheadline)
                         .fontWeight(.bold)
-                        .foregroundColor(Color("PrimaryColor"))
+                        .foregroundColor(primaryColor)
 
                     HStack(spacing: 4) {
                         Image(systemName: "person.fill")
@@ -272,14 +276,14 @@ struct MyReservationsPage: View {
                             .foregroundColor(accentYellow)
                         Text(reservation.providerName)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(cardSecondaryTextColor)
                     }
                 }
                 Spacer()
                 statusBadge(reservation.status)
             }
 
-            Divider().background(accentYellow.opacity(0.25))
+            Divider().background(cardDividerColor)
 
             // Date row
             HStack(spacing: 8) {
@@ -288,7 +292,7 @@ struct MyReservationsPage: View {
                     .font(.subheadline)
                 Text(formatDate(reservation.reservationDate))
                     .font(.subheadline)
-                    .foregroundColor(Color("PrimaryColor").opacity(0.8))
+                    .foregroundColor(primaryColor)
             }
 
             // Note
@@ -296,10 +300,10 @@ struct MyReservationsPage: View {
                 HStack(spacing: 6) {
                     Image(systemName: "note.text")
                         .font(.caption)
-                        .foregroundColor(accentYellow.opacity(0.7))
+                        .foregroundColor(primaryColor.opacity(0.75))
                     Text(reservation.note)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(cardSecondaryTextColor)
                         .lineLimit(2)
                 }
             }
@@ -315,10 +319,10 @@ struct MyReservationsPage: View {
                     }
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundColor(accentYellow)
+                    .foregroundColor(primaryColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
-                    .background(accentYellow.opacity(0.12))
+                    .background(primaryColor.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 9))
                 }
                 .buttonStyle(.plain)
