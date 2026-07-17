@@ -36,6 +36,14 @@ struct ExpertReservationsPage: View {
     @State private var reservationToReject: Reservation?
     @State private var showRejectConfirmation = false
     @State private var reservationToShowDetail: Reservation?
+
+    private let rejectionReasons = [
+        "Takvimim bu saat için uygun değil",
+        "Bu hizmet bölgesi dışında",
+        "Müşteri bilgileri eksik",
+        "Yoğunluk nedeniyle kabul edemiyorum",
+        "Diğer"
+    ]
     private var filteredReservations: [Reservation] {
         switch selectedFilter {
         case .pending:
@@ -108,16 +116,18 @@ struct ExpertReservationsPage: View {
             Text(viewModel.errorMessage)
         }
         .confirmationDialog(
-            "Rezervasyonu reddet".localized,
+            "Red nedeni seç".localized,
             isPresented: $showRejectConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Reddet".localized, role: .destructive) {
-                guard let reservation = reservationToReject else { return }
+            ForEach(rejectionReasons, id: \.self) { reason in
+                Button(reason.localized, role: .destructive) {
+                    guard let reservation = reservationToReject else { return }
 
-                Task {
-                    await viewModel.rejectReservation(reservation)
-                    reservationToReject = nil
+                    Task {
+                        await viewModel.rejectReservation(reservation, reason: reason)
+                        reservationToReject = nil
+                    }
                 }
             }
 

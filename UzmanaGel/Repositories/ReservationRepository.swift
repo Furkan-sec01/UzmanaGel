@@ -276,7 +276,8 @@ final class ReservationRepository {
     
     func updateReservationStatus(
         reservationId: String,
-        status: ReservationStatus
+        status: ReservationStatus,
+        rejectionReason: String? = nil
     ) async throws {
         guard Auth.auth().currentUser != nil else {
             throw ReservationRepositoryError.userNotFound
@@ -296,13 +297,15 @@ final class ReservationRepository {
 
         try await updateReservationAndBookedSlotStatus(
             reservationId: trimmedReservationId,
-            status: status
+            status: status,
+            rejectionReason: rejectionReason
         )
     }
     
     private func updateReservationAndBookedSlotStatus(
         reservationId: String,
-        status: ReservationStatus
+        status: ReservationStatus,
+        rejectionReason: String? = nil
     ) async throws {
         let reservationRef = db
             .collection(collectionName)
@@ -320,6 +323,15 @@ final class ReservationRepository {
 
         let reservationDate = reservationDateTimestamp.dateValue()
         let now = Date()
+
+        let trimmedRejectionReason = rejectionReason?.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        if status == .rejected && (trimmedRejectionReason?.isEmpty ?? true) {
+            throw ReservationRepositoryError.invalidReservation
+        }
+
         let dateKey = bookedSlotDateKey(from: reservationDate)
         let timeString = bookedSlotTimeString(from: reservationDate)
         let timeKey = timeString.replacingOccurrences(of: ":", with: "")
@@ -337,10 +349,16 @@ final class ReservationRepository {
 
         let batch = db.batch()
 
-        batch.updateData([
+        var reservationUpdateData: [String: Any] = [
             "status": status.rawValue,
             "updatedAt": Timestamp(date: now)
-        ], forDocument: reservationRef)
+        ]
+
+        if status == .rejected {
+            reservationUpdateData["rejectionReason"] = trimmedRejectionReason ?? ""
+        }
+
+        batch.updateData(reservationUpdateData, forDocument: reservationRef)
 
         // Sync slot only if this reservation owns the booked slot.
         // Old duplicate reservations may point to the same time slot.
@@ -397,6 +415,7 @@ final class ReservationRepository {
 
         let reservationId = data["reservationId"] as? String ?? document.documentID
         let addressText = data["addressText"] as? String ?? ""
+        let rejectionReason = data["rejectionReason"] as? String ?? ""
         let serviceDuration = data["serviceDuration"] as? String ?? ""
 
         let servicePrice: Int
@@ -422,6 +441,7 @@ final class ReservationRepository {
             addressText: addressText,
             note: note,
             status: status,
+            rejectionReason: rejectionReason,
             createdAt: createdAtTimestamp.dateValue(),
             updatedAt: updatedAtTimestamp.dateValue()
         )

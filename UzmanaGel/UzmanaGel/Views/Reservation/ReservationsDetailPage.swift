@@ -46,6 +46,7 @@ struct ReservationDetailPage: View {
                     detailSection
 
             addressSection
+                    rejectionReasonSection
                     noteSection
                     actionSection
                 }
@@ -191,6 +192,24 @@ struct ReservationDetailPage: View {
                 .padding(16)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    private var rejectionReasonSection: some View {
+        if reservation.status == .rejected && !reservation.rejectionReason.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Red Sebebi".localized)
+                    .font(.headline)
+
+                Text(reservation.rejectionReason)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
         }
     }
 
@@ -504,6 +523,7 @@ struct ReservationDetailPage: View {
             addressText: reservation.addressText,
             note: reservation.note,
             status: status,
+            rejectionReason: reservation.rejectionReason,
             createdAt: reservation.createdAt,
             updatedAt: Date()
         )
