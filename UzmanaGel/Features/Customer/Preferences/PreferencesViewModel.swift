@@ -26,7 +26,7 @@ class PreferencesViewModel: ObservableObject {
     
     private let preferencesService: PreferencesService
     
-    init(preferencesService: PreferencesService = MockPreferencesService()) {
+    init(preferencesService: PreferencesService = FirestorePreferencesService()) {
         self.preferencesService = preferencesService
     }
     

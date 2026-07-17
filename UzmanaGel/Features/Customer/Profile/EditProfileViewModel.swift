@@ -31,7 +31,7 @@ class EditProfileViewModel: ObservableObject {
     private let profileService: ProfileService
     private var originalProfile: UserProfile
     
-    init(profile: UserProfile, profileService: ProfileService = MockProfileService()) {
+    init(profile: UserProfile, profileService: ProfileService = FirestoreProfileService()) {
         self.originalProfile = profile
         self.profileService = profileService
         self.displayName = profile.displayName

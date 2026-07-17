@@ -144,14 +144,14 @@ private extension ServiceDetailPage {
                 Text(String(format: "%.1f", vm.service.rating))
                     .font(.system(size: 14, weight: .semibold))
 
-                Text("(0 yorum)")
+                Text("(0 yorum)".localized)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
 
                 Text("•")
                     .foregroundColor(.secondary)
 
-                Button("Yorumları Gör") { }
+                Button("Yorumları Gör".localized) { }
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color("PrimaryColor"))
 
@@ -228,20 +228,20 @@ private extension ServiceDetailPage {
             statCard(
                 icon: "checkmark.seal.fill",
                 iconColor: .green,
-                value: "\(vm.service.experienceYears) Yıl",
-                label: "Deneyim"
+                value: "\(vm.service.experienceYears) " + "Yıl".localized,
+                label: "Deneyim".localized
             )
             statCard(
                 icon: "checkmark.seal.fill",
                 iconColor: .green,
                 value: "0",
-                label: "İş Tamamlandı"
+                label: "İş Tamamlandı".localized
             )
             statCard(
                 icon: "clock",
                 iconColor: .secondary,
-                value: "Hemen",
-                label: "Yanıt Süresi"
+                value: "Hemen".localized,
+                label: "Yanıt Süresi".localized
             )
         }
     }
@@ -274,12 +274,12 @@ private extension ServiceDetailPage {
 
     var aboutSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Hakkında")
+            Text("Hakkında".localized)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Color("Text"))
 
             Text(vm.service.description.isEmpty
-                 ? "Bu hizmet sağlayıcı henüz detaylı bir açıklama girmemiş."
+                 ? "Bu hizmet sağlayıcı henüz detaylı bir açıklama girmemiş.".localized
                  : vm.service.description)
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
@@ -295,7 +295,7 @@ private extension ServiceDetailPage {
 
     var servicesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Hizmetler & Fiyatlar")
+            Text("Hizmetler & Fiyatlar".localized)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Color("Text"))
 
@@ -326,7 +326,7 @@ private extension ServiceDetailPage {
                     .foregroundColor(Color("TertiaryColor"))
 
                 if !duration.isEmpty {
-                    Text(duration)
+                    Text(duration.localized)
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
@@ -338,7 +338,7 @@ private extension ServiceDetailPage {
                 Text("₺\(price)")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(Color("Text"))
-                Text("başlangıç fiyatı")
+                Text("başlangıç fiyatı".localized)
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
@@ -353,12 +353,12 @@ private extension ServiceDetailPage {
 
     var gallerySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Portföy / Galeri")
+            Text("Portföy / Galeri".localized)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Color("Text"))
 
             if vm.galleryURLs.isEmpty {
-                Text("Henüz portföy görseli eklenmemiş.")
+                Text("Henüz portföy görseli eklenmemiş.".localized)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
                     .padding(.vertical, 8)
@@ -392,7 +392,7 @@ private extension ServiceDetailPage {
 
     var workingHoursSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Çalışma Saatleri")
+            Text("Çalışma Saatleri".localized)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Color("Text"))
 
@@ -448,7 +448,7 @@ private extension ServiceDetailPage {
                             .font(.system(size: 18))
                             .foregroundColor(.secondary)
                             .frame(width: 24)
-                        Text("Çalışma saatleri henüz girilmemiş.")
+                        Text("Çalışma saatleri henüz girilmemiş.".localized)
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                         Spacer()
@@ -466,11 +466,15 @@ private extension ServiceDetailPage {
     /// Kapalı günleri metin olarak döndürür (çalışılmayan günler). Sıra: Pzt→Paz.
     private var closedDaysText: String {
         let order = ["1", "2", "3", "4", "5", "6", "7"]
-        let names = ["1": "Pazartesi", "2": "Salı", "3": "Çarşamba", "4": "Perşembe", "5": "Cuma", "6": "Cumartesi", "7": "Pazar"]
+        let names = [
+            "1": "Pazartesi".localized, "2": "Salı".localized, "3": "Çarşamba".localized,
+            "4": "Perşembe".localized, "5": "Cuma".localized, "6": "Cumartesi".localized,
+            "7": "Pazar".localized
+        ]
         let working = Set(vm.expertProfile?.workingDays ?? [])
         let closed = order.filter { !working.contains($0) }.compactMap { names[$0] }
         if closed.isEmpty { return "" }
-        return "Kapalı: \(closed.joined(separator: ", "))"
+        return "Kapalı".localized + ": \(closed.joined(separator: ", "))"
     }
 }
 
@@ -480,7 +484,7 @@ private extension ServiceDetailPage {
 
     var locationSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Konum")
+            Text("Konum".localized)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Color("Text"))
 
@@ -549,7 +553,7 @@ private extension ServiceDetailPage {
                 HStack(spacing: 6) {
                     Image(systemName: "location.fill")
                         .font(.system(size: 13, weight: .semibold))
-                    Text("Yol Tarifi Al")
+                    Text("Yol Tarifi Al".localized)
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .foregroundColor(Color("Text"))
@@ -606,8 +610,8 @@ private extension ServiceDetailPage {
 
                     Text(
                         isStartingConversation
-                        ? "Sohbet Açılıyor..."
-                        : "Mesaj Gönder"
+                        ? "Sohbet Açılıyor...".localized
+                        : "Mesaj Gönder".localized
                     )
                     .font(.system(size: 16, weight: .bold))
                 }
@@ -645,7 +649,7 @@ private extension ServiceDetailPage {
 
     func startConversation() {
         guard !vm.service.providerId.isEmpty else {
-            chatErrorMessage = "Uzman bilgisi bulunamadı."
+            chatErrorMessage = "Uzman bilgisi bulunamadı.".localized
             showChatError = true
             return
         }

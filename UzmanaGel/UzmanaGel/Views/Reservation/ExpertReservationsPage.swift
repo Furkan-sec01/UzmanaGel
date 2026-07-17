@@ -17,14 +17,10 @@ private enum ExpertReservationFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .pending:
-            return "Bekleyen".localized
-        case .today:
-            return "Bugün".localized
-        case .upcoming:
-            return "Yaklaşan".localized
-        case .past:
-            return "Geçmiş".localized
+        case .pending:  return "Bekleyen".localized
+        case .today:    return "Bugün".localized
+        case .upcoming: return "Yaklaşan".localized
+        case .past:     return "Geçmiş".localized
         }
     }
 }
@@ -44,72 +40,69 @@ struct ExpertReservationsPage: View {
         "Yoğunluk nedeniyle kabul edemiyorum",
         "Diğer"
     ]
+
+    private let accentYellow = Color("TertiaryColor")
+    private let bgColor      = Color("BackgroundColor")
+
     private var filteredReservations: [Reservation] {
         switch selectedFilter {
         case .pending:
-            return viewModel.reservations.filter {
-                $0.status == .pending
-            }
-
+            return viewModel.reservations.filter { $0.status == .pending }
         case .today:
             return viewModel.reservations.filter {
-                isActive($0)
-                && Calendar.current.isDateInToday($0.reservationDate)
+                isActive($0) && Calendar.current.isDateInToday($0.reservationDate)
             }
-
         case .upcoming:
             return viewModel.reservations.filter {
-                isActive($0)
-                && $0.reservationDate > endOfToday
+                isActive($0) && $0.reservationDate > endOfToday
             }
-
         case .past:
             return viewModel.reservations.filter {
-                $0.status == .completed
-                || $0.status == .rejected
-                || $0.status == .cancelled
-                || $0.reservationDate < startOfToday
+                $0.status == .completed || $0.status == .rejected
+                || $0.status == .cancelled || $0.reservationDate < startOfToday
             }
         }
     }
 
-    private var startOfToday: Date {
-        Calendar.current.startOfDay(for: Date())
-    }
-
+    private var startOfToday: Date { Calendar.current.startOfDay(for: Date()) }
     private var endOfToday: Date {
-        Calendar.current.date(
-            byAdding: .day,
-            value: 1,
-            to: startOfToday
-        ) ?? Date()
+        Calendar.current.date(byAdding: .day, value: 1, to: startOfToday) ?? Date()
     }
 
     var body: some View {
-        Group {
-            if viewModel.isLoading {
-                ProgressView("Rezervasyonlar yükleniyor...".localized)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                VStack(spacing: 12) {
-                    filterPicker
+        ZStack {
+            bgColor.ignoresSafeArea()
 
-                    if filteredReservations.isEmpty {
-                        emptyState
-                    } else {
-                        reservationsList
+            Group {
+                if viewModel.isLoading {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .tint(accentYellow)
+                            .scaleEffect(1.4)
+                        Text("Rezervasyonlar yükleniyor...".localized)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack(spacing: 0) {
+                        filterPicker
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+
+                        if filteredReservations.isEmpty {
+                            emptyState
+                        } else {
+                            reservationsList
+                        }
                     }
                 }
             }
         }
         .navigationTitle("Gelen Rezervasyonlar".localized)
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            await viewModel.loadReservations()
-        }
-        .refreshable {
-            await viewModel.loadReservations()
-        }
+        .task { await viewModel.loadReservations() }
+        .refreshable { await viewModel.loadReservations() }
         .alert("Hata".localized, isPresented: $viewModel.showError) {
             Button("Tamam".localized, role: .cancel) { }
         } message: {
@@ -136,9 +129,9 @@ struct ExpertReservationsPage: View {
             }
         } message: {
             if let reservation = reservationToReject {
-                Text(String(format: "%@ adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?".localized, reservation.customerName))
+                Text(String(format: "%@ adlı müşterinin rezervasyon talebini neden reddetmek istiyorsunuz?".localized, reservation.customerName))
             } else {
-                Text("Bu rezervasyonu reddetmek istediğinizden emin misiniz?".localized)
+                Text("Bu rezervasyonu neden reddetmek istiyorsunuz?".localized)
             }
         }
         .sheet(item: $reservationToShowDetail) { reservation in
@@ -146,44 +139,73 @@ struct ExpertReservationsPage: View {
         }
     }
 
+    // MARK: - Filter Picker
     private var filterPicker: some View {
-        Picker("Rezervasyon filtresi".localized, selection: $selectedFilter) {
+        HStack(spacing: 0) {
             ForEach(ExpertReservationFilter.allCases) { filter in
-                Text(filter.title)
-                    .tag(filter)
+                let isSelected = selectedFilter == filter
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { selectedFilter = filter }
+                } label: {
+                    Text(filter.title)
+                        .font(.caption)
+                        .fontWeight(isSelected ? .bold : .regular)
+                        .foregroundColor(isSelected ? .white : accentYellow)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(isSelected ? accentYellow : accentYellow.opacity(0.12))
+                }
+                .buttonStyle(.plain)
+                if filter != ExpertReservationFilter.allCases.last {
+                    Divider().background(accentYellow.opacity(0.3))
+                }
             }
         }
-        .pickerStyle(.segmented)
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(accentYellow.opacity(0.4), lineWidth: 1)
+        )
     }
 
+    // MARK: - Reservations List
     private var reservationsList: some View {
-        List {
-            ForEach(filteredReservations) { reservation in
-                reservationCard(reservation)
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(filteredReservations) { reservation in
+                    reservationCard(reservation)
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
-        .listStyle(.plain)
     }
 
+    // MARK: - Empty State
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 20) {
             Spacer()
-
-            Image(systemName: "calendar.badge.exclamationmark")
-                .font(.system(size: 44))
-                .foregroundColor(.secondary)
-
-            Text(emptyStateTitle)
-                .font(.headline)
-
-            Text(emptyStateSubtitle)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-
+            ZStack {
+                Circle()
+                    .fill(accentYellow.opacity(0.12))
+                    .frame(width: 90, height: 90)
+                Circle()
+                    .fill(accentYellow.opacity(0.07))
+                    .frame(width: 118, height: 118)
+                Image(systemName: "calendar.badge.exclamationmark")
+                    .font(.system(size: 38))
+                    .foregroundColor(accentYellow)
+            }
+            VStack(spacing: 8) {
+                Text(emptyStateTitle)
+                    .font(.headline)
+                    .foregroundColor(Color("PrimaryColor"))
+                Text(emptyStateSubtitle)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -191,110 +213,100 @@ struct ExpertReservationsPage: View {
 
     private var emptyStateTitle: String {
         switch selectedFilter {
-        case .pending:
-            return "Bekleyen rezervasyon yok".localized
-        case .today:
-            return "Bugün için rezervasyon yok".localized
-        case .upcoming:
-            return "Yaklaşan rezervasyon yok".localized
-        case .past:
-            return "Geçmiş rezervasyon yok".localized
+        case .pending:  return "Bekleyen rezervasyon yok".localized
+        case .today:    return "Bugün için rezervasyon yok".localized
+        case .upcoming: return "Yaklaşan rezervasyon yok".localized
+        case .past:     return "Geçmiş rezervasyon yok".localized
         }
     }
 
     private var emptyStateSubtitle: String {
         switch selectedFilter {
-        case .pending:
-            return "Müşterilerden gelen yeni rezervasyon talepleri burada görünür.".localized
-        case .today:
-            return "Bugünkü aktif rezervasyonlar burada görünür.".localized
-        case .upcoming:
-            return "Bugünden sonraki aktif rezervasyonlar burada görünür.".localized
-        case .past:
-            return "Tamamlanan, reddedilen veya iptal edilen rezervasyonlar burada görünür.".localized
+        case .pending:  return "Müşterilerden gelen yeni rezervasyon talepleri burada görünür.".localized
+        case .today:    return "Bugünkü aktif rezervasyonlar burada görünür.".localized
+        case .upcoming: return "Bugünden sonraki aktif rezervasyonlar burada görünür.".localized
+        case .past:     return "Tamamlanan, reddedilen veya iptal edilen rezervasyonlar burada görünür.".localized
         }
     }
 
-    private func reservationCard(
-        _ reservation: Reservation
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
+    // MARK: - Card
+    private func reservationCard(_ reservation: Reservation) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(reservation.serviceTitle)
-                        .font(.headline)
-
-                    Text(reservation.customerName)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .fontWeight(.bold)
+                        .foregroundColor(Color("PrimaryColor"))
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.fill")
+                            .font(.caption2)
+                            .foregroundColor(accentYellow)
+                        Text(reservation.customerName)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-
                 Spacer()
-
                 statusBadge(reservation.status)
             }
 
+            Divider().background(accentYellow.opacity(0.25))
+
             HStack(spacing: 8) {
                 Image(systemName: "calendar")
-                    .foregroundColor(.secondary)
-
+                    .foregroundColor(accentYellow)
+                    .font(.subheadline)
                 Text(formatDate(reservation.reservationDate))
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color("PrimaryColor").opacity(0.8))
             }
 
             if !reservation.note.isEmpty {
-                Text(reservation.note)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
+                HStack(spacing: 6) {
+                    Image(systemName: "note.text")
+                        .font(.caption)
+                        .foregroundColor(accentYellow.opacity(0.7))
+                    Text(reservation.note)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
             }
 
-            detailButton(for: reservation)
+            // Detail button
+            Button {
+                reservationToShowDetail = reservation
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                    Text("Detayı Gör".localized)
+                }
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(accentYellow)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(accentYellow.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+            }
+            .buttonStyle(.plain)
 
             if reservation.status == .pending {
                 pendingActionButtons(for: reservation)
-            }        }
-        .padding(.vertical, 8)
-    }
-    
-    private func statusBadge(
-        _ status: ReservationStatus
-    ) -> some View {
-        Text(status.title)
-            .font(.caption)
-            .fontWeight(.semibold)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(statusColor(status).opacity(0.15))
-            .foregroundColor(statusColor(status))
-            .clipShape(Capsule())
-    }
-    
-    private func detailButton(
-        for reservation: Reservation
-    ) -> some View {
-        Button {
-            reservationToShowDetail = reservation
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "doc.text.magnifyingglass")
-                Text("Detayı Gör".localized)
-                    .font(.system(size: 13, weight: .bold))
             }
-            .foregroundColor(Color("PrimaryColor"))
-            .frame(maxWidth: .infinity)
-            .frame(height: 38)
-            .background(Color("PrimaryColor").opacity(0.10))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .buttonStyle(.plain)
-        .padding(.top, 4)
+        .padding(16)
+        .background(Color.white.opacity(0.9))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(accentYellow.opacity(0.3), lineWidth: 1)
+        )
+        .shadow(color: accentYellow.opacity(0.1), radius: 8, x: 0, y: 3)
     }
-    
-    private func pendingActionButtons(
-        for reservation: Reservation
-    ) -> some View {
+
+    private func pendingActionButtons(for reservation: Reservation) -> some View {
         let isUpdating = viewModel.updatingReservationId == reservation.reservationId
 
         return HStack(spacing: 10) {
@@ -303,68 +315,65 @@ struct ExpertReservationsPage: View {
                 showRejectConfirmation = true
             } label: {
                 Text("Reddet".localized)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.caption)
+                    .fontWeight(.bold)
                     .foregroundColor(.red)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 40)
-                    .background(Color.red.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.vertical, 8)
+                    .background(Color.red.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
             }
             .buttonStyle(.plain)
             .disabled(isUpdating)
 
             Button {
-                Task {
-                    await viewModel.acceptReservation(reservation)
-                }
+                Task { await viewModel.acceptReservation(reservation) }
             } label: {
                 HStack(spacing: 6) {
                     if isUpdating {
-                        ProgressView()
-                            .scaleEffect(0.8)
+                        ProgressView().scaleEffect(0.8).tint(.white)
                     }
-
                     Text("Kabul Et".localized)
-                        .font(.system(size: 13, weight: .bold))
                 }
+                .font(.caption)
+                .fontWeight(.bold)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 40)
-                .background(Color.green)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.vertical, 8)
+                .background(accentYellow)
+                .clipShape(RoundedRectangle(cornerRadius: 9))
             }
             .buttonStyle(.plain)
             .disabled(isUpdating)
         }
-        .padding(.top, 6)
     }
 
-    private func statusColor(
-        _ status: ReservationStatus
-    ) -> Color {
+    private func statusBadge(_ status: ReservationStatus) -> some View {
+        Text(status.title)
+            .font(.caption2)
+            .fontWeight(.bold)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(statusColor(status).opacity(0.13))
+            .foregroundColor(statusColor(status))
+            .clipShape(Capsule())
+    }
+
+    private func statusColor(_ status: ReservationStatus) -> Color {
         switch status {
-        case .pending:
-            return .orange
-        case .accepted:
-            return .green
-        case .rejected:
-            return .red
-        case .cancelled:
-            return .gray
-        case .completed:
-            return .blue
+        case .pending:   return .orange
+        case .accepted:  return accentYellow
+        case .rejected:  return .red
+        case .cancelled: return .gray
+        case .completed: return Color("PrimaryColor")
         }
     }
 
-    private func isActive(
-        _ reservation: Reservation
-    ) -> Bool {
+    private func isActive(_ reservation: Reservation) -> Bool {
         reservation.status == .pending || reservation.status == .accepted
     }
 
-    private func formatDate(
-        _ date: Date
-    ) -> String {
+    private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: LanguageManager.shared.languageCode == "en" ? "en_US" : "tr_TR")
         formatter.dateStyle = .medium

@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import FirebaseAuth
 
 @MainActor
 class CustomerProfileViewModel: ObservableObject {
@@ -9,7 +10,7 @@ class CustomerProfileViewModel: ObservableObject {
     
     private let profileService: ProfileService
     
-    init(profileService: ProfileService = MockProfileService()) {
+    init(profileService: ProfileService = FirestoreProfileService()) {
         self.profileService = profileService
     }
     
@@ -25,8 +26,8 @@ class CustomerProfileViewModel: ObservableObject {
     }
     
     func logout() {
-        // Handle logout process
         self.userProfile = nil
+        try? Auth.auth().signOut()
     }
     
     var membershipDurationText: String {
