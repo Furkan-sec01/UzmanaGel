@@ -48,16 +48,16 @@ struct LocationPickerSheet: View {
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Mevcut Konumumu Kullan")
+                                Text("Mevcut Konumumu Kullan".localized)
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundColor(.primary)
 
                                 if locationManager.isLoading {
-                                    Text("Konum alınıyor…")
+                                    Text("Konum alınıyor…".localized)
                                         .font(.system(size: 12))
                                         .foregroundColor(.secondary)
                                 } else if locationManager.authStatus == .denied {
-                                    Text("Konum izni verilmedi. Ayarlardan açabilirsiniz.")
+                                    Text("Konum izni verilmedi. Ayarlardan açabilirsiniz.".localized)
                                         .font(.system(size: 12))
                                         .foregroundColor(.red)
                                 } else if locationManager.coordinate != nil {
@@ -80,7 +80,7 @@ struct LocationPickerSheet: View {
                     }
                     .buttonStyle(.plain)
                 } header: {
-                    Text("Otomatik Konum")
+                    Text("Otomatik Konum".localized)
                 }
 
                 // MARK: - Şehir Seçimi
@@ -113,15 +113,15 @@ struct LocationPickerSheet: View {
                         }
                     }
                 } header: {
-                    Text("Şehir ve İlçe Seçin")
+                    Text("Şehir ve İlçe Seçin".localized)
                 }
             }
-            .searchable(text: $searchText, prompt: "Şehir veya ilçe ara…")
-            .navigationTitle("Konum Seçin")
+            .searchable(text: $searchText, prompt: "Şehir veya ilçe ara…".localized)
+            .navigationTitle("Konum Seçin".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         onDismiss()
                     }
                 }

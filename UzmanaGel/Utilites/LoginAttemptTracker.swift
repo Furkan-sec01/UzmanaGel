@@ -34,7 +34,13 @@ final class LoginAttemptTracker {
 
     let lockMessage = "Çok fazla hatalı giriş denemesi yaptınız. Lütfen 30 dakika sonra tekrar deneyin."
 
-    private init() {}
+    private init() {
+        #if DEBUG
+        // Geliştirme (Debug) modunda kilitlenmeleri otomatik sıfırla
+        UserDefaults.standard.removeObject(forKey: "loginFailedAttempts")
+        UserDefaults.standard.removeObject(forKey: "loginLockedUntil")
+        #endif
+    }
 
     func recordFailure() {
         failedAttempts += 1

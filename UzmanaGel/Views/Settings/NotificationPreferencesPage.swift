@@ -25,22 +25,22 @@ struct NotificationPreferencesPage: View {
     @AppStorage("marketingNotificationsEnabled")
     private var marketingNotificationsEnabled = false
 
-    @State private var permissionStatusText = "Kontrol ediliyor..."
+    @State private var permissionStatusText = "Kontrol ediliyor...".localized
     @State private var showPermissionAlert = false
 
     var body: some View {
         List {
             Section {
                 Toggle(isOn: $notificationEnabled) {
-                    Label("Tüm Bildirimler", systemImage: "bell.fill")
+                    Label("Tüm Bildirimler".localized, systemImage: "bell.fill")
                 }
             } footer: {
-                Text("Bu seçenek kapalıysa uygulama içindeki tüm bildirim tercihleri pasif kabul edilir.")
+                Text("Bu seçenek kapalıysa uygulama içindeki tüm bildirim tercihleri pasif kabul edilir.".localized)
             }
 
-            Section("İzin Durumu") {
+            Section("İzin Durumu".localized) {
                 HStack {
-                    Label("iOS Bildirim İzni", systemImage: "iphone.radiowaves.left.and.right")
+                    Label("iOS Bildirim İzni".localized, systemImage: "iphone.radiowaves.left.and.right")
 
                     Spacer()
 
@@ -54,39 +54,39 @@ struct NotificationPreferencesPage: View {
                         await loadNotificationPermissionStatus()
                     }
                 } label: {
-                    Label("İzni Yeniden Kontrol Et", systemImage: "arrow.clockwise")
+                    Label("İzni Yeniden Kontrol Et".localized, systemImage: "arrow.clockwise")
                 }
             }
 
-            Section("Bildirim Türleri") {
+            Section("Bildirim Türleri".localized) {
                 Toggle(isOn: $reservationNotificationsEnabled) {
-                    Label("Rezervasyon Bildirimleri", systemImage: "calendar.badge.clock")
+                    Label("Rezervasyon Bildirimleri".localized, systemImage: "calendar.badge.clock")
                 }
                 .disabled(!notificationEnabled)
 
                 Toggle(isOn: $messageNotificationsEnabled) {
-                    Label("Mesaj Bildirimleri", systemImage: "message.fill")
+                    Label("Mesaj Bildirimleri".localized, systemImage: "message.fill")
                 }
                 .disabled(!notificationEnabled)
 
                 Toggle(isOn: $systemNotificationsEnabled) {
-                    Label("Sistem Bildirimleri", systemImage: "exclamationmark.shield.fill")
+                    Label("Sistem Bildirimleri".localized, systemImage: "exclamationmark.shield.fill")
                 }
                 .disabled(!notificationEnabled)
 
                 Toggle(isOn: $marketingNotificationsEnabled) {
-                    Label("Kampanya Bildirimleri", systemImage: "megaphone.fill")
+                    Label("Kampanya Bildirimleri".localized, systemImage: "megaphone.fill")
                 }
                 .disabled(!notificationEnabled)
             }
 
-            Section("Bilgi") {
-                Text("Bu tercihler şu an cihazda saklanır. Push notification sistemi eklendiğinde Firebase bildirim akışıyla birlikte kullanılabilir.")
+            Section("Bilgi".localized) {
+                Text("Bu tercihler şu an cihazda saklanır. Push notification sistemi eklendiğinde Firebase bildirim akışıyla birlikte kullanılabilir.".localized)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
         }
-        .navigationTitle("Bildirim Tercihleri")
+        .navigationTitle("Bildirim Tercihleri".localized)
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await loadNotificationPermissionStatus()
@@ -98,10 +98,10 @@ struct NotificationPreferencesPage: View {
                 await requestNotificationPermissionIfNeeded()
             }
         }
-        .alert("Bildirim İzni Kapalı", isPresented: $showPermissionAlert) {
-            Button("Tamam", role: .cancel) {}
+        .alert("Bildirim İzni Kapalı".localized, isPresented: $showPermissionAlert) {
+            Button("Tamam".localized, role: .cancel) {}
         } message: {
-            Text("Bildirim izni daha önce kapatılmış. Tekrar açmak için iPhone Ayarları üzerinden UzmanaGel bildirim izinlerini açmanız gerekir.")
+            Text("Bildirim izni daha önce kapatılmış. Tekrar açmak için iPhone Ayarları üzerinden UzmanaGel bildirim izinlerini açmanız gerekir.".localized)
         }
     }
 
@@ -128,19 +128,19 @@ struct NotificationPreferencesPage: View {
 
                 await MainActor.run {
                     notificationEnabled = granted
-                    permissionStatusText = granted ? "İzin verildi" : "İzin verilmedi"
+                    permissionStatusText = granted ? "İzin verildi".localized : "İzin verilmedi".localized
                 }
             } catch {
                 await MainActor.run {
                     notificationEnabled = false
-                    permissionStatusText = "İzin alınamadı"
+                    permissionStatusText = "İzin alınamadı".localized
                 }
             }
 
         case .denied:
             await MainActor.run {
                 notificationEnabled = false
-                permissionStatusText = "İzin kapalı"
+                permissionStatusText = "İzin kapalı".localized
                 showPermissionAlert = true
             }
 
@@ -159,17 +159,17 @@ struct NotificationPreferencesPage: View {
     private func permissionText(for status: UNAuthorizationStatus) -> String {
         switch status {
         case .notDetermined:
-            return "Sorulmadı"
+            return "Sorulmadı".localized
         case .denied:
-            return "İzin kapalı"
+            return "İzin kapalı".localized
         case .authorized:
-            return "İzin verildi"
+            return "İzin verildi".localized
         case .provisional:
-            return "Geçici izin"
+            return "Geçici izin".localized
         case .ephemeral:
-            return "Geçici izin"
+            return "Geçici izin".localized
         @unknown default:
-            return "Bilinmiyor"
+            return "Bilinmiyor".localized
         }
     }
 }

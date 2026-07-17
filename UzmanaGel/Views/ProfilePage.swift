@@ -343,6 +343,8 @@ struct ProfilePage: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .background(Color.black.opacity(0.0001))
             }
             .buttonStyle(.plain)
 
@@ -420,7 +422,7 @@ struct ProfilePage: View {
             navigationRow(
                 icon: "calendar.badge.clock",
                 tint: .indigo,
-                title: "Rezervasyonlarım",
+                title: "Rezervasyonlarım".localized,
                 destination: AnyView(MyReservationsPage())
             )
 
@@ -459,7 +461,7 @@ struct ProfilePage: View {
     // MARK: - Security
     private var securitySection: some View {
         profileSection(title: "GÜVENLİK", icon: "shield.fill") {
-            navigationRow(icon: "key.shield", tint: Color("TertiaryColor"), title: "Şifre Değiştir", destination: AnyView(ResetPasswordPage()))
+            navigationRow(icon: "key.shield", tint: Color("TertiaryColor"), title: "Şifre Değiştir".localized, destination: AnyView(ResetPasswordPage()))
         }
     }
 
@@ -536,6 +538,8 @@ struct ProfilePage: View {
                     .foregroundColor(.secondary)
             }
             .padding(14)
+            .contentShape(Rectangle())
+            .background(Color.black.opacity(0.0001))
         }
         .buttonStyle(.plain)
     }

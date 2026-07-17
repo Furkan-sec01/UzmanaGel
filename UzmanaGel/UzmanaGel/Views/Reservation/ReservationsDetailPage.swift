@@ -50,11 +50,11 @@ struct ReservationDetailPage: View {
                 .padding(20)
             }
             .background(Color("BackgroundColor"))
-            .navigationTitle("Rezervasyon Detayı")
+            .navigationTitle("Rezervasyon Detayı".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         dismiss()
                     }
                 }
@@ -64,40 +64,40 @@ struct ReservationDetailPage: View {
                     ChatDetailPage(conversation: chatConversation)
                 }
             }
-            .alert("Hata", isPresented: $showError) {
-                Button("Tamam", role: .cancel) { }
+            .alert("Hata".localized, isPresented: $showError) {
+                Button("Tamam".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
             .confirmationDialog(
-                "Rezervasyonu iptal et",
+                "Rezervasyonu iptal et".localized,
                 isPresented: $showCancelConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("İptal Et", role: .destructive) {
+                Button("İptal Et".localized, role: .destructive) {
                     Task {
                         await cancelReservationFromDetail()
                     }
                 }
 
-                Button("Vazgeç", role: .cancel) { }
+                Button("Vazgeç".localized, role: .cancel) { }
             } message: {
-                Text("Bu rezervasyonu iptal etmek istediğinizden emin misiniz?")
+                Text("Bu rezervasyonu iptal etmek istediğinizden emin misiniz?".localized)
             }
             .confirmationDialog(
-                "Rezervasyonu reddet",
+                "Rezervasyonu reddet".localized,
                 isPresented: $showRejectConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Reddet", role: .destructive) {
+                Button("Reddet".localized, role: .destructive) {
                     Task {
                         await updateReservationStatusFromDetail(.rejected)
                     }
                 }
 
-                Button("Vazgeç", role: .cancel) { }
+                Button("Vazgeç".localized, role: .cancel) { }
             } message: {
-                Text("\(reservation.customerName) adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?")
+                Text(String(format: "%@ adlı müşterinin rezervasyon talebini reddetmek istediğinizden emin misiniz?".localized, reservation.customerName))
             }
         }
     }
@@ -124,7 +124,7 @@ struct ReservationDetailPage: View {
 
             infoRow(
                 icon: "calendar",
-                title: "Randevu Tarihi",
+                title: "Randevu Tarihi".localized,
                 value: formatDate(reservation.reservationDate)
             )
         }
@@ -135,25 +135,25 @@ struct ReservationDetailPage: View {
 
     private var detailSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Bilgiler")
+            Text("Bilgiler".localized)
                 .font(.headline)
 
             VStack(spacing: 12) {
                 infoRow(
                     icon: "person",
-                    title: "Müşteri",
+                    title: "Müşteri".localized,
                     value: reservation.customerName
                 )
 
                 infoRow(
                     icon: "briefcase",
-                    title: "Hizmet",
+                    title: "Hizmet".localized,
                     value: reservation.serviceTitle
                 )
 
                 infoRow(
                     icon: "clock",
-                    title: "Oluşturulma Tarihi",
+                    title: "Oluşturulma Tarihi".localized,
                     value: formatDate(reservation.createdAt)
                 )
             }
@@ -165,10 +165,10 @@ struct ReservationDetailPage: View {
 
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Not")
+            Text("Not".localized)
                 .font(.headline)
 
-            Text(reservation.note.isEmpty ? "Not eklenmemiş." : reservation.note)
+            Text(reservation.note.isEmpty ? "Not eklenmemiş.".localized : reservation.note)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -180,7 +180,7 @@ struct ReservationDetailPage: View {
 
     private var actionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("İşlemler")
+            Text("İşlemler".localized)
                 .font(.headline)
 
             messageButton
@@ -209,7 +209,7 @@ struct ReservationDetailPage: View {
                     Image(systemName: "message.fill")
                 }
 
-                Text("Mesaj Gönder")
+                Text("Mesaj Gönder".localized)
                     .font(.system(size: 15, weight: .bold))
             }
             .foregroundColor(.white)
@@ -227,7 +227,7 @@ struct ReservationDetailPage: View {
             Button {
                 showRejectConfirmation = true
             } label: {
-                Text("Reddet")
+                Text("Reddet".localized)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.red)
                     .frame(maxWidth: .infinity)
@@ -250,7 +250,7 @@ struct ReservationDetailPage: View {
                             .tint(.white)
                     }
 
-                    Text("Kabul Et")
+                    Text("Kabul Et".localized)
                         .font(.system(size: 14, weight: .bold))
                 }
                 .foregroundColor(.white)
@@ -275,7 +275,7 @@ struct ReservationDetailPage: View {
                         .tint(.red)
                 }
 
-                Text("Rezervasyonu İptal Et")
+                Text("Rezervasyonu İptal Et".localized)
                     .font(.system(size: 14, weight: .bold))
             }
             .foregroundColor(.red)
@@ -366,7 +366,7 @@ struct ReservationDetailPage: View {
 
     private func openChat() async {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
-            errorMessage = "Oturum açmış kullanıcı bulunamadı."
+            errorMessage = "Oturum açmış kullanıcı bulunamadı.".localized
             showError = true
             return
         }
@@ -384,7 +384,7 @@ struct ReservationDetailPage: View {
             participantId = reservation.customerId
             participantName = reservation.customerName
         } else {
-            errorMessage = "Bu rezervasyon için mesajlaşma yetkiniz yok."
+            errorMessage = "Bu rezervasyon için mesajlaşma yetkiniz yok.".localized
             showError = true
             return
         }
@@ -411,7 +411,7 @@ struct ReservationDetailPage: View {
         _ status: ReservationStatus
     ) async {
         guard canProviderDecide else {
-            errorMessage = "Bu rezervasyon için karar verme yetkiniz yok."
+            errorMessage = "Bu rezervasyon için karar verme yetkiniz yok.".localized
             showError = true
             return
         }
@@ -435,7 +435,7 @@ struct ReservationDetailPage: View {
 
     private func cancelReservationFromDetail() async {
         guard canCustomerCancel else {
-            errorMessage = "Bu rezervasyonu iptal edemezsiniz."
+            errorMessage = "Bu rezervasyonu iptal edemezsiniz.".localized
             showError = true
             return
         }
@@ -479,7 +479,7 @@ struct ReservationDetailPage: View {
         _ date: Date
     ) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.locale = Locale(identifier: LanguageManager.shared.languageCode == "en" ? "en_US" : "tr_TR")
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)

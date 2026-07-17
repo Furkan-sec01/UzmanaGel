@@ -37,17 +37,17 @@ struct ResetPasswordPage: View {
                     Spacer().frame(height: 28)
 
                     VStack(spacing: 6) {
-                        Text("Şifre Değiştir")
+                        Text("Şifre Değiştir".localized)
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.primary)
 
-                        Text("Mevcut şifreni doğrula ve yeni şifreni belirle.")
+                        Text("Mevcut şifreni doğrula ve yeni şifreni belirle.".localized)
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                     }
 
                     passwordField(
-                        placeholder: "Mevcut şifre",
+                        placeholder: "Mevcut şifre".localized,
                         text: $currentPassword,
                         isVisible: $showCurrent
                     )
@@ -55,13 +55,13 @@ struct ResetPasswordPage: View {
                     Divider().padding(.horizontal, 4)
 
                     passwordField(
-                        placeholder: "Yeni şifre",
+                        placeholder: "Yeni şifre".localized,
                         text: $newPassword,
                         isVisible: $showNew
                     )
 
                     passwordField(
-                        placeholder: "Yeni şifre tekrar",
+                        placeholder: "Yeni şifre tekrar".localized,
                         text: $confirmPassword,
                         isVisible: $showConfirm
                     )
@@ -73,7 +73,7 @@ struct ResetPasswordPage: View {
                             if isLoading {
                                 ProgressView().tint(.white)
                             }
-                            Text("ŞİFREYİ GÜNCELLE")
+                            Text("ŞİFREYİ GÜNCELLE".localized)
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.white)
                         }
@@ -96,7 +96,7 @@ struct ResetPasswordPage: View {
                                 ProgressView()
                             }
 
-                            Text("Mevcut şifreni mi unuttun?")
+                            Text("Mevcut şifreni mi unuttun?".localized)
                                 .font(.system(size: 13, weight: .semibold))
                         }
                         .foregroundColor(Color("PrimaryColor"))
@@ -118,14 +118,14 @@ struct ResetPasswordPage: View {
                 .padding(.vertical, 24)
             }
         }
-        .navigationTitle("Şifre Değiştir")
+        .navigationTitle("Şifre Değiştir".localized)
         .navigationBarTitleDisplayMode(.inline)
         .alert(alertTitle, isPresented: $showAlert) {
-            Button("Tamam") {
+            Button("Tamam".localized) {
                 if isSuccess { dismiss() }
             }
         } message: {
-            Text(alertMessage + (alertSuggestion.isEmpty ? "" : "\n\n💡 Öneri: \(alertSuggestion)"))
+            Text(alertMessage + (alertSuggestion.isEmpty ? "" : "\n\n💡 " + "Öneri: ".localized + alertSuggestion))
         }
     }
 
@@ -224,7 +224,7 @@ struct ResetPasswordPage: View {
 
     private var passwordRequirementsView: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Şifre Gereksinimleri")
+            Text("Şifre Gereksinimleri".localized)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.secondary)
 
@@ -246,7 +246,7 @@ struct ResetPasswordPage: View {
             Image(systemName: met ? "checkmark.circle.fill" : "circle")
                 .font(.system(size: 13))
                 .foregroundColor(met ? .green : .secondary.opacity(0.5))
-            Text(text)
+            Text(text.localized)
                 .font(.system(size: 12))
                 .foregroundColor(met ? Color("Text") : .secondary)
         }
@@ -255,10 +255,10 @@ struct ResetPasswordPage: View {
     private var passwordStrengthBar: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("Şifre Gücü:")
+                Text("Şifre Gücü:".localized)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
-                Text(strengthLabel)
+                Text(strengthLabel.localized)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(strengthColor)
             }
@@ -322,7 +322,7 @@ struct ResetPasswordPage: View {
             Image(systemName: icon)
                 .font(.system(size: 13))
                 .foregroundColor(color)
-            Text(text)
+            Text(text.localized)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(color)
         }
@@ -384,9 +384,9 @@ struct ResetPasswordPage: View {
         guard let user = Auth.auth().currentUser,
               let email = user.email else {
             showError(
-                title: "Oturum Hatası",
-                message: "Aktif bir oturum veya e-posta bulunamadı.",
-                suggestion: "Uygulamadan çıkış yapıp tekrar giriş yapın."
+                title: "Oturum Hatası".localized,
+                message: "Aktif bir oturum veya e-posta bulunamadı.".localized,
+                suggestion: "Uygulamadan çıkış yapıp tekrar giriş yapın.".localized
             )
             return
         }
@@ -406,8 +406,8 @@ struct ResetPasswordPage: View {
         do {
             try await user.updatePassword(to: newPassword)
             showSuccess(
-                title: "Şifre Güncellendi ✓",
-                message: "Şifreniz başarıyla değiştirildi. Bir sonraki girişinizde yeni şifrenizi kullanmanız gerekmektedir."
+                title: "Şifre Güncellendi ✓".localized,
+                message: "Şifreniz başarıyla değiştirildi. Bir sonraki girişinizde yeni şifrenizi kullanmanız gerekmektedir.".localized
             )
         } catch {
             mapFirebaseError(error, phase: .passwordUpdate)
@@ -416,9 +416,9 @@ struct ResetPasswordPage: View {
     private func sendPasswordResetEmail() async {
         guard let email = Auth.auth().currentUser?.email else {
             showError(
-                title: "E-posta Bulunamadı",
-                message: "Şifre sıfırlama bağlantısı göndermek için hesabınıza bağlı bir e-posta bulunamadı.",
-                suggestion: "Profil bilgilerinizden e-posta adresinizi kontrol edin."
+                title: "E-posta Bulunamadı".localized,
+                message: "Şifre sıfırlama bağlantısı göndermek için hesabınıza bağlı bir e-posta bulunamadı.".localized,
+                suggestion: "Profil bilgilerinizden e-posta adresinizi kontrol edin.".localized
             )
             return
         }
@@ -430,8 +430,8 @@ struct ResetPasswordPage: View {
             try await Auth.auth().sendPasswordReset(withEmail: email)
 
             showSuccess(
-                title: "Sıfırlama E-postası Gönderildi",
-                message: "\(email) adresine şifre sıfırlama bağlantısı gönderildi."
+                title: "Sıfırlama E-postası Gönderildi".localized,
+                message: String(format: "%@ adresine şifre sıfırlama bağlantısı gönderildi.".localized, email)
             )
         } catch {
             mapFirebaseError(error, phase: .passwordUpdate)
@@ -451,54 +451,54 @@ struct ResetPasswordPage: View {
         switch code {
         case AuthErrorCode.wrongPassword.rawValue, AuthErrorCode.invalidCredential.rawValue:
             showError(
-                title: "Şifre Doğrulanamadı",
-                message: "Girdiğiniz mevcut şifre hatalı.",
-                suggestion: "Şifrenizi hatırlamıyorsanız \"Şifremi Unuttum\" ile sıfırlayabilirsiniz."
+                title: "Şifre Doğrulanamadı".localized,
+                message: "Girdiğiniz mevcut şifre hatalı.".localized,
+                suggestion: "Şifrenizi hatırlamıyorsanız \"Şifremi Unuttum\" ile sıfırlayabilirsiniz.".localized
             )
         case AuthErrorCode.weakPassword.rawValue:
             showError(
-                title: "Zayıf Şifre",
-                message: "Yeni şifreniz güvenlik standartlarını karşılamıyor.",
-                suggestion: "Büyük/küçük harf, rakam ve özel karakter kombinasyonu kullanın."
+                title: "Zayıf Şifre".localized,
+                message: "Yeni şifreniz güvenlik standartlarını karşılamıyor.".localized,
+                suggestion: "Büyük/küçük harf, rakam ve özel karakter kombinasyonu kullanın.".localized
             )
         case AuthErrorCode.requiresRecentLogin.rawValue:
             showError(
-                title: "Oturum Süresi Doldu",
-                message: "Bu işlem için yakın zamanda giriş yapılmış olması gerekiyor.",
-                suggestion: "Çıkış yapıp tekrar giriş yapın ve hemen şifre değiştirin."
+                title: "Oturum Süresi Doldu".localized,
+                message: "Bu işlem için yakın zamanda giriş yapılmış olması gerekiyor.".localized,
+                suggestion: "Çıkış yapıp tekrar giriş yapın ve hemen şifre değiştirin.".localized
             )
         case AuthErrorCode.networkError.rawValue:
             showError(
-                title: "Bağlantı Hatası",
-                message: "Sunucuyla iletişim kurulamadı.",
-                suggestion: "İnternet bağlantınızı kontrol edip tekrar deneyin."
+                title: "Bağlantı Hatası".localized,
+                message: "Sunucuyla iletişim kurulamadı.".localized,
+                suggestion: "İnternet bağlantınızı kontrol edip tekrar deneyin.".localized
             )
         case AuthErrorCode.tooManyRequests.rawValue:
             showError(
-                title: "Çok Fazla Deneme",
-                message: "Çok fazla başarısız deneme yapıldı.",
-                suggestion: "En az 5 dakika bekleyip tekrar deneyin."
+                title: "Çok Fazla Deneme".localized,
+                message: "Çok fazla başarısız deneme yapıldı.".localized,
+                suggestion: "En az 5 dakika bekleyip tekrar deneyin.".localized
             )
         case AuthErrorCode.userDisabled.rawValue:
             showError(
-                title: "Hesap Askıya Alındı",
-                message: "Hesabınız devre dışı bırakılmış.",
-                suggestion: "destek@uzmanagel.com adresinden bize ulaşın."
+                title: "Hesap Askıya Alındı".localized,
+                message: "Hesabınız devre dışı bırakılmış.".localized,
+                suggestion: "destek@uzmanagel.com adresinden bize ulaşın.".localized
             )
         case AuthErrorCode.internalError.rawValue:
             showError(
-                title: "Sunucu Hatası",
-                message: "Firebase sunucularında beklenmeyen bir hata oluştu.",
-                suggestion: "Birkaç dakika bekleyip tekrar deneyin."
+                title: "Sunucu Hatası".localized,
+                message: "Firebase sunucularında beklenmeyen bir hata oluştu.".localized,
+                suggestion: "Birkaç dakika bekleyip tekrar deneyin.".localized
             )
         default:
             let phaseText = phase == .reauthentication
-                ? "mevcut şifreniz doğrulanırken"
-                : "yeni şifreniz kaydedilirken"
+                ? "mevcut şifreniz doğrulanırken".localized
+                : "yeni şifreniz kaydedilirken".localized
             showError(
-                title: "Beklenmeyen Hata",
-                message: "\(phaseText.capitalized) bir hata oluştu (Kod: \(code)).",
-                suggestion: "Tekrar deneyin. Sorun devam ederse destek ekibimize başvurun."
+                title: "Beklenmeyen Hata".localized,
+                message: String(format: "%@ bir hata oluştu (Kod: %d).".localized, phaseText, code),
+                suggestion: "Tekrar deneyin. Sorun devam ederse destek ekibimize başvurun.".localized
             )
         }
     }

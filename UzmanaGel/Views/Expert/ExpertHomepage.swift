@@ -497,8 +497,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "calendar.badge.exclamationmark",
-                        title: "Gelen Rezervasyonlar",
-                        subtitle: "Bekleyen ve yaklaşan talepleri görüntüle",
+                        title: "Gelen Rezervasyonlar".localized,
+                        subtitle: "Bekleyen ve yaklaşan talepleri görüntüle".localized,
                         color: .orange
                     )
                 }
@@ -703,8 +703,8 @@ private extension ExpertHomepage {
 
                     menuRow(
                         icon: "calendar.badge.exclamationmark",
-                        title: "Gelen Rezervasyonlar",
-                        subtitle: "Müşteri taleplerini görüntüleyin"
+                        title: "Gelen Rezervasyonlar".localized,
+                        subtitle: "Müşteri taleplerini görüntüleyin".localized
                     ) {
                         showMenu = false
                         showReservationsPage = true

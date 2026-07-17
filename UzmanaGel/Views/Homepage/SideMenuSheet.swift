@@ -97,7 +97,7 @@ struct SideMenuSheet: View {
                 Button {
                         onReservationsTap()
                 } label: {
-                    menuRowContent("Rezervasyonlarım", "calendar.badge.clock")
+                    menuRowContent("Rezervasyonlarım".localized, "calendar.badge.clock")
                 }
                     .buttonStyle(.plain)
 

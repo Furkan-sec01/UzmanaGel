@@ -428,19 +428,19 @@ struct UserInfoEditView: View {
             if isPasswordSectionExpanded {
                 VStack(spacing: 14) {
                     passwordInputRow(
-                        placeholder: "Mevcut Şifre",
+                        placeholder: "Mevcut Şifre".localized,
                         text: $currentPassword,
                         isVisible: $showCurrentPassword
                     )
 
                     passwordInputRow(
-                        placeholder: "Yeni Şifre",
+                        placeholder: "Yeni Şifre".localized,
                         text: $newPassword,
                         isVisible: $showNewPassword
                     )
 
                     passwordInputRow(
-                        placeholder: "Yeni Şifre (Tekrar)",
+                        placeholder: "Yeni Şifre (Tekrar)".localized,
                         text: $confirmNewPassword,
                         isVisible: $showConfirmNewPassword
                     )
@@ -456,7 +456,7 @@ struct UserInfoEditView: View {
                             if isUpdatingPassword {
                                 ProgressView().tint(.white)
                             }
-                            Text("ŞİFREYİ GÜNCELLE")
+                            Text("ŞİFREYİ GÜNCELLE".localized)
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(.white)
                         }
@@ -482,7 +482,7 @@ struct UserInfoEditView: View {
     private var passwordStrengthIndicator: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Şifre Gücü: \(passwordStrengthLabel)")
+                Text("Şifre Gücü: ".localized + passwordStrengthLabel.localized)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(passwordStrengthColor)
 
@@ -521,7 +521,7 @@ struct UserInfoEditView: View {
             Image(systemName: met ? "checkmark.circle.fill" : "circle")
                 .foregroundColor(met ? .green : .secondary)
                 .font(.system(size: 13))
-            Text(text)
+            Text(text.localized)
                 .font(.system(size: 12))
                 .foregroundColor(met ? Color("Text") : .secondary)
         }
@@ -1137,10 +1137,10 @@ struct UserInfoEditView: View {
             withAnimation {
                 isPasswordSectionExpanded = false
             }
-            showSuccessMessage("Şifreniz başarıyla güncellendi.")
+            showSuccessMessage("Şifreniz başarıyla güncellendi.".localized)
         } catch {
-            alertTitle = "Şifre Değiştirilemedi"
-            alertMessage = "Güvenlik gereği yeniden oturum açmanız gerekebilir: \(error.localizedDescription)"
+            alertTitle = "Şifre Değiştirilemedi".localized
+            alertMessage = "Güvenlik gereği yeniden oturum açmanız gerekebilir: ".localized + error.localizedDescription
             showAlert = true
         }
     }

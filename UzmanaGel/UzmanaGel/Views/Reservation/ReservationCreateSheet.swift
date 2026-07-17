@@ -24,9 +24,9 @@ struct ReservationCreateSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Randevu Bilgileri") {
+                Section("Randevu Bilgileri".localized) {
                     DatePicker(
-                        "Randevu Günü",
+                        "Randevu Günü".localized,
                         selection: Binding(
                             get: {
                                 viewModel.reservationDate
@@ -47,14 +47,14 @@ struct ReservationCreateSheet: View {
                     if viewModel.isLoadingBookedSlots {
                         HStack {
                             ProgressView()
-                            Text("Dolu saatler kontrol ediliyor...")
+                            Text("Dolu saatler kontrol ediliyor...".localized)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
 
                     Picker(
-                        "Randevu Saati",
+                        "Randevu Saati".localized,
                         selection: Binding(
                             get: {
                                 viewModel.selectedTimeString
@@ -65,7 +65,7 @@ struct ReservationCreateSheet: View {
                         )
                     ) {
                         ForEach(viewModel.availableTimeSlots, id: \.self) { time in
-                            Text(viewModel.isBooked(time) ? "\(time) - Dolu" : time)
+                            Text(viewModel.isBooked(time) ? "\(time) - \("Dolu".localized)" : time)
                                 .tag(time)
                                 .disabled(viewModel.isBooked(time))
                         }
@@ -73,7 +73,7 @@ struct ReservationCreateSheet: View {
                     .pickerStyle(.menu)
 
                     TextField(
-                        "Not ekle",
+                        "Not ekle".localized,
                         text: $viewModel.note,
                         axis: .vertical
                     )
@@ -95,7 +95,7 @@ struct ReservationCreateSheet: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("Rezervasyon Talebi Oluştur")
+                            Text("Rezervasyon Talebi Oluştur".localized)
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -106,11 +106,11 @@ struct ReservationCreateSheet: View {
                     )
                 }
             }
-            .navigationTitle("Rezervasyon")
+            .navigationTitle("Rezervasyon".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         dismiss()
                     }
                 }
@@ -118,17 +118,17 @@ struct ReservationCreateSheet: View {
             .task {
                 await viewModel.loadBookedSlots(providerId: providerId)
             }
-            .alert("Hata", isPresented: $viewModel.showError) {
-                Button("Tamam", role: .cancel) { }
+            .alert("Hata".localized, isPresented: $viewModel.showError) {
+                Button("Tamam".localized, role: .cancel) { }
             } message: {
                 Text(viewModel.errorMessage)
             }
-            .alert("Başarılı", isPresented: $viewModel.isSuccess) {
-                Button("Tamam") {
+            .alert("Başarılı".localized, isPresented: $viewModel.isSuccess) {
+                Button("Tamam".localized) {
                     dismiss()
                 }
             } message: {
-                Text("Rezervasyon talebiniz oluşturuldu.")
+                Text("Rezervasyon talebiniz oluşturuldu.".localized)
             }
         }
     }
