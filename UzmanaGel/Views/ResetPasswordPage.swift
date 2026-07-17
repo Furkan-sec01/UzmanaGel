@@ -28,94 +28,36 @@ struct ResetPasswordPage: View {
     @State private var showAlert = false
     @State private var isSuccess = false
 
+    private let accentYellow = Color("TertiaryColor")
+    private let bgColor      = Color("BackgroundColor")
+    private let primaryColor = Color("PrimaryColor")
+
+    private var fullAlertMessageText: String {
+        if alertSuggestion.isEmpty {
+            return alertMessage
+        } else {
+            return "\(alertMessage)\n\n💡 \("Öneri: ".localized)\(alertSuggestion)"
+        }
+    }
+
     var body: some View {
         ZStack {
-            Color(.systemGroupedBackground).ignoresSafeArea()
+            bgColor.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 18) {
-                    Spacer().frame(height: 28)
-
-                    VStack(spacing: 6) {
-                        Text("Şifre Değiştir".localized)
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.primary)
-
-                        Text("Mevcut şifreni doğrula ve yeni şifreni belirle.".localized)
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                    }
-
-                    passwordField(
-                        placeholder: "Mevcut şifre".localized,
-                        text: $currentPassword,
-                        isVisible: $showCurrent
-                    )
-
-                    Divider().padding(.horizontal, 4)
-
-                    passwordField(
-                        placeholder: "Yeni şifre".localized,
-                        text: $newPassword,
-                        isVisible: $showNew
-                    )
-
-                    passwordField(
-                        placeholder: "Yeni şifre tekrar".localized,
-                        text: $confirmPassword,
-                        isVisible: $showConfirm
-                    )
-
-                    Button {
-                        Task { await changePassword() }
-                    } label: {
-                        HStack(spacing: 8) {
-                            if isLoading {
-                                ProgressView().tint(.white)
-                            }
-                            Text("ŞİFREYİ GÜNCELLE".localized)
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .background(Color("PrimaryColor"))
-                        .cornerRadius(14)
-                        .shadow(radius: 6, y: 3)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!isValid || isLoading)
-                    .opacity(isValid && !isLoading ? 1 : 0.6)
-                    .padding(.top, 6)
-                    
-                    Button {
-                        Task { await sendPasswordResetEmail() }
-                    } label: {
-                        HStack(spacing: 6) {
-                            if isSendingResetEmail {
-                                ProgressView()
-                            }
-
-                            Text("Mevcut şifreni mi unuttun?".localized)
-                                .font(.system(size: 13, weight: .semibold))
-                        }
-                        .foregroundColor(Color("PrimaryColor"))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isSendingResetEmail)
-
+                VStack(spacing: 20) {
+                    Spacer().frame(height: 16)
+                    headerCard
+                    passwordInputsCard
+                    submitButtonsGroup
                     if !newPassword.isEmpty {
                         passwordRequirementsView
                     }
-
                     validationMessages
-
                     Spacer()
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 24)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
             }
         }
         .navigationTitle("Şifre Değiştir".localized)
@@ -125,8 +67,127 @@ struct ResetPasswordPage: View {
                 if isSuccess { dismiss() }
             }
         } message: {
-            Text(alertMessage + (alertSuggestion.isEmpty ? "" : "\n\n💡 " + "Öneri: ".localized + alertSuggestion))
+            Text(fullAlertMessageText)
         }
+    }
+
+    // MARK: - Header Card
+    private var headerCard: some View {
+        VStack(spacing: 6) {
+            Text("Şifre Değiştir".localized)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(primaryColor)
+
+            Text("Mevcut şifreni doğrula ve yeni şifreni belirle.".localized)
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.bottom, 6)
+    }
+
+    // MARK: - Password Inputs Card
+    private var passwordInputsCard: some View {
+        VStack(spacing: 16) {
+            passwordField(
+                placeholder: "Mevcut şifre".localized,
+                text: $currentPassword,
+                isVisible: $showCurrent,
+                leftIcon: "key.horizontal.fill",
+                leftIconColor: .orange
+            )
+
+            Divider().background(Color.gray.opacity(0.15))
+
+            passwordField(
+                placeholder: "Yeni şifre".localized,
+                text: $newPassword,
+                isVisible: $showNew,
+                leftIcon: "lock.shield.fill",
+                leftIconColor: .teal
+            )
+
+            passwordField(
+                placeholder: "Yeni şifre tekrar".localized,
+                text: $confirmPassword,
+                isVisible: $showConfirm,
+                leftIcon: "checkmark.shield.fill",
+                leftIconColor: .indigo
+            )
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.95))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(accentYellow.opacity(0.35), lineWidth: 1)
+        )
+        .shadow(color: accentYellow.opacity(0.1), radius: 8, x: 0, y: 3)
+    }
+
+    // MARK: - Submit Buttons Group
+    private var submitButtonsGroup: some View {
+        VStack(spacing: 14) {
+            Button {
+                Task { await changePassword() }
+            } label: {
+                updateButtonLabel
+            }
+            .buttonStyle(.plain)
+            .disabled(!isValid || isLoading)
+
+            Button {
+                Task { await sendPasswordResetEmail() }
+            } label: {
+                HStack(spacing: 8) {
+                    if isSendingResetEmail {
+                        ProgressView().scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "envelope.badge.fill")
+                            .foregroundColor(.blue)
+                    }
+                    Text("Mevcut şifreni mi unuttun?".localized)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(primaryColor)
+                }
+                .padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+            .disabled(isSendingResetEmail)
+        }
+    }
+
+    private var updateButtonLabel: some View {
+        HStack(spacing: 8) {
+            if isLoading {
+                ProgressView().tint(primaryColor)
+            } else {
+                Image(systemName: "lock.rotation")
+                    .font(.system(size: 16, weight: .bold))
+            }
+            Text("ŞİFREYİ GÜNCELLE".localized)
+                .font(.system(size: 15, weight: .bold))
+        }
+        .foregroundColor((!isValid || isLoading) ? .secondary : primaryColor)
+        .frame(maxWidth: .infinity)
+        .frame(height: 52)
+        .background {
+            if !isValid || isLoading {
+                Color.gray.opacity(0.15)
+            } else {
+                LinearGradient(
+                    colors: [accentYellow, accentYellow.opacity(0.85)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke((!isValid || isLoading) ? Color.clear : primaryColor.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: (!isValid || isLoading) ? .clear : accentYellow.opacity(0.4), radius: 10, x: 0, y: 5)
     }
 
     // MARK: - Validation Messages
@@ -186,11 +247,17 @@ struct ResetPasswordPage: View {
     private func passwordField(
         placeholder: String,
         text: Binding<String>,
-        isVisible: Binding<Bool>
+        isVisible: Binding<Bool>,
+        leftIcon: String,
+        leftIconColor: Color
     ) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "lock")
-                .foregroundColor(.secondary)
+        HStack(spacing: 12) {
+            Image(systemName: leftIcon)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(leftIconColor)
+                .frame(width: 32, height: 32)
+                .background(leftIconColor.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             Group {
                 if isVisible.wrappedValue {
@@ -199,34 +266,43 @@ struct ResetPasswordPage: View {
                     SecureField(placeholder, text: text)
                 }
             }
+            .font(.system(size: 15, weight: .medium))
+            .foregroundColor(primaryColor)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
 
             Button {
                 isVisible.wrappedValue.toggle()
             } label: {
-                Image(systemName: isVisible.wrappedValue ? "eye.slash" : "eye")
-                    .foregroundColor(.secondary)
+                Image(systemName: isVisible.wrappedValue ? "eye.slash.fill" : "eye.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(isVisible.wrappedValue ? .blue : .secondary.opacity(0.7))
+                    .padding(4)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 12)
         .frame(height: 52)
-        .background(Color(.secondarySystemBackground))
+        .background(bgColor)
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(leftIconColor.opacity(0.3), lineWidth: 1)
         )
-        .cornerRadius(14)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Password Requirements
 
     private var passwordRequirementsView: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Şifre Gereksinimleri".localized)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "shield.checkered")
+                    .foregroundColor(.teal)
+                    .font(.system(size: 14, weight: .bold))
+                Text("Şifre Gereksinimleri".localized)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(primaryColor)
+            }
 
             requirementRow("En az 6 karakter", met: newPassword.count >= 6)
             requirementRow("En az 1 büyük harf (A-Z)", met: newPassword.range(of: "[A-Z]", options: .regularExpression) != nil)
@@ -236,19 +312,24 @@ struct ResetPasswordPage: View {
 
             passwordStrengthBar
         }
-        .padding(12)
-        .background(Color(.secondarySystemBackground).opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(16)
+        .background(Color.white.opacity(0.95))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(accentYellow.opacity(0.25), lineWidth: 1)
+        )
+        .shadow(color: accentYellow.opacity(0.08), radius: 6, x: 0, y: 2)
     }
 
     private func requirementRow(_ text: String, met: Bool) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             Image(systemName: met ? "checkmark.circle.fill" : "circle")
                 .font(.system(size: 13))
-                .foregroundColor(met ? .green : .secondary.opacity(0.5))
+                .foregroundColor(met ? .green : .secondary.opacity(0.4))
             Text(text.localized)
-                .font(.system(size: 12))
-                .foregroundColor(met ? Color("Text") : .secondary)
+                .font(.system(size: 12, weight: met ? .semibold : .regular))
+                .foregroundColor(met ? primaryColor : .secondary)
         }
     }
 
@@ -258,6 +339,7 @@ struct ResetPasswordPage: View {
                 Text("Şifre Gücü:".localized)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
+                Spacer()
                 Text(strengthLabel.localized)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(strengthColor)
@@ -266,7 +348,7 @@ struct ResetPasswordPage: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(Color.gray.opacity(0.15))
                         .frame(height: 6)
 
                     RoundedRectangle(cornerRadius: 3)
@@ -277,7 +359,7 @@ struct ResetPasswordPage: View {
             }
             .frame(height: 6)
         }
-        .padding(.top, 4)
+        .padding(.top, 6)
     }
 
     private var strengthScore: Int {
@@ -306,7 +388,7 @@ struct ResetPasswordPage: View {
         switch strengthScore {
         case 0...1: return .red
         case 2: return .orange
-        case 3: return .yellow
+        case 3: return accentYellow
         case 4: return .mint
         case 5: return .green
         default: return .green

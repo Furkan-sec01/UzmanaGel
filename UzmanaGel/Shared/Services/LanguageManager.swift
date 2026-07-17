@@ -400,7 +400,37 @@ class LanguageManager: ObservableObject {
         "Otomatik Konum": "Automatic Location",
         "Şehir ve İlçe Seçin": "Select City & District",
         "Şehir veya ilçe ara…": "Search city or district...",
-        "Konum Seçin": "Select Location"
+        "Konum Seçin": "Select Location",
+        
+        // Service Detail Page & Working Hours
+        "Deneyim": "Experience",
+        "Yıl": "Years",
+        "İş Tamamlandı": "Jobs Completed",
+        "Hemen": "Instant",
+        "Yanıt Süresi": "Response Time",
+        "Bu hizmet sağlayıcı henüz detaylı bir açıklama girmemiş.": "This service provider hasn't entered a detailed description yet.",
+        "Hizmetler & Fiyatlar": "Services & Pricing",
+        "Portföy / Galeri": "Portfolio / Gallery",
+        "Henüz portföy görseli eklenmemiş.": "No portfolio images added yet.",
+        "Çalışma Saatleri": "Working Hours",
+        "Çalışma saatleri henüz girilmemiş.": "Working hours have not been entered yet.",
+        "Kapalı": "Closed",
+        "Pazartesi": "Monday",
+        "Salı": "Tuesday",
+        "Çarşamba": "Wednesday",
+        "Perşembe": "Thursday",
+        "Cuma": "Friday",
+        "Cumartesi": "Saturday",
+        "Pazar": "Sunday",
+        "Konum": "Location",
+        "Yol Tarifi Al": "Get Directions",
+        "Sohbet Açılıyor...": "Opening Chat...",
+        "Uzman bilgisi bulunamadı.": "Expert information not found.",
+        "Yorumları Gör": "See Reviews",
+        "yarım saat": "half hour",
+        "saat": "hour",
+        "günlük": "daily",
+        "su tesisatı bakım": "Plumbing maintenance"
     ]
 }
 

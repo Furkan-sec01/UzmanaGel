@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Combine
 
 @MainActor
@@ -9,7 +10,7 @@ class AddressListViewModel: ObservableObject {
     
     private let addressService: AddressService
     
-    init(addressService: AddressService = MockAddressService()) {
+    init(addressService: AddressService = FirestoreAddressService()) {
         self.addressService = addressService
     }
     
@@ -27,10 +28,12 @@ class AddressListViewModel: ObservableObject {
     func deleteAddress(at indexSet: IndexSet) async {
         guard let index = indexSet.first else { return }
         let targetId = addresses[index].id
-        
         do {
             try await addressService.deleteAddress(id: targetId)
-            addresses.remove(at: index)
+            // Only remove from UI after Firebase confirms deletion
+            withAnimation {
+                addresses.remove(at: index)
+            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -40,8 +43,16 @@ class AddressListViewModel: ObservableObject {
         isLoading = true
         do {
             try await addressService.setDefaultAddress(id: id)
-            // Reload local values
-            self.addresses = try await addressService.fetchAddresses()
+            // Update in-memory directly instead of a second network fetch
+            withAnimation {
+                addresses = addresses.map {
+                    var a = $0
+                    a.isDefault = (a.id == id)
+                    return a
+                }
+                // Re-sort: default first
+                addresses.sort { $0.isDefault && !$1.isDefault }
+            }
         } catch {
             self.errorMessage = error.localizedDescription
         }

@@ -62,7 +62,7 @@ final class ServiceDetailViewModel: ObservableObject {
             "5": "Cuma", "6": "Cumartesi", "7": "Pazar"
         ]
         let days = expertProfile?.workingDays ?? []
-        return order.filter { days.contains($0) }.map { map[$0] ?? $0 }
+        return order.filter { days.contains($0) }.map { (map[$0] ?? $0).localized }
     }
 
     var workingHoursRangeText: String? {
