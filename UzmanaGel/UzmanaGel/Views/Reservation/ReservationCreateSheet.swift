@@ -11,6 +11,7 @@ struct ReservationCreateSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ReservationViewModel()
+    @State private var addressText = ""
 
     let serviceId: String
     let serviceTitle: String
@@ -101,6 +102,19 @@ struct ReservationCreateSheet: View {
                         }
                     }
                     .pickerStyle(.menu)
+
+                    Section("Adres Bilgisi".localized) {
+                        TextField(
+                            "Adresinizi veya kısa konum notunuzu yazın".localized,
+                            text: $addressText,
+                            axis: .vertical
+                        )
+                        .lineLimit(2...5)
+
+                        Text("Bu alan şimdilik yalnızca rezervasyon ekranı hazırlığı içindir. Sonraki adımda rezervasyon verisine bağlanacak.".localized)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
 
                     TextField(
                         "Not ekle".localized,
