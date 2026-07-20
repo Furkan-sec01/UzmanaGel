@@ -1,1 +1,5 @@
 .DS_Store
+
+# Xcode personal user data
+**/xcuserdata/
+*.xcuserstate
