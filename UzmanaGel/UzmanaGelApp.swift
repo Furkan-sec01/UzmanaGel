@@ -1,15 +1,20 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseAuth
+import FirebaseMessaging
 import UserNotifications
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
 
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         FirebaseApp.configure()
+
+        Messaging.messaging().delegate = self
+        UNUserNotificationCenter.current().delegate = self
+
         application.registerForRemoteNotifications()
         return true
     }
@@ -20,6 +25,21 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) {
         // Set APNs token for Firebase Phone Auth
         Auth.auth().setAPNSToken(deviceToken, type: .sandbox)
+
+        // Connect APNs token to Firebase Messaging
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func messaging(
+        _ messaging: Messaging,
+        didReceiveRegistrationToken fcmToken: String?
+    ) {
+        guard let fcmToken else {
+            print("FCM token alınamadı.")
+            return
+        }
+
+        print("FCM token:", fcmToken)
     }
 
     func application(
