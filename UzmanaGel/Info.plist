@@ -14,6 +14,14 @@
 				<string>com.googleusercontent.apps.199378347598-sscpf4r0mbbjjp0rd4221p1qhrk94rfm</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>app-1-199378347598-ios-df023fb7abce15a1cc451f</string>
+			</array>
+		</dict>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
