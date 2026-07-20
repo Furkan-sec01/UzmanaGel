@@ -50,7 +50,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
             return
         }
 
-        print("FCM token:", fcmToken)
         saveFCMToken(fcmToken)
     }
 
@@ -71,39 +70,77 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
     ) async {
         let userInfo = response.notification.request.content.userInfo
 
-        print("Notification tapped:", userInfo)
-        print("Notification action:", response.actionIdentifier)
-
         handleNotificationTap(userInfo)
     }
 
     private func handleNotificationTap(
         _ userInfo: [AnyHashable: Any]
     ) {
-        guard let type = userInfo["type"] as? String else {
+        let data = normalizedNotificationData(userInfo)
+
+        guard let rawType = data["type"] as? String else {
             print("Notification type bulunamadı.")
             return
         }
 
+        let type = rawType.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
         switch type {
         case "reservation":
-            guard let reservationId = userInfo["reservationId"] as? String else {
+            guard let rawReservationId = data["reservationId"] as? String else {
                 print("Reservation ID bulunamadı.")
                 return
             }
 
-            print("Reservation notification:", reservationId)
+            let reservationId = rawReservationId.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+            guard !reservationId.isEmpty else {
+                print("Reservation ID boş.")
+                return
+            }
+
+            Task { @MainActor in
+                NotificationRouter.shared.openReservation(id: reservationId)
+            }
 
         case "message":
-            guard let conversationId = userInfo["conversationId"] as? String else {
+            guard let rawConversationId = data["conversationId"] as? String else {
                 print("Conversation ID bulunamadı.")
                 return
             }
 
-            print("Message notification:", conversationId)
+            let conversationId = rawConversationId.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+            guard !conversationId.isEmpty else {
+                print("Conversation ID boş.")
+                return
+            }
+
 
         default:
             print("Unknown notification type:", type)
+        }
+    }
+
+    private func normalizedNotificationData(
+        _ userInfo: [AnyHashable: Any]
+    ) -> [String: Any] {
+        userInfo.reduce(into: [String: Any]()) { result, item in
+            guard let rawKey = item.key as? String else {
+                return
+            }
+
+            let normalizedKey = rawKey.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+            result[normalizedKey] = item.value
         }
     }
 
