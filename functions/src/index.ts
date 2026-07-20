@@ -1,4 +1,5 @@
 import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -122,3 +123,63 @@ export const rejectHelpRequest = onCall(async (request) => {
     message: "Talep reddedildi.",
   };
 });
+
+export const sendMessageNotification = onDocumentCreated(
+  "conversations/{conversationId}/messages/{messageId}",
+  async (event) => {
+    const messageData = event.data?.data();
+
+    if (!messageData) {
+      console.log("Mesaj verisi bulunamadı.");
+      return;
+    }
+
+    const rawReceiverId = messageData.receiverId;
+    const receiverId =
+      typeof rawReceiverId === "string" ?
+        rawReceiverId.trim() :
+        "";
+
+    const conversationId =
+      String(event.params.conversationId ?? "").trim();
+
+    if (!receiverId || !conversationId) {
+      console.log("Bildirim için gerekli alanlar eksik.");
+      return;
+    }
+
+    const receiverSnapshot = await db
+      .collection("users")
+      .doc(receiverId)
+      .get();
+
+    const fcmToken = receiverSnapshot.data()?.fcmToken;
+
+    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
+      console.log("Alıcı kullanıcının FCM tokenı bulunamadı.");
+      return;
+    }
+
+    const messageId = await admin.messaging().send({
+      token: fcmToken,
+      notification: {
+        title: "Yeni mesaj",
+        body: "Yeni bir mesajınız var.",
+      },
+      data: {
+        type: "message",
+        conversationId: conversationId,
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+          },
+        },
+      },
+    });
+
+    console.log("Mesaj bildirimi gönderildi:", messageId);
+  }
+);
+
