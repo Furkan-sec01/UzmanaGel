@@ -2,6 +2,7 @@ import SwiftUI
 import FirebaseCore
 import FirebaseAuth
 import FirebaseMessaging
+import FirebaseFirestore
 import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
@@ -14,6 +15,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
 
         Messaging.messaging().delegate = self
         UNUserNotificationCenter.current().delegate = self
+
+        // Save a pending token after login
+        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard user != nil,
+                  let pendingToken = UserDefaults.standard.string(forKey: "pendingFCMToken") else {
+                return
+            }
+
+            self?.saveFCMToken(pendingToken)
+        }
 
         application.registerForRemoteNotifications()
         return true
@@ -40,6 +51,34 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         }
 
         print("FCM token:", fcmToken)
+        saveFCMToken(fcmToken)
+    }
+
+    private func saveFCMToken(_ token: String) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            UserDefaults.standard.set(token, forKey: "pendingFCMToken")
+            print("FCM token kullanıcı girişini bekliyor.")
+            return
+        }
+
+        let tokenData: [String: Any] = [
+            "fcmToken": token,
+            "fcmTokenUpdatedAt": FieldValue.serverTimestamp()
+        ]
+
+        Firestore.firestore()
+            .collection("users")
+            .document(uid)
+            .setData(tokenData, merge: true) { error in
+                if let error {
+                    print("FCM token kaydedilemedi:", error.localizedDescription)
+                    UserDefaults.standard.set(token, forKey: "pendingFCMToken")
+                    return
+                }
+
+                UserDefaults.standard.removeObject(forKey: "pendingFCMToken")
+                print("FCM token Firestore'a kaydedildi.")
+            }
     }
 
     func application(
