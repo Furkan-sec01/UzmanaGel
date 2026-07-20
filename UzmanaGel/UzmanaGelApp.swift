@@ -73,6 +73,38 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
 
         print("Notification tapped:", userInfo)
         print("Notification action:", response.actionIdentifier)
+
+        handleNotificationTap(userInfo)
+    }
+
+    private func handleNotificationTap(
+        _ userInfo: [AnyHashable: Any]
+    ) {
+        guard let type = userInfo["type"] as? String else {
+            print("Notification type bulunamadı.")
+            return
+        }
+
+        switch type {
+        case "reservation":
+            guard let reservationId = userInfo["reservationId"] as? String else {
+                print("Reservation ID bulunamadı.")
+                return
+            }
+
+            print("Reservation notification:", reservationId)
+
+        case "message":
+            guard let conversationId = userInfo["conversationId"] as? String else {
+                print("Conversation ID bulunamadı.")
+                return
+            }
+
+            print("Message notification:", conversationId)
+
+        default:
+            print("Unknown notification type:", type)
+        }
     }
 
     private func saveFCMToken(_ token: String) {
