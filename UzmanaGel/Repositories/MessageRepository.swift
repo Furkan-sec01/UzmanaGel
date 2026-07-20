@@ -12,6 +12,17 @@ final class MessageRepository {
 
     private let db = Firestore.firestore()
 
+    enum MessageRepositoryError: LocalizedError {
+        case invalidConversation
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidConversation:
+                return "Konuşma bulunamadı veya erişim izniniz yok."
+            }
+        }
+    }
+
     // MARK: - Conversation ID
 
     func makeConversationId(
@@ -91,6 +102,46 @@ final class MessageRepository {
             lastMessageDate: Date(),
             unreadCount: 0
         )
+    }
+
+    // MARK: - Fetch Conversation
+
+    func fetchConversation(
+        byId conversationId: String,
+        currentUserId: String
+    ) async throws -> Conversation {
+
+        let trimmedConversationId = conversationId.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        let trimmedCurrentUserId = currentUserId.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmedConversationId.isEmpty,
+              !trimmedCurrentUserId.isEmpty else {
+            throw MessageRepositoryError.invalidConversation
+        }
+
+        let document = try await db
+            .collection("conversations")
+            .document(trimmedConversationId)
+            .getDocument()
+
+        guard
+            let participantIds =
+                document.data()?["participantIds"] as? [String],
+            participantIds.contains(trimmedCurrentUserId),
+            let conversation = mapConversation(
+                document: document,
+                currentUserId: trimmedCurrentUserId
+            )
+        else {
+            throw MessageRepositoryError.invalidConversation
+        }
+
+        return conversation
     }
 
     // MARK: - Listen Conversations
@@ -270,11 +321,13 @@ final class MessageRepository {
 
     /// Convert FireStore Data to Swift Model
     private func mapConversation(
-        document: QueryDocumentSnapshot,
+        document: DocumentSnapshot,
         currentUserId: String
     ) -> Conversation? {
 
-        let data = document.data()
+        guard let data = document.data() else {
+            return nil
+        }
 
         guard
             let participantIds = data["participantIds"] as? [String],

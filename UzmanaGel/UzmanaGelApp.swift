@@ -1,15 +1,31 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseAuth
+import FirebaseMessaging
+import FirebaseFirestore
 import UserNotifications
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
 
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         FirebaseApp.configure()
+
+        Messaging.messaging().delegate = self
+        UNUserNotificationCenter.current().delegate = self
+
+        // Save a pending token after login
+        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard user != nil,
+                  let pendingToken = UserDefaults.standard.string(forKey: "pendingFCMToken") else {
+                return
+            }
+
+            self?.saveFCMToken(pendingToken)
+        }
+
         application.registerForRemoteNotifications()
         return true
     }
@@ -20,6 +36,146 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) {
         // Set APNs token for Firebase Phone Auth
         Auth.auth().setAPNSToken(deviceToken, type: .sandbox)
+
+        // Connect APNs token to Firebase Messaging
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func messaging(
+        _ messaging: Messaging,
+        didReceiveRegistrationToken fcmToken: String?
+    ) {
+        guard let fcmToken else {
+            print("FCM token alınamadı.")
+            return
+        }
+
+        saveFCMToken(fcmToken)
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        let userInfo = notification.request.content.userInfo
+
+        print("Foreground notification received:", userInfo)
+
+        return [.banner, .list, .sound]
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        let userInfo = response.notification.request.content.userInfo
+
+        handleNotificationTap(userInfo)
+    }
+
+    private func handleNotificationTap(
+        _ userInfo: [AnyHashable: Any]
+    ) {
+        let data = normalizedNotificationData(userInfo)
+        print("Notification normalized keys:", data.keys.sorted())
+
+        guard let rawType = data["type"] as? String else {
+            print("Notification type bulunamadı.")
+            return
+        }
+
+        let type = rawType.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        switch type {
+        case "reservation":
+            guard let rawReservationId = data["reservationId"] as? String else {
+                print("Reservation ID bulunamadı.")
+                return
+            }
+
+            let reservationId = rawReservationId.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+            guard !reservationId.isEmpty else {
+                print("Reservation ID boş.")
+                return
+            }
+
+            Task { @MainActor in
+                NotificationRouter.shared.openReservation(id: reservationId)
+            }
+
+        case "message":
+            guard let rawConversationId = data["conversationId"] as? String else {
+                print("Conversation ID bulunamadı.")
+                return
+            }
+
+            let conversationId = rawConversationId.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+            guard !conversationId.isEmpty else {
+                print("Conversation ID boş.")
+                return
+            }
+
+            print("Message notification conversation ID:", conversationId)
+
+            Task { @MainActor in
+                NotificationRouter.shared.openConversation(id: conversationId)
+            }
+
+
+        default:
+            print("Unknown notification type:", type)
+        }
+    }
+
+    private func normalizedNotificationData(
+        _ userInfo: [AnyHashable: Any]
+    ) -> [String: Any] {
+        userInfo.reduce(into: [String: Any]()) { result, item in
+            guard let rawKey = item.key as? String else {
+                return
+            }
+
+            let normalizedKey = rawKey.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+            result[normalizedKey] = item.value
+        }
+    }
+
+    private func saveFCMToken(_ token: String) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            UserDefaults.standard.set(token, forKey: "pendingFCMToken")
+            print("FCM token kullanıcı girişini bekliyor.")
+            return
+        }
+
+        let tokenData: [String: Any] = [
+            "fcmToken": token,
+            "fcmTokenUpdatedAt": FieldValue.serverTimestamp()
+        ]
+
+        Firestore.firestore()
+            .collection("users")
+            .document(uid)
+            .setData(tokenData, merge: true) { error in
+                if let error {
+                    print("FCM token kaydedilemedi:", error.localizedDescription)
+                    UserDefaults.standard.set(token, forKey: "pendingFCMToken")
+                    return
+                }
+
+                UserDefaults.standard.removeObject(forKey: "pendingFCMToken")
+                print("FCM token Firestore'a kaydedildi.")
+            }
     }
 
     func application(

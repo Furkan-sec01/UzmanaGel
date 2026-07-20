@@ -137,6 +137,38 @@ final class ReservationRepository {
         return documentRef.documentID
     }
     
+    // Fetch one reservation by ID
+    func fetchReservation(byId reservationId: String) async throws -> Reservation {
+        guard let currentUser = Auth.auth().currentUser else {
+            throw ReservationRepositoryError.userNotFound
+        }
+        
+
+        let trimmedReservationId = reservationId.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmedReservationId.isEmpty else {
+            throw ReservationRepositoryError.invalidReservation
+        }
+
+        let document = try await db
+            .collection(collectionName)
+            .document(trimmedReservationId)
+            .getDocument()
+
+        guard let reservation = mapReservation(from: document) else {
+            throw ReservationRepositoryError.invalidReservation
+        }
+
+        guard reservation.customerId == currentUser.uid ||
+              reservation.providerId == currentUser.uid else {
+            throw ReservationRepositoryError.invalidReservation
+        }
+
+        return reservation
+    }
+
     func fetchBookedTimeStrings(
         providerId: String,
         date: Date
@@ -392,9 +424,11 @@ final class ReservationRepository {
 
     ///Firestore'dan gelen veriyi Swift modeline cevirir
     private func mapReservation(
-        from document: QueryDocumentSnapshot
+        from document: DocumentSnapshot
     ) -> Reservation? {
-        let data = document.data()
+        guard let data = document.data() else {
+            return nil
+        }
 
         guard
             let serviceId = data["serviceId"] as? String,
