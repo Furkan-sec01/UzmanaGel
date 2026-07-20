@@ -77,6 +77,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         _ userInfo: [AnyHashable: Any]
     ) {
         let data = normalizedNotificationData(userInfo)
+        print("Notification normalized keys:", data.keys.sorted())
 
         guard let rawType = data["type"] as? String else {
             print("Notification type bulunamadı.")
@@ -120,6 +121,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
             guard !conversationId.isEmpty else {
                 print("Conversation ID boş.")
                 return
+            }
+
+            print("Message notification conversation ID:", conversationId)
+
+            Task { @MainActor in
+                NotificationRouter.shared.openConversation(id: conversationId)
             }
 
 
