@@ -65,6 +65,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         return [.banner, .list, .sound]
     }
 
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        let userInfo = response.notification.request.content.userInfo
+
+        print("Notification tapped:", userInfo)
+        print("Notification action:", response.actionIdentifier)
+    }
+
     private func saveFCMToken(_ token: String) {
         guard let uid = Auth.auth().currentUser?.uid else {
             UserDefaults.standard.set(token, forKey: "pendingFCMToken")
