@@ -183,3 +183,82 @@ export const sendMessageNotification = onDocumentCreated(
   }
 );
 
+export const sendReservationCreatedNotification = onDocumentCreated(
+  "reservations/{reservationId}",
+  async (event) => {
+    const reservationData = event.data?.data();
+
+    if (!reservationData) {
+      console.log("Rezervasyon verisi bulunamadı.");
+      return;
+    }
+
+    const rawProviderId = reservationData.providerId;
+    const providerId =
+      typeof rawProviderId === "string" ?
+        rawProviderId.trim() :
+        "";
+
+    const reservationId =
+      String(event.params.reservationId ?? "").trim();
+
+    if (!providerId || !reservationId) {
+      console.log("Rezervasyon bildirimi alanları eksik.");
+      return;
+    }
+
+    const rawCustomerName = reservationData.customerName;
+    const customerName =
+      typeof rawCustomerName === "string" ?
+        rawCustomerName.trim() :
+        "";
+
+    const rawServiceTitle = reservationData.serviceTitle;
+    const serviceTitle =
+      typeof rawServiceTitle === "string" ?
+        rawServiceTitle.trim() :
+        "";
+
+    const displayCustomerName = customerName || "Bir müşteri";
+    const displayServiceTitle = serviceTitle || "bir hizmet";
+
+    const providerSnapshot = await db
+      .collection("users")
+      .doc(providerId)
+      .get();
+
+    const fcmToken = providerSnapshot.data()?.fcmToken;
+
+    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
+      console.log("Uzmanın FCM tokenı bulunamadı.");
+      return;
+    }
+
+    const notificationId = await admin.messaging().send({
+      token: fcmToken,
+      notification: {
+        title: "Yeni rezervasyon talebi",
+        body:
+          `${displayCustomerName}, ${displayServiceTitle} için ` +
+          "rezervasyon oluşturdu.",
+      },
+      data: {
+        type: "reservation",
+        reservationId: reservationId,
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+          },
+        },
+      },
+    });
+
+    console.log(
+      "Rezervasyon bildirimi gönderildi:",
+      notificationId
+    );
+  }
+);
+
