@@ -2,6 +2,7 @@ import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {
   onDocumentCreated,
   onDocumentUpdated,
+  onDocumentWritten,
 } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 
@@ -403,6 +404,132 @@ export const sendReservationStatusNotification = onDocumentUpdated(
       "Rezervasyon durum bildirimi gönderildi:",
       newStatus,
       notificationId
+    );
+  }
+);
+
+/**
+ * Recalculates and stores a provider review summary.
+ * @param {string} providerId Provider user ID.
+ * @return {Promise<void>} Resolves after the updates finish.
+ */
+async function updateProviderReviewSummary(
+  providerId: string
+): Promise<void> {
+  const trimmedProviderId = providerId.trim();
+
+  if (!trimmedProviderId) {
+    console.log("Review özeti için providerId bulunamadı.");
+    return;
+  }
+
+  const reviewsSnapshot = await db
+    .collection("reviews")
+    .where("providerId", "==", trimmedProviderId)
+    .get();
+
+  let ratingTotal = 0;
+  let reviewCount = 0;
+
+  for (const reviewDocument of reviewsSnapshot.docs) {
+    const rawRating = reviewDocument.data().rating;
+    const rating = Number(rawRating);
+
+    if (
+      Number.isInteger(rating) &&
+      rating >= 1 &&
+      rating <= 5
+    ) {
+      ratingTotal += rating;
+      reviewCount += 1;
+    }
+  }
+
+  const averageRating =
+    reviewCount > 0 ?
+      Number((ratingTotal / reviewCount).toFixed(2)) :
+      0;
+
+  const servicesSnapshot = await db
+    .collection("services")
+    .where("providerId", "==", trimmedProviderId)
+    .get();
+
+  const writer = db.bulkWriter();
+
+  writer.set(
+    db.collection("service_providers").doc(trimmedProviderId),
+    {
+      rating: averageRating,
+      reviewCount: reviewCount,
+      ratingUpdatedAt:
+        admin.firestore.FieldValue.serverTimestamp(),
+    },
+    {
+      merge: true,
+    }
+  );
+
+  for (const serviceDocument of servicesSnapshot.docs) {
+    writer.set(
+      serviceDocument.ref,
+      {
+        rating: averageRating,
+        reviewCount: reviewCount,
+        ratingUpdatedAt:
+          admin.firestore.FieldValue.serverTimestamp(),
+      },
+      {
+        merge: true,
+      }
+    );
+  }
+
+  await writer.close();
+
+  console.log(
+    "Provider review özeti güncellendi:",
+    trimmedProviderId,
+    averageRating,
+    reviewCount
+  );
+}
+
+export const updateProviderRatingFromReviews = onDocumentWritten(
+  "reviews/{reviewId}",
+  async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    const beforeProviderId =
+      typeof beforeData?.providerId === "string" ?
+        beforeData.providerId.trim() :
+        "";
+
+    const afterProviderId =
+      typeof afterData?.providerId === "string" ?
+        afterData.providerId.trim() :
+        "";
+
+    const providerIds = new Set<string>();
+
+    if (beforeProviderId) {
+      providerIds.add(beforeProviderId);
+    }
+
+    if (afterProviderId) {
+      providerIds.add(afterProviderId);
+    }
+
+    if (providerIds.size === 0) {
+      console.log("Review belgesinde providerId bulunamadı.");
+      return;
+    }
+
+    await Promise.all(
+      Array.from(providerIds).map((providerId) =>
+        updateProviderReviewSummary(providerId)
+      )
     );
   }
 );

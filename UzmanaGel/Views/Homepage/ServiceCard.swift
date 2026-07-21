@@ -74,7 +74,7 @@ struct ServiceCard: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.secondary)
 
-                        Text("(0 yorum)".localized)
+                        Text("(\(service.reviewCount) yorum)")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
