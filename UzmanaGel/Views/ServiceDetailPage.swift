@@ -245,7 +245,7 @@ private extension ServiceDetailPage {
             statCard(
                 icon: "checkmark.seal.fill",
                 iconColor: .green,
-                value: "0",
+                value: "\(vm.service.completedJobCount)",
                 label: "İş Tamamlandı".localized
             )
             statCard(
