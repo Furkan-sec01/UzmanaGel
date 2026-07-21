@@ -735,3 +735,95 @@ export const sendReviewCreatedNotification = onDocumentCreated(
   }
 );
 
+export const sendProviderResponseNotification = onDocumentUpdated(
+  "reviews/{reviewId}",
+  async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    if (!beforeData || !afterData) {
+      console.log("Değerlendirme güncelleme verisi bulunamadı.");
+      return;
+    }
+
+    const beforeResponse =
+      typeof beforeData.providerResponse === "string" ?
+        beforeData.providerResponse.trim() :
+        "";
+
+    const afterResponse =
+      typeof afterData.providerResponse === "string" ?
+        afterData.providerResponse.trim() :
+        "";
+
+    if (beforeResponse || !afterResponse) {
+      return;
+    }
+
+    const customerId =
+      typeof afterData.customerId === "string" ?
+        afterData.customerId.trim() :
+        "";
+
+    const providerId =
+      typeof afterData.providerId === "string" ?
+        afterData.providerId.trim() :
+        "";
+
+    const reviewId =
+      String(event.params.reviewId ?? "").trim();
+
+    if (!customerId || !providerId || !reviewId) {
+      console.log("Uzman cevabı bildirimi alanları eksik.");
+      return;
+    }
+
+    const serviceTitle =
+      typeof afterData.serviceTitle === "string" ?
+        afterData.serviceTitle.trim() :
+        "";
+
+    const customerSnapshot = await db
+      .collection("users")
+      .doc(customerId)
+      .get();
+
+    const fcmToken = customerSnapshot.data()?.fcmToken;
+
+    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
+      console.log("Müşterinin FCM tokenı bulunamadı.");
+      return;
+    }
+
+    const displayServiceTitle =
+      serviceTitle || "Hizmet";
+
+    const notificationId = await admin.messaging().send({
+      token: fcmToken,
+      notification: {
+        title: "Uzman yorumunuza yanıt verdi",
+        body:
+          `${displayServiceTitle} değerlendirmesine ` +
+          "uzman tarafından yanıt verildi.",
+      },
+      data: {
+        type: "review",
+        reviewId: reviewId,
+        providerId: providerId,
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+          },
+        },
+      },
+    });
+
+    console.log(
+      "Uzman cevabı bildirimi gönderildi:",
+      notificationId
+    );
+  }
+);
+
