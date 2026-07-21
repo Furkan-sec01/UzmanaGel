@@ -16,6 +16,7 @@ final class NotificationRouter: ObservableObject {
 
     @Published private(set) var pendingReservationId: String?
     @Published private(set) var pendingConversationId: String?
+    @Published private(set) var pendingReviewProviderId: String?
 
     private init() {}
 
@@ -34,6 +35,22 @@ final class NotificationRouter: ObservableObject {
     func clearConversation() {
         pendingConversationId = nil
     }
+
+    func openReviews(providerId: String) {
+        pendingReviewProviderId = providerId
+    }
+
+    func clearReviews() {
+        pendingReviewProviderId = nil
+    }
+}
+
+private struct NotificationReviewRoute: Identifiable {
+    let providerId: String
+
+    var id: String {
+        providerId
+    }
 }
 
 struct RootView: View {
@@ -45,6 +62,7 @@ struct RootView: View {
 
     @State private var notificationReservation: Reservation?
     @State private var notificationConversation: Conversation?
+    @State private var notificationReviewRoute: NotificationReviewRoute?
     @State private var notificationErrorMessage = ""
     @State private var showNotificationError = false
 
@@ -81,12 +99,16 @@ struct RootView: View {
         .task(id: notificationRouter.pendingConversationId) {
             await openPendingConversationIfPossible()
         }
+        .task(id: notificationRouter.pendingReviewProviderId) {
+            await openPendingReviewIfPossible()
+        }
         .onChange(of: session.isAuthenticated) { _, isAuthenticated in
             guard isAuthenticated else { return }
 
             Task {
                 await openPendingReservationIfPossible()
                 await openPendingConversationIfPossible()
+                await openPendingReviewIfPossible()
             }
         }
         .onChange(of: session.isCheckingProfile) { _, isCheckingProfile in
@@ -103,6 +125,14 @@ struct RootView: View {
         .sheet(item: $notificationConversation) { conversation in
             NavigationStack {
                 ChatDetailPage(conversation: conversation)
+            }
+        }
+        .sheet(item: $notificationReviewRoute) { route in
+            NavigationStack {
+                ReviewsPage(
+                    providerId: route.providerId,
+                    providerName: ""
+                )
             }
         }
         .alert("Bildirim Açılamadı".localized, isPresented: $showNotificationError) {
@@ -132,6 +162,22 @@ struct RootView: View {
             notificationErrorMessage = error.localizedDescription
             showNotificationError = true
         }
+    }
+
+    @MainActor
+    private func openPendingReviewIfPossible() async {
+        guard session.isAuthenticated,
+              !session.isCheckingProfile,
+              let providerId =
+                notificationRouter.pendingReviewProviderId else {
+            return
+        }
+
+        notificationRouter.clearReviews()
+
+        notificationReviewRoute = NotificationReviewRoute(
+            providerId: providerId
+        )
     }
 
     @MainActor
