@@ -14,19 +14,49 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         FirebaseApp.configure()
 
         Messaging.messaging().delegate = self
-        UNUserNotificationCenter.current().delegate = self
 
-        // Save a pending token after login
-        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            guard user != nil,
-                  let pendingToken = UserDefaults.standard.string(forKey: "pendingFCMToken") else {
-                return
+        let notificationCenter = UNUserNotificationCenter.current()
+        notificationCenter.delegate = self
+
+        notificationCenter.requestAuthorization(
+            options: [.alert, .badge, .sound]
+        ) { granted, error in
+            if let error {
+                print(
+                    "Bildirim izni alınamadı:",
+                    error.localizedDescription
+                )
+            } else {
+                print("Bildirim izni durumu:", granted)
             }
 
-            self?.saveFCMToken(pendingToken)
+            DispatchQueue.main.async {
+                application.registerForRemoteNotifications()
+            }
         }
 
-        application.registerForRemoteNotifications()
+        // Save the current token for every signed-in user
+        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard let user else { return }
+
+            Messaging.messaging().token { token, error in
+                if let error {
+                    print(
+                        "FCM token yenilenemedi:",
+                        error.localizedDescription
+                    )
+                    return
+                }
+
+                guard let token else {
+                    print("FCM token bulunamadı.")
+                    return
+                }
+
+                self?.saveFCMToken(token, for: user.uid)
+            }
+        }
+
         return true
     }
 
@@ -77,7 +107,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         _ userInfo: [AnyHashable: Any]
     ) {
         let data = normalizedNotificationData(userInfo)
-        print("Notification normalized keys:", data.keys.sorted())
 
         guard let rawType = data["type"] as? String else {
             print("Notification type bulunamadı.")
@@ -123,8 +152,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
                 return
             }
 
-            print("Message notification conversation ID:", conversationId)
-
             Task { @MainActor in
                 NotificationRouter.shared.openConversation(id: conversationId)
             }
@@ -151,8 +178,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         }
     }
 
-    private func saveFCMToken(_ token: String) {
-        guard let uid = Auth.auth().currentUser?.uid else {
+    private func saveFCMToken(
+        _ token: String,
+        for userId: String? = nil
+    ) {
+        guard let uid = userId ?? Auth.auth().currentUser?.uid else {
             UserDefaults.standard.set(token, forKey: "pendingFCMToken")
             print("FCM token kullanıcı girişini bekliyor.")
             return

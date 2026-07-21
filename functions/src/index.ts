@@ -1,5 +1,8 @@
 import {onCall, HttpsError} from "firebase-functions/v2/https";
-import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+} from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -180,6 +183,227 @@ export const sendMessageNotification = onDocumentCreated(
     });
 
     console.log("Mesaj bildirimi gönderildi:", messageId);
+  }
+);
+
+export const sendReservationCreatedNotification = onDocumentCreated(
+  "reservations/{reservationId}",
+  async (event) => {
+    const reservationData = event.data?.data();
+
+    if (!reservationData) {
+      console.log("Rezervasyon verisi bulunamadı.");
+      return;
+    }
+
+    const rawProviderId = reservationData.providerId;
+    const providerId =
+      typeof rawProviderId === "string" ?
+        rawProviderId.trim() :
+        "";
+
+    const reservationId =
+      String(event.params.reservationId ?? "").trim();
+
+    if (!providerId || !reservationId) {
+      console.log("Rezervasyon bildirimi alanları eksik.");
+      return;
+    }
+
+    const rawCustomerName = reservationData.customerName;
+    const customerName =
+      typeof rawCustomerName === "string" ?
+        rawCustomerName.trim() :
+        "";
+
+    const rawServiceTitle = reservationData.serviceTitle;
+    const serviceTitle =
+      typeof rawServiceTitle === "string" ?
+        rawServiceTitle.trim() :
+        "";
+
+    const displayCustomerName = customerName || "Bir müşteri";
+    const displayServiceTitle = serviceTitle || "bir hizmet";
+
+    const providerSnapshot = await db
+      .collection("users")
+      .doc(providerId)
+      .get();
+
+    const fcmToken = providerSnapshot.data()?.fcmToken;
+
+    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
+      console.log("Uzmanın FCM tokenı bulunamadı.");
+      return;
+    }
+
+    const notificationId = await admin.messaging().send({
+      token: fcmToken,
+      notification: {
+        title: "Yeni rezervasyon talebi",
+        body:
+          `${displayCustomerName}, ${displayServiceTitle} için ` +
+          "rezervasyon oluşturdu.",
+      },
+      data: {
+        type: "reservation",
+        reservationId: reservationId,
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+          },
+        },
+      },
+    });
+
+    console.log(
+      "Rezervasyon bildirimi gönderildi:",
+      notificationId
+    );
+  }
+);
+
+export const sendReservationStatusNotification = onDocumentUpdated(
+  "reservations/{reservationId}",
+  async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    if (!beforeData || !afterData) {
+      console.log("Rezervasyon güncelleme verisi bulunamadı.");
+      return;
+    }
+
+    const rawOldStatus = beforeData.status;
+    const oldStatus =
+      typeof rawOldStatus === "string" ?
+        rawOldStatus.trim() :
+        "";
+
+    const rawNewStatus = afterData.status;
+    const newStatus =
+      typeof rawNewStatus === "string" ?
+        rawNewStatus.trim() :
+        "";
+
+    if (!newStatus || oldStatus === newStatus) {
+      return;
+    }
+
+    const reservationId =
+      String(event.params.reservationId ?? "").trim();
+
+    const providerId =
+      typeof afterData.providerId === "string" ?
+        afterData.providerId.trim() :
+        "";
+
+    const customerId =
+      typeof afterData.customerId === "string" ?
+        afterData.customerId.trim() :
+        "";
+
+    const serviceTitle =
+      typeof afterData.serviceTitle === "string" ?
+        afterData.serviceTitle.trim() :
+        "";
+
+    const customerName =
+      typeof afterData.customerName === "string" ?
+        afterData.customerName.trim() :
+        "";
+
+    const displayServiceTitle =
+      serviceTitle || "Hizmet";
+
+    const displayCustomerName =
+      customerName || "Müşteri";
+
+    let receiverId = "";
+    let title = "";
+    let body = "";
+
+    switch (newStatus) {
+    case "accepted": {
+      receiverId = customerId;
+      title = "Rezervasyon onaylandı";
+      body =
+        `${displayServiceTitle} rezervasyonunuz ` +
+        "uzman tarafından onaylandı.";
+      break;
+    }
+
+    case "rejected": {
+      receiverId = customerId;
+      title = "Rezervasyon reddedildi";
+
+      const rejectionReason =
+        typeof afterData.rejectionReason === "string" ?
+          afterData.rejectionReason.trim() :
+          "";
+
+      body = rejectionReason ?
+        `Ret nedeni: ${rejectionReason}` :
+        "Rezervasyon talebiniz uzman tarafından reddedildi.";
+      break;
+    }
+
+    case "cancelled": {
+      receiverId = providerId;
+      title = "Rezervasyon iptal edildi";
+      body =
+        `${displayCustomerName}, ${displayServiceTitle} ` +
+        "rezervasyonunu iptal etti.";
+      break;
+    }
+
+    default:
+      return;
+    }
+
+    if (!receiverId || !reservationId) {
+      console.log("Durum bildirimi için gerekli alanlar eksik.");
+      return;
+    }
+
+    const receiverSnapshot = await db
+      .collection("users")
+      .doc(receiverId)
+      .get();
+
+    const fcmToken = receiverSnapshot.data()?.fcmToken;
+
+    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
+      console.log("Bildirim alıcısının FCM tokenı bulunamadı.");
+      return;
+    }
+
+    const notificationId = await admin.messaging().send({
+      token: fcmToken,
+      notification: {
+        title: title,
+        body: body,
+      },
+      data: {
+        type: "reservation",
+        reservationId: reservationId,
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+          },
+        },
+      },
+    });
+
+    console.log(
+      "Rezervasyon durum bildirimi gönderildi:",
+      newStatus,
+      notificationId
+    );
   }
 );
 
