@@ -35,14 +35,26 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
             }
         }
 
-        // Save a pending token after login
+        // Save the current token for every signed-in user
         _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            guard user != nil,
-                  let pendingToken = UserDefaults.standard.string(forKey: "pendingFCMToken") else {
-                return
-            }
+            guard let user else { return }
 
-            self?.saveFCMToken(pendingToken)
+            Messaging.messaging().token { token, error in
+                if let error {
+                    print(
+                        "FCM token yenilenemedi:",
+                        error.localizedDescription
+                    )
+                    return
+                }
+
+                guard let token else {
+                    print("FCM token bulunamadı.")
+                    return
+                }
+
+                self?.saveFCMToken(token, for: user.uid)
+            }
         }
 
         return true
@@ -166,8 +178,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         }
     }
 
-    private func saveFCMToken(_ token: String) {
-        guard let uid = Auth.auth().currentUser?.uid else {
+    private func saveFCMToken(
+        _ token: String,
+        for userId: String? = nil
+    ) {
+        guard let uid = userId ?? Auth.auth().currentUser?.uid else {
             UserDefaults.standard.set(token, forKey: "pendingFCMToken")
             print("FCM token kullanıcı girişini bekliyor.")
             return
