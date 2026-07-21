@@ -28,7 +28,6 @@ final class NotificationRouter: ObservableObject {
     }
 
     func openConversation(id: String) {
-        print("Router received conversation ID:", id)
         pendingConversationId = id
     }
 
@@ -137,15 +136,6 @@ struct RootView: View {
 
     @MainActor
     private func openPendingConversationIfPossible() async {
-        print(
-            "Message route check:",
-            "authenticated=\(session.isAuthenticated)",
-            "checkingProfile=\(session.isCheckingProfile)",
-            "userId=\(session.userId ?? "nil")",
-            "isExpert=\(session.isExpert)",
-            "conversationId=\(notificationRouter.pendingConversationId ?? "nil")"
-        )
-
         guard session.isAuthenticated,
               !session.isCheckingProfile,
               let currentUserId = session.userId,
@@ -159,18 +149,10 @@ struct RootView: View {
                 currentUserId: currentUserId
             )
 
-            print("Notification conversation fetched:", conversation.id)
-
             notificationRouter.clearConversation()
             notificationConversation = conversation
 
-            print("Chat detail sheet requested.")
         } catch {
-            print(
-                "Notification conversation fetch failed:",
-                error.localizedDescription
-            )
-
             notificationRouter.clearConversation()
             notificationErrorMessage = error.localizedDescription
             showNotificationError = true
