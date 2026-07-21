@@ -14,7 +14,26 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         FirebaseApp.configure()
 
         Messaging.messaging().delegate = self
-        UNUserNotificationCenter.current().delegate = self
+
+        let notificationCenter = UNUserNotificationCenter.current()
+        notificationCenter.delegate = self
+
+        notificationCenter.requestAuthorization(
+            options: [.alert, .badge, .sound]
+        ) { granted, error in
+            if let error {
+                print(
+                    "Bildirim izni alınamadı:",
+                    error.localizedDescription
+                )
+            } else {
+                print("Bildirim izni durumu:", granted)
+            }
+
+            DispatchQueue.main.async {
+                application.registerForRemoteNotifications()
+            }
+        }
 
         // Save a pending token after login
         _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
@@ -26,7 +45,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
             self?.saveFCMToken(pendingToken)
         }
 
-        application.registerForRemoteNotifications()
         return true
     }
 
