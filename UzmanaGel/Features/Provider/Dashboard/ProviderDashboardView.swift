@@ -71,6 +71,10 @@ struct ProviderDashboardView: View {
                             // 3. Today's appointments
                             todayAppointmentsSection
                                 .padding(.horizontal)
+
+                            // 4. Real reservation statistics
+                            chartsSection
+                                .padding(.horizontal)
                         }
                         .padding(.vertical)
                     }
@@ -248,112 +252,132 @@ struct ProviderDashboardView: View {
     }
     
     private var chartsSection: some View {
-        VStack(alignment: .leading, spacing: Constants.spacingL) {
-            Text("Grafikler ve İstatistikler")
+        VStack(
+            alignment: .leading,
+            spacing: Constants.spacingL
+        ) {
+            Text("İş İstatistikleri")
                 .font(.caption)
                 .fontWeight(.bold)
                 .foregroundColor(Color.themeSecondaryText)
                 .padding(.horizontal, Constants.paddingS)
-            
-            // 1. Weekly Earnings Chart
+
             CardView {
-                VStack(alignment: .leading, spacing: Constants.spacingS) {
-                    Text("Haftalık Kazanç")
+                VStack(
+                    alignment: .leading,
+                    spacing: Constants.spacingM
+                ) {
+                    Text("Son 6 Ay Tamamlanan İşler")
                         .font(.subheadline)
                         .fontWeight(.bold)
-                    
-                    Chart {
-                        ForEach(viewModel.weeklyEarnings) { item in
-                            BarMark(
-                                x: .value("Gün", item.dayName),
-                                y: .value("Kazanç", item.amount)
-                            )
-                            .foregroundStyle(Color.themePrimary.gradient)
-                            .cornerRadius(4)
+                        .foregroundColor(Color.themeText)
+
+                    if viewModel.monthlyJobs.allSatisfy({
+                        $0.count == 0
+                    }) {
+                        dashboardEmptyState(
+                            icon: "chart.bar.xaxis",
+                            title: "Henüz tamamlanan iş yok",
+                            message:
+                                "Son altı aya ait tamamlanan iş " +
+                                "verisi bulunmuyor."
+                        )
+                    } else {
+                        Chart {
+                            ForEach(viewModel.monthlyJobs) { item in
+                                BarMark(
+                                    x: .value(
+                                        "Ay",
+                                        item.monthName
+                                    ),
+                                    y: .value(
+                                        "Tamamlanan İş",
+                                        item.count
+                                    )
+                                )
+                                .foregroundStyle(
+                                    Color.themePrimary.gradient
+                                )
+                                .cornerRadius(4)
+                            }
                         }
+                        .frame(height: 180)
                     }
-                    .frame(height: 180)
                 }
             }
-            
-            // 2. Monthly Jobs Count
+
             CardView {
-                VStack(alignment: .leading, spacing: Constants.spacingS) {
-                    Text("Aylık İş Sayısı")
+                VStack(
+                    alignment: .leading,
+                    spacing: Constants.spacingM
+                ) {
+                    Text("Tamamlanan Hizmet Dağılımı")
                         .font(.subheadline)
                         .fontWeight(.bold)
-                    
-                    Chart {
-                        ForEach(viewModel.monthlyJobs) { item in
-                            LineMark(
-                                x: .value("Ay", item.monthName),
-                                y: .value("İş", item.count)
-                            )
-                            .lineStyle(StrokeStyle(lineWidth: 3))
-                            .foregroundStyle(Color.themeSecondary)
-                            
-                            PointMark(
-                                x: .value("Ay", item.monthName),
-                                y: .value("İş", item.count)
-                            )
-                            .foregroundStyle(Color.themeSecondary)
+                        .foregroundColor(Color.themeText)
+
+                    if viewModel.popularServices.isEmpty {
+                        dashboardEmptyState(
+                            icon: "chart.pie",
+                            title: "Hizmet verisi bulunmuyor",
+                            message:
+                                "Tamamlanan işler oluştuğunda hizmet " +
+                                "dağılımı burada gösterilecek."
+                        )
+                    } else {
+                        Chart {
+                            ForEach(
+                                viewModel.popularServices.prefix(5)
+                            ) { item in
+                                SectorMark(
+                                    angle: .value(
+                                        "Tamamlanan İş",
+                                        item.value
+                                    ),
+                                    innerRadius: .ratio(0.55),
+                                    angularInset: 2
+                                )
+                                .foregroundStyle(
+                                    by: .value(
+                                        "Hizmet",
+                                        item.serviceName
+                                    )
+                                )
+                                .cornerRadius(5)
+                            }
                         }
+                        .frame(height: 220)
                     }
-                    .frame(height: 180)
-                }
-            }
-            
-            // 3. Customer Satisfaction Trend
-            CardView {
-                VStack(alignment: .leading, spacing: Constants.spacingS) {
-                    Text("Memnuniyet Trendi")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                    
-                    Chart {
-                        ForEach(viewModel.satisfactionTrends) { item in
-                            AreaMark(
-                                x: .value("Ay", item.date),
-                                y: .value("Puan", item.rating)
-                            )
-                            .foregroundStyle(Color.themeWarning.opacity(0.15).gradient)
-                            
-                            LineMark(
-                                x: .value("Ay", item.date),
-                                y: .value("Puan", item.rating)
-                            )
-                            .lineStyle(StrokeStyle(lineWidth: 3))
-                            .foregroundStyle(Color.themeWarning)
-                        }
-                    }
-                    .chartYScale(domain: 4.0...5.0)
-                    .frame(height: 180)
-                }
-            }
-            
-            // 4. Popular Services Pie Chart (using iOS 17 SectorMark)
-            CardView {
-                VStack(alignment: .leading, spacing: Constants.spacingS) {
-                    Text("Popüler Hizmetler")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                    
-                    Chart {
-                        ForEach(viewModel.popularServices) { item in
-                            SectorMark(
-                                angle: .value("Pay", item.value),
-                                innerRadius: .ratio(0.55),
-                                angularInset: 2.0
-                            )
-                            .foregroundStyle(by: .value("Hizmet", item.serviceName))
-                            .cornerRadius(5)
-                        }
-                    }
-                    .frame(height: 200)
                 }
             }
         }
     }
+
+    private func dashboardEmptyState(
+        icon: String,
+        title: String,
+        message: String
+    ) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 28))
+                .foregroundColor(Color.themeSecondaryText)
+
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(Color.themeText)
+
+            Text(message)
+                .font(.caption)
+                .foregroundColor(Color.themeSecondaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 180)
+        .padding(.horizontal)
+    }
+
 }
 
 #Preview {

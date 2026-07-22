@@ -19,33 +19,15 @@ final class ProviderDashboardViewModel: ObservableObject {
     @Published var isAvailable = true
     @Published var isUpdatingAvailability = false
 
-    // These metrics need payment, review, and analytics data.
-    @Published var todayEarnings = "—"
-    @Published var averageRating = "—"
-    @Published var profileViewsCount = "—"
-    @Published var responseRate = "—"
-
     @Published var totalJobsCount = "0"
     @Published var pendingBookingsCount = 0
     @Published var upcomingBookingsCount = 0
     @Published var unreadMessagesCount = 0
 
-    struct WeeklyEarning: Identifiable {
-        let id = UUID()
-        let dayName: String
-        let amount: Double
-    }
-
     struct MonthlyJob: Identifiable {
         let id = UUID()
         let monthName: String
         let count: Int
-    }
-
-    struct SatisfactionTrend: Identifiable {
-        let id = UUID()
-        let date: String
-        let rating: Double
     }
 
     struct ServiceShare: Identifiable {
@@ -54,9 +36,7 @@ final class ProviderDashboardViewModel: ObservableObject {
         let value: Double
     }
 
-    @Published var weeklyEarnings: [WeeklyEarning] = []
     @Published var monthlyJobs: [MonthlyJob] = []
-    @Published var satisfactionTrends: [SatisfactionTrend] = []
     @Published var popularServices: [ServiceShare] = []
 
     struct Appointment: Identifiable {
