@@ -10,9 +10,11 @@ import Foundation
 enum ReservationStatus: String, Codable, CaseIterable {
     case pending
     case accepted
+    case inProgress
+    case completed
     case rejected
     case cancelled
-    case completed
+    case noShow
 
     var title: String {
         switch self {
@@ -20,12 +22,16 @@ enum ReservationStatus: String, Codable, CaseIterable {
             return "Beklemede".localized
         case .accepted:
             return "Onaylandı".localized
+        case .inProgress:
+            return "Devam Ediyor".localized
+        case .completed:
+            return "Tamamlandı".localized
         case .rejected:
             return "Reddedildi".localized
         case .cancelled:
             return "İptal Edildi".localized
-        case .completed:
-            return "Tamamlandı".localized
+        case .noShow:
+            return "Müşteri Gelmedi".localized
         }
     }
 }

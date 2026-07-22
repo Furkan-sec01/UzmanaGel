@@ -244,12 +244,16 @@ struct ReservationDetailPage: View {
         switch reservation.status {
         case .accepted:
             return "checkmark.circle.fill"
+        case .inProgress:
+            return "play.circle.fill"
+        case .completed:
+            return "flag.checkered.circle.fill"
         case .rejected:
             return "xmark.circle.fill"
         case .cancelled:
             return "minus.circle.fill"
-        case .completed:
-            return "flag.checkered.circle.fill"
+        case .noShow:
+            return "person.crop.circle.badge.xmark"
         case .pending:
             return "hourglass"
         }
@@ -259,12 +263,16 @@ struct ReservationDetailPage: View {
         switch reservation.status {
         case .accepted:
             return "Kabul Edildi".localized
+        case .inProgress:
+            return "Hizmet Başlatıldı".localized
+        case .completed:
+            return "Tamamlandı".localized
         case .rejected:
             return "Reddedildi".localized
         case .cancelled:
             return "İptal Edildi".localized
-        case .completed:
-            return "Tamamlandı".localized
+        case .noShow:
+            return "Müşteri Gelmedi".localized
         case .pending:
             return "Beklemede".localized
         }
@@ -274,12 +282,16 @@ struct ReservationDetailPage: View {
         switch reservation.status {
         case .accepted:
             return "Uzman rezervasyon talebini kabul etti.".localized
+        case .inProgress:
+            return "Uzman hizmeti başlattı.".localized
+        case .completed:
+            return "Rezervasyon tamamlandı.".localized
         case .rejected:
             return "Uzman rezervasyon talebini reddetti.".localized
         case .cancelled:
             return "Rezervasyon iptal edildi.".localized
-        case .completed:
-            return "Rezervasyon tamamlandı.".localized
+        case .noShow:
+            return "Müşteri rezervasyona gelmedi.".localized
         case .pending:
             return "Rezervasyon yanıt bekliyor.".localized
         }
@@ -550,11 +562,13 @@ struct ReservationDetailPage: View {
 
     private func statusColor(_ status: ReservationStatus) -> Color {
         switch status {
-        case .pending:   return .orange
-        case .accepted:  return accentYellow
-        case .rejected:  return .red
-        case .cancelled: return .gray
-        case .completed: return primaryColor
+        case .pending:    return .orange
+        case .accepted:   return accentYellow
+        case .inProgress: return .blue
+        case .completed:  return primaryColor
+        case .rejected:   return .red
+        case .cancelled:  return .gray
+        case .noShow:     return .gray
         }
     }
 

@@ -59,8 +59,11 @@ struct ExpertReservationsPage: View {
             }
         case .past:
             return viewModel.reservations.filter {
-                $0.status == .completed || $0.status == .rejected
-                || $0.status == .cancelled || $0.reservationDate < startOfToday
+                $0.status == .completed
+                    || $0.status == .rejected
+                    || $0.status == .cancelled
+                    || $0.status == .noShow
+                    || $0.reservationDate < startOfToday
             }
         }
     }
@@ -364,16 +367,20 @@ struct ExpertReservationsPage: View {
 
     private func statusColor(_ status: ReservationStatus) -> Color {
         switch status {
-        case .pending:   return .orange
-        case .accepted:  return accentYellow
-        case .rejected:  return .red
-        case .cancelled: return .gray
-        case .completed: return Color("PrimaryColor")
+        case .pending:    return .orange
+        case .accepted:   return accentYellow
+        case .inProgress: return .blue
+        case .completed:  return Color("PrimaryColor")
+        case .rejected:   return .red
+        case .cancelled:  return .gray
+        case .noShow:     return .gray
         }
     }
 
     private func isActive(_ reservation: Reservation) -> Bool {
-        reservation.status == .pending || reservation.status == .accepted
+        reservation.status == .pending
+            || reservation.status == .accepted
+            || reservation.status == .inProgress
     }
 
     private func formatDate(_ date: Date) -> String {
