@@ -34,6 +34,32 @@ enum ReservationStatus: String, Codable, CaseIterable {
             return "Müşteri Gelmedi".localized
         }
     }
+
+    func canTransition(to newStatus: ReservationStatus) -> Bool {
+        switch self {
+        case .pending:
+            return newStatus == .accepted
+                || newStatus == .rejected
+                || newStatus == .cancelled
+
+        case .accepted:
+            return newStatus == .inProgress
+                || newStatus == .noShow
+                || newStatus == .cancelled
+
+        case .inProgress:
+            return newStatus == .completed
+
+        case .completed, .rejected, .cancelled, .noShow:
+            return false
+        }
+    }
+
+    var isBlockingSlot: Bool {
+        self == .pending
+            || self == .accepted
+            || self == .inProgress
+    }
 }
 
 struct Reservation: Identifiable, Codable, Hashable {

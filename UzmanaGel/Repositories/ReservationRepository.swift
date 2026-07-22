@@ -22,6 +22,8 @@ final class ReservationRepository {
         case invalidCustomerName
         case invalidReservation
         case slotUnavailable
+        case unauthorizedAction
+        case invalidStatusTransition
 
         var errorDescription: String? {
             switch self {
@@ -37,6 +39,10 @@ final class ReservationRepository {
                 return "Rezervasyon bilgisi eksik."
             case .slotUnavailable:
                 return "Seçtiğiniz saat dolu. Lütfen başka bir saat seçin."
+            case .unauthorizedAction:
+                return "Bu rezervasyon işlemi için yetkiniz yok."
+            case .invalidStatusTransition:
+                return "Rezervasyon bu duruma geçirilemez."
             }
         }
     }
@@ -97,9 +103,9 @@ final class ReservationRepository {
         let existingSlot = try await bookedSlotRef.getDocument()
 
         if let existingData = existingSlot.data(),
-           let existingStatus = existingData["status"] as? String,
-           existingStatus == ReservationStatus.pending.rawValue ||
-           existingStatus == ReservationStatus.accepted.rawValue {
+           let statusRawValue = existingData["status"] as? String,
+           let existingStatus = ReservationStatus(rawValue: statusRawValue),
+           existingStatus.isBlockingSlot {
             throw ReservationRepositoryError.slotUnavailable
         }
 
@@ -206,8 +212,8 @@ final class ReservationRepository {
             }
 
             guard
-                statusRawValue == ReservationStatus.pending.rawValue ||
-                statusRawValue == ReservationStatus.accepted.rawValue
+                let status = ReservationStatus(rawValue: statusRawValue),
+                status.isBlockingSlot
             else {
                 return nil
             }
@@ -285,6 +291,11 @@ final class ReservationRepository {
         }
     }
 
+    private enum ReservationActionRole {
+        case customer
+        case provider
+    }
+
     func cancelReservation(
         reservationId: String
     ) async throws {
@@ -302,10 +313,11 @@ final class ReservationRepository {
 
         try await updateReservationAndBookedSlotStatus(
             reservationId: trimmedReservationId,
-            status: .cancelled
+            status: .cancelled,
+            requiredRole: .customer
         )
     }
-    
+
     func updateReservationStatus(
         reservationId: String,
         status: ReservationStatus,
@@ -323,22 +335,36 @@ final class ReservationRepository {
             throw ReservationRepositoryError.invalidReservation
         }
 
-        guard status == .accepted || status == .rejected else {
+        let providerStatuses: [ReservationStatus] = [
+            .accepted,
+            .rejected,
+            .inProgress,
+            .completed,
+            .noShow
+        ]
+
+        guard providerStatuses.contains(status) else {
             throw ReservationRepositoryError.invalidReservation
         }
 
         try await updateReservationAndBookedSlotStatus(
             reservationId: trimmedReservationId,
             status: status,
-            rejectionReason: rejectionReason
+            rejectionReason: rejectionReason,
+            requiredRole: .provider
         )
     }
-    
+
     private func updateReservationAndBookedSlotStatus(
         reservationId: String,
         status: ReservationStatus,
-        rejectionReason: String? = nil
+        rejectionReason: String? = nil,
+        requiredRole: ReservationActionRole
     ) async throws {
+        guard let currentUser = Auth.auth().currentUser else {
+            throw ReservationRepositoryError.userNotFound
+        }
+
         let reservationRef = db
             .collection(collectionName)
             .document(reservationId)
@@ -348,9 +374,30 @@ final class ReservationRepository {
         guard
             let data = snapshot.data(),
             let providerId = data["providerId"] as? String,
-            let reservationDateTimestamp = data["reservationDate"] as? Timestamp
+            let customerId = data["customerId"] as? String,
+            let reservationDateTimestamp = data["reservationDate"] as? Timestamp,
+            let currentStatusRawValue = data["status"] as? String,
+            let currentStatus = ReservationStatus(
+                rawValue: currentStatusRawValue
+            )
         else {
             throw ReservationRepositoryError.invalidReservation
+        }
+
+        switch requiredRole {
+        case .customer:
+            guard currentUser.uid == customerId else {
+                throw ReservationRepositoryError.unauthorizedAction
+            }
+
+        case .provider:
+            guard currentUser.uid == providerId else {
+                throw ReservationRepositoryError.unauthorizedAction
+            }
+        }
+
+        guard currentStatus.canTransition(to: status) else {
+            throw ReservationRepositoryError.invalidStatusTransition
         }
 
         let reservationDate = reservationDateTimestamp.dateValue()
@@ -360,7 +407,8 @@ final class ReservationRepository {
             in: .whitespacesAndNewlines
         )
 
-        if status == .rejected && (trimmedRejectionReason?.isEmpty ?? true) {
+        if status == .rejected
+            && (trimmedRejectionReason?.isEmpty ?? true) {
             throw ReservationRepositoryError.invalidReservation
         }
 
@@ -377,7 +425,8 @@ final class ReservationRepository {
             .document(timeKey)
 
         let bookedSlotSnapshot = try await bookedSlotRef.getDocument()
-        let bookedSlotReservationId = bookedSlotSnapshot.data()?["reservationId"] as? String
+        let bookedSlotReservationId =
+            bookedSlotSnapshot.data()?["reservationId"] as? String
 
         let batch = db.batch()
 
@@ -387,14 +436,32 @@ final class ReservationRepository {
         ]
 
         if status == .rejected {
-            reservationUpdateData["rejectionReason"] = trimmedRejectionReason ?? ""
+            reservationUpdateData["rejectionReason"] =
+                trimmedRejectionReason ?? ""
         }
 
-        batch.updateData(reservationUpdateData, forDocument: reservationRef)
+        switch status {
+        case .inProgress:
+            reservationUpdateData["startedAt"] = Timestamp(date: now)
 
-        // Sync slot only if this reservation owns the booked slot.
-        // Old duplicate reservations may point to the same time slot.
-        if bookedSlotSnapshot.exists && bookedSlotReservationId == reservationId {
+        case .completed:
+            reservationUpdateData["completedAt"] = Timestamp(date: now)
+
+        case .noShow:
+            reservationUpdateData["noShowAt"] = Timestamp(date: now)
+
+        case .pending, .accepted, .rejected, .cancelled:
+            break
+        }
+
+        batch.updateData(
+            reservationUpdateData,
+            forDocument: reservationRef
+        )
+
+        // Sync only the slot owned by this reservation.
+        if bookedSlotSnapshot.exists
+            && bookedSlotReservationId == reservationId {
             batch.setData([
                 "providerId": providerId,
                 "dateKey": dateKey,
