@@ -21,10 +21,6 @@ struct ReservationDetailPage: View {
     @State private var isUpdatingStatus = false
     @State private var showCancelConfirmation = false
     @State private var showRejectConfirmation = false
-    @State private var showCompleteConfirmation = false
-    @State private var showReviewSheet = false
-    @State private var hasSubmittedReview = false
-    @State private var isCheckingReview = false
 
     private let rejectionReasons = [
         "Takvimim bu saat için uygun değil",
@@ -38,7 +34,6 @@ struct ReservationDetailPage: View {
 
     private let messageRepository = MessageRepository()
     private let reservationRepository = ReservationRepository()
-    private let reviewRepository = ReviewRepository()
 
     private let accentYellow = Color("TertiaryColor")
     private let bgColor      = Color("BackgroundColor")
@@ -78,17 +73,6 @@ struct ReservationDetailPage: View {
             .navigationDestination(isPresented: $showChat) {
                 if let chatConversation { ChatDetailPage(conversation: chatConversation) }
             }
-            .sheet(isPresented: $showReviewSheet) {
-                ReviewCreateSheet(
-                    reservation: reservation,
-                    onSubmitted: {
-                        hasSubmittedReview = true
-                    }
-                )
-            }
-            .task {
-                await loadReviewStatus()
-            }
             .alert("Hata".localized, isPresented: $showError) {
                 Button("Tamam".localized, role: .cancel) { }
             } message: {
@@ -103,23 +87,6 @@ struct ReservationDetailPage: View {
                 Button("Vazgeç".localized, role: .cancel) { }
             } message: {
                 Text("Bu rezervasyonu iptal etmek istediğinizden emin misiniz?".localized)
-            }
-            .confirmationDialog(
-                "Hizmeti tamamla".localized,
-                isPresented: $showCompleteConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Tamamlandı Olarak İşaretle".localized) {
-                    Task {
-                        await completeReservationFromDetail()
-                    }
-                }
-
-                Button("Vazgeç".localized, role: .cancel) { }
-            } message: {
-                Text(
-                    "Bu hizmetin tamamlandığını onaylıyor musunuz?".localized
-                )
             }
             .confirmationDialog(
                 "Red nedeni seç".localized,
@@ -427,8 +394,6 @@ struct ReservationDetailPage: View {
             sectionHeader(icon: "bolt.fill", title: "İşlemler".localized)
             messageButton
             if canProviderDecide { providerDecisionButtons }
-            if canProviderComplete { completeButton }
-            if isCustomerCompletedReservation { reviewAction }
             if canCustomerCancel { cancelButton }
         }
     }
@@ -520,100 +485,6 @@ struct ReservationDetailPage: View {
         }
     }
 
-    // MARK: - Review Action
-    @ViewBuilder
-    private var reviewAction: some View {
-        if isCheckingReview {
-            HStack(spacing: 10) {
-                ProgressView()
-
-                Text("Değerlendirme kontrol ediliyor...".localized)
-                    .font(.system(size: 14, weight: .semibold))
-            }
-            .foregroundColor(cardSecondaryTextColor)
-            .frame(maxWidth: .infinity)
-            .frame(height: 46)
-            .background(Color.white.opacity(0.98))
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: 14,
-                    style: .continuous
-                )
-            )
-        } else if hasSubmittedReview {
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark.seal.fill")
-
-                Text("Değerlendirildi".localized)
-                    .font(.system(size: 14, weight: .bold))
-            }
-            .foregroundColor(primaryColor)
-            .frame(maxWidth: .infinity)
-            .frame(height: 46)
-            .background(primaryColor.opacity(0.1))
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: 14,
-                    style: .continuous
-                )
-            )
-        } else {
-            Button {
-                showReviewSheet = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "star.fill")
-
-                    Text("Değerlendir".localized)
-                        .font(.system(size: 14, weight: .bold))
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 46)
-                .background(accentYellow)
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: 14,
-                        style: .continuous
-                    )
-                )
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    // MARK: - Complete Button
-    private var completeButton: some View {
-        Button {
-            showCompleteConfirmation = true
-        } label: {
-            HStack(spacing: 8) {
-                if isUpdatingStatus {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .tint(.white)
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                }
-
-                Text("Hizmeti Tamamla".localized)
-                    .font(.system(size: 14, weight: .bold))
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 46)
-            .background(primaryColor)
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: 14,
-                    style: .continuous
-                )
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(isUpdatingStatus)
-    }
-
     // MARK: - Cancel Button
     private var cancelButton: some View {
         Button {
@@ -688,15 +559,6 @@ struct ReservationDetailPage: View {
     }
 
     // MARK: - Logic
-    private var isCustomerCompletedReservation: Bool {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            return false
-        }
-
-        return uid == reservation.customerId
-            && reservation.status == .completed
-    }
-
     private var canCustomerCancel: Bool {
         guard let uid = Auth.auth().currentUser?.uid else { return false }
         return uid == reservation.customerId
@@ -706,35 +568,6 @@ struct ReservationDetailPage: View {
     private var canProviderDecide: Bool {
         guard let uid = Auth.auth().currentUser?.uid else { return false }
         return uid == reservation.providerId && reservation.status == .pending
-    }
-
-    private var canProviderComplete: Bool {
-        guard let uid = Auth.auth().currentUser?.uid else { return false }
-
-        return uid == reservation.providerId
-            && reservation.status == .accepted
-            && reservation.reservationDate <= Date()
-    }
-
-    private func loadReviewStatus() async {
-        guard isCustomerCompletedReservation else {
-            hasSubmittedReview = false
-            return
-        }
-
-        isCheckingReview = true
-        defer {
-            isCheckingReview = false
-        }
-
-        do {
-            hasSubmittedReview = try await reviewRepository.hasReview(
-                reservationId: reservation.reservationId
-            )
-        } catch {
-            errorMessage = error.localizedDescription
-            showError = true
-        }
     }
 
     private func openChat() async {
@@ -792,42 +625,11 @@ struct ReservationDetailPage: View {
         defer { isUpdatingStatus = false }
         do {
             try await reservationRepository.updateReservationStatus(
-                reservationId: reservation.reservationId,
-                status: status,
-                rejectionReason: rejectionReason
-            )
+                reservationId: reservation.reservationId, status: status)
             reservation = updatedReservation(
                 status: status,
                 rejectionReason: rejectionReason
             )
-            onStatusChanged?()
-        } catch {
-            errorMessage = error.localizedDescription
-            showError = true
-        }
-    }
-
-    private func completeReservationFromDetail() async {
-        guard canProviderComplete else {
-            errorMessage = "Bu hizmet henüz tamamlanamaz.".localized
-            showError = true
-            return
-        }
-
-        isUpdatingStatus = true
-        defer {
-            isUpdatingStatus = false
-        }
-
-        do {
-            try await reservationRepository.completeReservation(
-                reservationId: reservation.reservationId
-            )
-
-            reservation = updatedReservation(
-                status: .completed
-            )
-
             onStatusChanged?()
         } catch {
             errorMessage = error.localizedDescription
