@@ -1,100 +1,200 @@
 import Foundation
 import Combine
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
+
+private enum EditBusinessProfileError: LocalizedError {
+    case userNotFound
+    case profileNotFound
+    case businessNameRequired
+
+    var errorDescription: String? {
+        switch self {
+        case .userNotFound:
+            return "Kullanıcı oturumu bulunamadı."
+        case .profileNotFound:
+            return "Uzman profili bulunamadı."
+        case .businessNameRequired:
+            return "İşletme adı boş bırakılamaz."
+        }
+    }
+}
 
 @MainActor
-class EditBusinessProfileViewModel: ObservableObject {
-    // Info inputs
+final class EditBusinessProfileViewModel: ObservableObject {
+
+    // Form inputs
     @Published var businessName = ""
     @Published var description = ""
     @Published var selectedCategories: [String] = []
-    
-    // Character Limit details
+
     let descriptionLimit = 250
-    
-    // Image selection properties
+
+    // Image state
     @Published var logoUrl: String?
     @Published var coverUrl: String?
     @Published var selectedLogoData: Data?
     @Published var selectedCoverData: Data?
-    
-    // Status metrics
+
+    // Status state
     @Published var isCertified = false
-    @Published var missingDocuments: [String] = ["Kimlik Fotokopisi (Arka Yüz)", "Mesleki Yeterlilik Belgesi / Sertifika"]
+    @Published var missingDocuments: [String] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
-    
-    private let providerService: ProviderService
-    
-    init(providerService: ProviderService = MockProviderService()) {
-        self.providerService = providerService
+
+    private let userRepository: UserRepository
+
+    init(
+        userRepository: UserRepository = UserRepository()
+    ) {
+        self.userRepository = userRepository
     }
-    
+
     func loadBusinessInfo() async {
-        isLoading = true
-        errorMessage = nil
-        do {
-            let info = try await providerService.fetchProviderProfile()
-            self.businessName = info.businessName
-            self.description = info.description
-            self.logoUrl = info.imageUrl
-            self.isCertified = info.isCertified
-            
-            // Setup mock categories
-            self.selectedCategories = ["Tesisatçı", "Tadilat & Renovasyon"]
-        } catch {
-            self.errorMessage = error.localizedDescription
-        }
-        isLoading = false
-    }
-    
-    func saveBusinessProfile() async {
+        guard !isLoading else { return }
+
         isLoading = true
         errorMessage = nil
         successMessage = nil
-        
+
+        defer {
+            isLoading = false
+        }
+
         do {
-            // 1. Upload images if selected
-            if selectedLogoData != nil || selectedCoverData != nil {
-                let urls = try await providerService.updateProviderImages(
-                    logoData: selectedLogoData,
-                    coverData: selectedCoverData
-                )
-                if let logo = urls.logoUrl { self.logoUrl = logo }
-                if let cover = urls.coverUrl { self.coverUrl = cover }
-                
-                self.selectedLogoData = nil
-                self.selectedCoverData = nil
+            guard let uid = Auth.auth().currentUser?.uid else {
+                throw EditBusinessProfileError.userNotFound
             }
-            
-            // 2. Save texts info
-            let _ = try await providerService.updateProviderProfile(
-                businessName: businessName,
-                description: description,
-                categories: selectedCategories
-            )
-            
-            successMessage = "İşletme profili güncellendi."
+
+            guard let profile =
+                    try await userRepository.fetchExpertProfile(uid: uid)
+            else {
+                throw EditBusinessProfileError.profileNotFound
+            }
+
+            businessName = profile.businessName
+            description = profile.about ?? ""
+            selectedCategories = profile.serviceCategories
+            logoUrl = profile.profileImageURL
+            coverUrl = nil
+
+            isCertified = !profile.certificateURLs.isEmpty
+            updateMissingDocuments(from: profile)
         } catch {
             errorMessage = error.localizedDescription
         }
-        isLoading = false
     }
-    
+
+    func saveBusinessProfile() async {
+        guard !isLoading else { return }
+
+        let trimmedBusinessName = businessName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let trimmedDescription = description
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedBusinessName.isEmpty else {
+            errorMessage =
+                EditBusinessProfileError.businessNameRequired
+                    .localizedDescription
+            return
+        }
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            errorMessage =
+                EditBusinessProfileError.userNotFound.localizedDescription
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+
+        defer {
+            isLoading = false
+        }
+
+        do {
+            let fields: [String: Any] = [
+                "businessName": trimmedBusinessName,
+                "about": trimmedDescription,
+                "description": trimmedDescription,
+                "serviceCategories": selectedCategories,
+                "updatedAt": FieldValue.serverTimestamp()
+            ]
+
+            try await userRepository.updateExpertProfile(
+                uid: uid,
+                fields: fields
+            )
+
+            businessName = trimmedBusinessName
+            description = trimmedDescription
+
+            let hasPendingImageChange =
+                selectedLogoData != nil ||
+                selectedCoverData != nil
+
+            selectedLogoData = nil
+            selectedCoverData = nil
+
+            if hasPendingImageChange {
+                successMessage =
+                    "İşletme bilgileri kaydedildi. " +
+                    "Görsel değişiklikleri henüz kaydedilmedi."
+            } else {
+                successMessage = "İşletme profili güncellendi."
+            }
+
+            NotificationCenter.default.post(
+                name: .userDataUpdated,
+                object: nil
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func enforceDescriptionLimit() {
         if description.count > descriptionLimit {
-            description = String(description.prefix(descriptionLimit))
+            description = String(
+                description.prefix(descriptionLimit)
+            )
         }
     }
-    
+
     func removeCategory(_ category: String) {
-        selectedCategories.removeAll(where: { $0 == category })
-    }
-    
-    func addCategory(_ category: String) {
-        if !selectedCategories.contains(category) {
-            selectedCategories.append(category)
+        selectedCategories.removeAll {
+            $0 == category
         }
+    }
+
+    func addCategory(_ category: String) {
+        guard !selectedCategories.contains(category) else {
+            return
+        }
+
+        selectedCategories.append(category)
+    }
+
+    private func updateMissingDocuments(
+        from profile: ExpertProfile
+    ) {
+        var documents: [String] = []
+
+        if profile.idBackURL == nil {
+            documents.append("Kimlik Fotokopisi (Arka Yüz)")
+        }
+
+        if profile.certificateURLs.isEmpty {
+            documents.append(
+                "Mesleki Yeterlilik Belgesi / Sertifika"
+            )
+        }
+
+        missingDocuments = documents
     }
 }
