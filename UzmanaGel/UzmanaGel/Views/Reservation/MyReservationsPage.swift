@@ -56,9 +56,17 @@ struct MyReservationsPage: View {
     private var filteredReservations: [Reservation] {
         switch selectedFilter {
         case .active:
-            return viewModel.reservations.filter { $0.status == .pending || $0.status == .accepted }
+            return viewModel.reservations.filter {
+                $0.status == .pending
+                    || $0.status == .accepted
+                    || $0.status == .inProgress
+            }
         case .past:
-            return viewModel.reservations.filter { $0.status == .completed || $0.status == .rejected }
+            return viewModel.reservations.filter {
+                $0.status == .completed
+                    || $0.status == .rejected
+                    || $0.status == .noShow
+            }
         case .cancelled:
             return viewModel.reservations.filter { $0.status == .cancelled }
         }
@@ -372,11 +380,13 @@ struct MyReservationsPage: View {
 
     private func statusColor(_ status: ReservationStatus) -> Color {
         switch status {
-        case .pending:   return .orange
-        case .accepted:  return .green
-        case .rejected:  return .red
-        case .cancelled: return .gray
-        case .completed: return Color("PrimaryColor")
+        case .pending:    return .orange
+        case .accepted:   return .green
+        case .inProgress: return .blue
+        case .completed:  return Color("PrimaryColor")
+        case .rejected:   return .red
+        case .cancelled:  return .gray
+        case .noShow:     return .gray
         }
     }
 

@@ -102,31 +102,76 @@ service cloud.firestore {
         ]);
 
       allow update: if signedIn()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          "status",
-          "updatedAt",
-          "rejectionReason"
-        ])
+        && request.resource.data.updatedAt is timestamp
         && (
           (
             resource.data.customerId == request.auth.uid
             && resource.data.status in ["pending", "accepted"]
             && request.resource.data.status == "cancelled"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status",
+              "updatedAt"
+            ])
           )
           ||
           (
             resource.data.providerId == request.auth.uid
             && resource.data.status == "pending"
-            && (
-              request.resource.data.status == "accepted"
-              ||
-              (
-                request.resource.data.status == "rejected"
-                && request.resource.data.rejectionReason is string
-                && request.resource.data.rejectionReason.size() > 0
-                && request.resource.data.rejectionReason.size() <= 200
-              )
-            )
+            && request.resource.data.status == "accepted"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status",
+              "updatedAt"
+            ])
+          )
+          ||
+          (
+            resource.data.providerId == request.auth.uid
+            && resource.data.status == "pending"
+            && request.resource.data.status == "rejected"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status",
+              "updatedAt",
+              "rejectionReason"
+            ])
+            && request.resource.data.rejectionReason is string
+            && request.resource.data.rejectionReason.size() > 0
+            && request.resource.data.rejectionReason.size() <= 200
+          )
+          ||
+          (
+            resource.data.providerId == request.auth.uid
+            && resource.data.status == "accepted"
+            && request.resource.data.status == "inProgress"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status",
+              "updatedAt",
+              "startedAt"
+            ])
+            && request.resource.data.startedAt is timestamp
+          )
+          ||
+          (
+            resource.data.providerId == request.auth.uid
+            && resource.data.status == "accepted"
+            && request.resource.data.status == "noShow"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status",
+              "updatedAt",
+              "noShowAt"
+            ])
+            && request.resource.data.noShowAt is timestamp
+          )
+          ||
+          (
+            resource.data.providerId == request.auth.uid
+            && resource.data.status == "inProgress"
+            && request.resource.data.status == "completed"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status",
+              "updatedAt",
+              "completedAt"
+            ])
+            && request.resource.data.completedAt is timestamp
           )
         );
 
@@ -236,7 +281,10 @@ service cloud.firestore {
                 && request.resource.data.status in [
                   "accepted",
                   "rejected",
-                  "cancelled"
+                  "cancelled",
+                  "inProgress",
+                  "completed",
+                  "noShow"
                 ]
                 && getAfter(
                   /databases/$(database)/documents/reservations/$(resource.data.reservationId)
@@ -256,7 +304,13 @@ service cloud.firestore {
                     getAfter(
                       /databases/$(database)/documents/reservations/$(resource.data.reservationId)
                     ).data.providerId == request.auth.uid
-                    && request.resource.data.status in ["accepted", "rejected"]
+                    && request.resource.data.status in [
+                      "accepted",
+                      "rejected",
+                      "inProgress",
+                      "completed",
+                      "noShow"
+                    ]
                   )
                 )
               )

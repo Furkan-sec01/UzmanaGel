@@ -145,12 +145,16 @@ class ScheduleViewModel: ObservableObject {
             return .orange
         case .accepted:
             return .green
+        case .inProgress:
+            return .blue
+        case .completed:
+            return .blue
         case .rejected:
             return .red
         case .cancelled:
             return .gray
-        case .completed:
-            return .blue
+        case .noShow:
+            return .gray
         }
     }
 
@@ -195,7 +199,7 @@ class ScheduleViewModel: ObservableObject {
     }
 
     private func isBlockingStatus(_ status: ReservationStatus) -> Bool {
-        status == .pending || status == .accepted
+        status.isBlockingSlot
     }
 
     private var timeFormatter: DateFormatter {
