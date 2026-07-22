@@ -359,6 +359,32 @@ export const sendReservationStatusNotification = onDocumentUpdated(
       break;
     }
 
+    case "inProgress": {
+      receiverId = customerId;
+      title = "Hizmet başlatıldı";
+      body =
+        `${displayServiceTitle} hizmetiniz uzman tarafından ` +
+        "başlatıldı.";
+      break;
+    }
+
+    case "completed": {
+      receiverId = customerId;
+      title = "Hizmet tamamlandı";
+      body =
+        `${displayServiceTitle} hizmetiniz tamamlandı.`;
+      break;
+    }
+
+    case "noShow": {
+      receiverId = customerId;
+      title = "Rezervasyon güncellendi";
+      body =
+        `${displayServiceTitle} rezervasyonunuz, müşteri ` +
+        "gelmedi olarak işaretlendi.";
+      break;
+    }
+
     default:
       return;
     }
