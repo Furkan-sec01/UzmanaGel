@@ -8,9 +8,6 @@ enum ReviewRepositoryError: LocalizedError {
     case invalidReview
     case reviewNotAllowed
     case alreadyReviewed
-    case invalidProviderResponse
-    case providerResponseNotAllowed
-    case alreadyResponded
 
     var errorDescription: String? {
         switch self {
@@ -24,12 +21,6 @@ enum ReviewRepositoryError: LocalizedError {
             return "Yalnızca tamamlanan rezervasyonlar değerlendirilebilir."
         case .alreadyReviewed:
             return "Bu rezervasyon daha önce değerlendirilmiş."
-        case .invalidProviderResponse:
-            return "Uzman cevabı geçersiz."
-        case .providerResponseNotAllowed:
-            return "Bu değerlendirmeye cevap verme yetkiniz bulunmuyor."
-        case .alreadyResponded:
-            return "Bu değerlendirmeye daha önce cevap verilmiş."
         }
     }
 }
@@ -145,57 +136,6 @@ final class ReviewRepository {
         ])
     }
 
-    func submitProviderResponse(
-        reviewId: String,
-        response: String
-    ) async throws {
-        guard let currentUser = Auth.auth().currentUser else {
-            throw ReviewRepositoryError.userNotFound
-        }
-
-        let trimmedReviewId = reviewId.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-
-        let trimmedResponse = response.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-
-        guard !trimmedReviewId.isEmpty,
-              !trimmedResponse.isEmpty,
-              trimmedResponse.count <= 500 else {
-            throw ReviewRepositoryError.invalidProviderResponse
-        }
-
-        let reviewRef = db
-            .collection(collectionName)
-            .document(trimmedReviewId)
-
-        let snapshot = try await reviewRef.getDocument()
-
-        guard let data = snapshot.data(),
-              let providerId = data["providerId"] as? String,
-              providerId == currentUser.uid else {
-            throw ReviewRepositoryError.providerResponseNotAllowed
-        }
-
-        let existingResponse =
-            (data["providerResponse"] as? String)?
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                )
-
-        guard existingResponse?.isEmpty != false else {
-            throw ReviewRepositoryError.alreadyResponded
-        }
-
-        try await reviewRef.updateData([
-            "providerResponse": trimmedResponse,
-            "providerResponseAt": FieldValue.serverTimestamp(),
-            "updatedAt": FieldValue.serverTimestamp()
-        ])
-    }
-
     private func mapReview(
         from document: QueryDocumentSnapshot
     ) -> ProviderReview? {
@@ -235,16 +175,6 @@ final class ReviewRepository {
             (data["updatedAt"] as? Timestamp)?.dateValue()
             ?? createdAt
 
-        let providerResponse =
-            (data["providerResponse"] as? String)?
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                )
-
-        let providerResponseAt =
-            (data["providerResponseAt"] as? Timestamp)?
-                .dateValue()
-
         let reviewId =
             (data["reviewId"] as? String)?
                 .trimmingCharacters(
@@ -263,11 +193,6 @@ final class ReviewRepository {
             serviceTitle: serviceTitle,
             rating: rating,
             comment: comment,
-            providerResponse:
-                providerResponse?.isEmpty == false
-                    ? providerResponse
-                    : nil,
-            providerResponseAt: providerResponseAt,
             createdAt: createdAt,
             updatedAt: updatedAt
         )

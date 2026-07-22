@@ -1,11 +1,9 @@
 import SwiftUI
-import FirebaseAuth
 
 @MainActor
 struct ReviewsPage: View {
 
     @StateObject private var viewModel: ReviewsViewModel
-    @State private var selectedReviewForResponse: ProviderReview?
 
     private let providerName: String
 
@@ -36,33 +34,6 @@ struct ReviewsPage: View {
         }
         .refreshable {
             await viewModel.loadReviews()
-        }
-        .sheet(item: $selectedReviewForResponse) { review in
-            ProviderResponseSheet(
-                review: review
-            ) { response in
-                await viewModel.submitProviderResponse(
-                    reviewId: review.reviewId,
-                    response: response
-                )
-            }
-        }
-        .alert(
-            "Cevap Gönderilemedi",
-            isPresented: Binding(
-                get: {
-                    viewModel.responseErrorMessage != nil
-                },
-                set: { isPresented in
-                    if !isPresented {
-                        viewModel.responseErrorMessage = nil
-                    }
-                }
-            )
-        ) {
-            Button("Tamam", role: .cancel) {}
-        } message: {
-            Text(viewModel.responseErrorMessage ?? "")
         }
     }
 
@@ -175,78 +146,12 @@ struct ReviewsPage: View {
             .font(.system(size: 14))
             .foregroundColor(Color("Text"))
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            if let providerResponse = review.providerResponse {
-                providerResponseView(
-                    response: providerResponse,
-                    responseDate: review.providerResponseAt
-                )
-            } else if Auth.auth().currentUser?.uid == review.providerId {
-                Button {
-                    selectedReviewForResponse = review
-                } label: {
-                    Label(
-                        "Cevapla",
-                        systemImage: "arrowshape.turn.up.left"
-                    )
-                    .font(.system(size: 14, weight: .semibold))
-                }
-                .buttonStyle(.bordered)
-            }
         }
         .padding(16)
         .background(Color("CardBackground"))
         .clipShape(
             RoundedRectangle(
                 cornerRadius: 14,
-                style: .continuous
-            )
-        )
-    }
-
-    private func providerResponseView(
-        response: String,
-        responseDate: Date?
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(
-                    "Uzmanın Yanıtı",
-                    systemImage: "checkmark.seal.fill"
-                )
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color("PrimaryColor"))
-
-                Spacer()
-
-                if let responseDate {
-                    Text(
-                        responseDate,
-                        format: .dateTime
-                            .day()
-                            .month(.abbreviated)
-                            .year()
-                    )
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                }
-            }
-
-            Text(response)
-                .font(.system(size: 14))
-                .foregroundColor(Color("Text"))
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .leading
-                )
-        }
-        .padding(12)
-        .background(
-            Color("PrimaryColor").opacity(0.08)
-        )
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 10,
                 style: .continuous
             )
         )
@@ -329,113 +234,3 @@ struct ReviewsPage: View {
         return String(value).uppercased()
     }
 }
-
-@MainActor
-private struct ProviderResponseSheet: View {
-
-    @Environment(\.dismiss) private var dismiss
-
-    let review: ProviderReview
-    let onSubmit: (String) async -> Bool
-
-    @State private var response = ""
-    @State private var isSubmitting = false
-
-    private var trimmedResponse: String {
-        response.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-    }
-
-    private var canSubmit: Bool {
-        !trimmedResponse.isEmpty
-            && trimmedResponse.count <= 500
-            && !isSubmitting
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("Müşteri Yorumu") {
-                    Text(review.customerName)
-                        .font(.headline)
-
-                    Text(review.comment.isEmpty
-                         ? "Yorum metni eklenmedi."
-                         : review.comment)
-                }
-
-                Section("Uzman Yanıtı") {
-                    ZStack(alignment: .topLeading) {
-                        if response.isEmpty {
-                            Text("Yanıtınızı yazın...")
-                                .foregroundColor(.secondary)
-                                .padding(.top, 8)
-                                .padding(.leading, 5)
-                        }
-
-                        TextEditor(text: $response)
-                            .frame(minHeight: 140)
-                    }
-
-                    Text("\(response.count)/500")
-                        .font(.caption)
-                        .foregroundColor(
-                            response.count > 500
-                                ? .red
-                                : .secondary
-                        )
-                        .frame(
-                            maxWidth: .infinity,
-                            alignment: .trailing
-                        )
-                }
-            }
-            .navigationTitle("Yoruma Cevap Ver")
-            .navigationBarTitleDisplayMode(.inline)
-            .interactiveDismissDisabled(isSubmitting)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Vazgeç") {
-                        dismiss()
-                    }
-                    .disabled(isSubmitting)
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        Task {
-                            await submitResponse()
-                        }
-                    } label: {
-                        if isSubmitting {
-                            ProgressView()
-                        } else {
-                            Text("Gönder")
-                        }
-                    }
-                    .disabled(!canSubmit)
-                }
-            }
-        }
-    }
-
-    private func submitResponse() async {
-        guard canSubmit else {
-            return
-        }
-
-        isSubmitting = true
-
-        let isSuccessful = await onSubmit(
-            trimmedResponse
-        )
-
-        isSubmitting = false
-
-        if isSuccessful {
-            dismiss()
-        }
-    }
-}
-

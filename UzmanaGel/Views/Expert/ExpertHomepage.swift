@@ -26,7 +26,6 @@ struct ExpertHomepage: View {
     @State private var showProfilePage = false
     @State private var showReservationsPage = false
     @State private var showMessagesPage = false
-    @State private var showReviewsPage = false
     @State private var showExpertPortfolioPage = false
 
     @State private var showProviderDashboard = false
@@ -132,23 +131,6 @@ struct ExpertHomepage: View {
                                 }
                             }
                         }
-                }
-            }
-            .fullScreenCover(isPresented: $showReviewsPage) {
-                if let providerId = session.userId {
-                    NavigationStack {
-                        ReviewsPage(
-                            providerId: providerId,
-                            providerName: ""
-                        )
-                        .toolbar {
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
-                                    showReviewsPage = false
-                                }
-                            }
-                        }
-                    }
                 }
             }
             .fullScreenCover(isPresented: $showExpertPortfolioPage) {
@@ -537,19 +519,6 @@ private extension ExpertHomepage {
 
                 Button {
                     showMenu = false
-                    showReviewsPage = true
-                } label: {
-                    actionRowContent(
-                        icon: "star.bubble.fill",
-                        title: "Yorumlar",
-                        subtitle: "Müşteri değerlendirmelerini görüntüleyin",
-                        color: .orange
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    showMenu = false
                     showProviderDashboard = true
                 } label: {
                     actionRowContent(
@@ -748,15 +717,6 @@ private extension ExpertHomepage {
                     ) {
                         showMenu = false
                         showMessagesPage = true
-                    }
-
-                    menuRow(
-                        icon: "star.bubble.fill",
-                        title: "Yorumlar",
-                        subtitle: "Müşteri değerlendirmelerini görüntüleyin"
-                    ) {
-                        showMenu = false
-                        showReviewsPage = true
                     }
 
                     menuRow(icon: "photo.on.rectangle.angled", title: "Portföy", subtitle: "Portföyünüzü yönetin") {

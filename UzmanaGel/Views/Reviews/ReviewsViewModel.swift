@@ -6,9 +6,7 @@ final class ReviewsViewModel: ObservableObject {
 
     @Published private(set) var reviews: [ProviderReview] = []
     @Published private(set) var isLoading = false
-    @Published private(set) var respondingReviewId: String?
     @Published var errorMessage: String?
-    @Published var responseErrorMessage: String?
 
     private let providerId: String
     private let repository: ReviewRepository
@@ -35,38 +33,6 @@ final class ReviewsViewModel: ObservableObject {
         }
 
         return Double(totalRating) / Double(reviews.count)
-    }
-
-    func submitProviderResponse(
-        reviewId: String,
-        response: String
-    ) async -> Bool {
-        guard respondingReviewId == nil else {
-            return false
-        }
-
-        respondingReviewId = reviewId
-        responseErrorMessage = nil
-
-        defer {
-            respondingReviewId = nil
-        }
-
-        do {
-            try await repository.submitProviderResponse(
-                reviewId: reviewId,
-                response: response
-            )
-
-            reviews = try await repository.fetchReviews(
-                providerId: providerId
-            )
-
-            return true
-        } catch {
-            responseErrorMessage = error.localizedDescription
-            return false
-        }
     }
 
     func loadReviews() async {

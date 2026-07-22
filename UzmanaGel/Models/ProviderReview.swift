@@ -14,9 +14,6 @@ struct ProviderReview: Identifiable, Codable, Hashable {
     let rating: Int
     let comment: String
 
-    let providerResponse: String?
-    let providerResponseAt: Date?
-
     let createdAt: Date
     let updatedAt: Date
 
