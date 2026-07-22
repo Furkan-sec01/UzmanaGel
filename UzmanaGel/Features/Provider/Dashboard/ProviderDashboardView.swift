@@ -124,9 +124,24 @@ struct ProviderDashboardView: View {
                 }
                 Spacer()
                 
-                Toggle("", isOn: $viewModel.isAvailable)
-                    .labelsHidden()
-                    .tint(Color.themeSuccess)
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: {
+                            viewModel.isAvailable
+                        },
+                        set: { newValue in
+                            Task {
+                                await viewModel.updateAvailability(
+                                    to: newValue
+                                )
+                            }
+                        }
+                    )
+                )
+                .labelsHidden()
+                .tint(Color.themeSuccess)
+                .disabled(viewModel.isUpdatingAvailability)
             }
         }
     }

@@ -1,10 +1,23 @@
 import Foundation
 import Combine
+import FirebaseAuth
+
+private enum DashboardError: LocalizedError {
+    case userNotFound
+
+    var errorDescription: String? {
+        switch self {
+        case .userNotFound:
+            return "Kullanıcı oturumu bulunamadı."
+        }
+    }
+}
 
 @MainActor
 final class ProviderDashboardViewModel: ObservableObject {
 
     @Published var isAvailable = true
+    @Published var isUpdatingAvailability = false
 
     // These metrics need payment, review, and analytics data.
     @Published var todayEarnings = "—"
@@ -61,11 +74,15 @@ final class ProviderDashboardViewModel: ObservableObject {
     @Published var showError = false
 
     private let reservationRepository: ReservationRepository
+    private let userRepository: UserRepository
 
     init(
-        reservationRepository: ReservationRepository = ReservationRepository()
+        reservationRepository: ReservationRepository =
+            ReservationRepository(),
+        userRepository: UserRepository = UserRepository()
     ) {
         self.reservationRepository = reservationRepository
+        self.userRepository = userRepository
     }
 
     func loadDashboardData() async {
@@ -80,9 +97,17 @@ final class ProviderDashboardViewModel: ObservableObject {
         }
 
         do {
+            guard let uid = Auth.auth().currentUser?.uid else {
+                throw DashboardError.userNotFound
+            }
+
             let reservations =
                 try await reservationRepository.fetchProviderReservations()
 
+            let availability =
+                try await userRepository.fetchExpertAvailability(uid: uid)
+
+            isAvailable = availability
             updateMetrics(from: reservations)
         } catch {
             errorMessage = error.localizedDescription
@@ -90,8 +115,37 @@ final class ProviderDashboardViewModel: ObservableObject {
         }
     }
 
-    func toggleAvailability() {
-        isAvailable.toggle()
+    func updateAvailability(to newValue: Bool) async {
+        guard !isUpdatingAvailability else { return }
+        guard newValue != isAvailable else { return }
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            errorMessage = DashboardError.userNotFound.localizedDescription
+            showError = true
+            return
+        }
+
+        let previousValue = isAvailable
+
+        isAvailable = newValue
+        isUpdatingAvailability = true
+        errorMessage = ""
+        showError = false
+
+        defer {
+            isUpdatingAvailability = false
+        }
+
+        do {
+            try await userRepository.updateExpertAvailability(
+                uid: uid,
+                isAvailable: newValue
+            )
+        } catch {
+            isAvailable = previousValue
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 
     private func updateMetrics(from reservations: [Reservation]) {
