@@ -354,6 +354,20 @@ final class ServiceRepository {
         merged.city = provider.city
         merged.providerIsAvailable = provider.isAvailable
 
+        let profileImageURL = provider.profileImageURL
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        let legacyImageURL = provider.image
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        merged.providerImageURL = profileImageURL.isEmpty
+            ? legacyImageURL
+            : profileImageURL
+
         // Provider'dan gelen ek alanlar (varsa)
         if merged.description.isEmpty && !provider.description.isEmpty {
             merged.description = provider.description

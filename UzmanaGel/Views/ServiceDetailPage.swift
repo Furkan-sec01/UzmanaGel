@@ -166,11 +166,20 @@ private extension ServiceDetailPage {
 
     var profileAvatar: some View {
         Group {
-            if let url = vm.coverImageURL {
+            if let url = providerProfileURL {
                 AsyncImage(url: url) { phase in
                     switch phase {
-                    case .success(let img):
-                        img.resizable().scaledToFill()
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+
+                    case .empty:
+                        ZStack {
+                            Color(.secondarySystemBackground)
+                            ProgressView()
+                        }
+
                     default:
                         avatarPlaceholder
                     }
@@ -179,6 +188,31 @@ private extension ServiceDetailPage {
                 avatarPlaceholder
             }
         }
+    }
+
+    var providerProfileURL: URL? {
+        let profileValue = vm.expertProfile?
+            .profileImageURL?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if let profileValue,
+           !profileValue.isEmpty,
+           let url = URL(string: profileValue) {
+            return url
+        }
+
+        let mergedValue = vm.service.providerImageURL
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !mergedValue.isEmpty else {
+            return nil
+        }
+
+        return URL(string: mergedValue)
     }
 
     var avatarPlaceholder: some View {

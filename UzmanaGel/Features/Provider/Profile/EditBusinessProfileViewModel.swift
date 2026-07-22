@@ -31,11 +31,9 @@ final class EditBusinessProfileViewModel: ObservableObject {
 
     let descriptionLimit = 250
 
-    // Image state
+    // Logo state
     @Published var logoUrl: String?
-    @Published var coverUrl: String?
     @Published var selectedLogoData: Data?
-    @Published var selectedCoverData: Data?
 
     // Status state
     @Published var isCertified = false
@@ -45,11 +43,15 @@ final class EditBusinessProfileViewModel: ObservableObject {
     @Published var successMessage: String?
 
     private let userRepository: UserRepository
+    private let storageUploadService: StorageUploadService
 
     init(
-        userRepository: UserRepository = UserRepository()
+        userRepository: UserRepository = UserRepository(),
+        storageUploadService: StorageUploadService =
+            StorageUploadService()
     ) {
         self.userRepository = userRepository
+        self.storageUploadService = storageUploadService
     }
 
     func loadBusinessInfo() async {
@@ -78,7 +80,6 @@ final class EditBusinessProfileViewModel: ObservableObject {
             description = profile.about ?? ""
             selectedCategories = profile.serviceCategories
             logoUrl = profile.profileImageURL
-            coverUrl = nil
 
             isCertified = !profile.certificateURLs.isEmpty
             updateMissingDocuments(from: profile)
@@ -105,7 +106,8 @@ final class EditBusinessProfileViewModel: ObservableObject {
 
         guard let uid = Auth.auth().currentUser?.uid else {
             errorMessage =
-                EditBusinessProfileError.userNotFound.localizedDescription
+                EditBusinessProfileError.userNotFound
+                    .localizedDescription
             return
         }
 
@@ -118,7 +120,7 @@ final class EditBusinessProfileViewModel: ObservableObject {
         }
 
         do {
-            let fields: [String: Any] = [
+            var fields: [String: Any] = [
                 "businessName": trimmedBusinessName,
                 "about": trimmedDescription,
                 "description": trimmedDescription,
@@ -126,28 +128,37 @@ final class EditBusinessProfileViewModel: ObservableObject {
                 "updatedAt": FieldValue.serverTimestamp()
             ]
 
+            var uploadedLogoURL: String?
+
+            if let selectedLogoData {
+                let newLogoURL =
+                    try await storageUploadService
+                        .uploadProfilePhoto(
+                            imageData: selectedLogoData
+                        )
+
+                fields["profileImageURL"] = newLogoURL
+
+                // Keep provider summary image in sync.
+                fields["image"] = newLogoURL
+
+                uploadedLogoURL = newLogoURL
+            }
+
             try await userRepository.updateExpertProfile(
                 uid: uid,
                 fields: fields
             )
 
+            if let uploadedLogoURL {
+                logoUrl = uploadedLogoURL
+            }
+
             businessName = trimmedBusinessName
             description = trimmedDescription
-
-            let hasPendingImageChange =
-                selectedLogoData != nil ||
-                selectedCoverData != nil
-
             selectedLogoData = nil
-            selectedCoverData = nil
 
-            if hasPendingImageChange {
-                successMessage =
-                    "İşletme bilgileri kaydedildi. " +
-                    "Görsel değişiklikleri henüz kaydedilmedi."
-            } else {
-                successMessage = "İşletme profili güncellendi."
-            }
+            successMessage = "İşletme profili güncellendi."
 
             NotificationCenter.default.post(
                 name: .userDataUpdated,

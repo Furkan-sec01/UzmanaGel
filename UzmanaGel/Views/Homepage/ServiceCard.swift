@@ -156,16 +156,20 @@ struct ServiceCard: View {
 
     private var serviceImage: some View {
         Group {
-            if let url = imageURL {
+            if let url = cardImageURL {
                 AsyncImage(url: url) { phase in
                     switch phase {
-                    case .success(let img):
-                        img.resizable().scaledToFill()
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+
                     case .empty:
                         ZStack {
                             Color(.secondarySystemBackground)
                             ProgressView()
                         }
+
                     default:
                         imagePlaceholder
                     }
@@ -174,6 +178,51 @@ struct ServiceCard: View {
                 imagePlaceholder
             }
         }
+    }
+
+    private var cardImageURL: URL? {
+        // Keep custom listing images unchanged.
+        if let imageURL,
+           !isProfileStorageImage(imageURL) {
+            return imageURL
+        }
+
+        let providerValue = service.providerImageURL
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !providerValue.isEmpty,
+           let url = URL(string: providerValue) {
+            return url
+        }
+
+        // Keep old images as a fallback.
+        if let imageURL {
+            return imageURL
+        }
+
+        let serviceValue = service.image
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !serviceValue.isEmpty else {
+            return nil
+        }
+
+        return URL(string: serviceValue)
+    }
+
+    private func isProfileStorageImage(
+        _ url: URL
+    ) -> Bool {
+        let value = url.absoluteString.lowercased()
+
+        return value.contains("profile_photos%2f")
+            || value.contains("profile_photos/")
+            || value.contains("profile_images%2f")
+            || value.contains("profile_images/")
     }
 
     private var imagePlaceholder: some View {

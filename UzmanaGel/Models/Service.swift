@@ -30,6 +30,10 @@ struct Service: Identifiable, Codable, Hashable {
     var city: String
     var description: String
     var image: String
+
+    // Provider profile photo from service_providers.
+    var providerImageURL: String = ""
+
     var experienceYears: Int
     var rating: Double
     var isAvailable: Bool
