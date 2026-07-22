@@ -157,27 +157,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
             }
 
 
-        case "review":
-            guard let rawProviderId = data["providerId"] as? String else {
-                print("Review provider ID bulunamadı.")
-                return
-            }
-
-            let providerId = rawProviderId.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-            guard !providerId.isEmpty else {
-                print("Review provider ID boş.")
-                return
-            }
-
-            Task { @MainActor in
-                NotificationRouter.shared.openReviews(
-                    providerId: providerId
-                )
-            }
-
         default:
             print("Unknown notification type:", type)
         }

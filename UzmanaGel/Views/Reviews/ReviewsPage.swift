@@ -66,14 +66,10 @@ struct ReviewsPage: View {
 
     private var summaryCard: some View {
         VStack(spacing: 12) {
-            if !providerName.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ).isEmpty {
-                Text(providerName)
-                    .font(.headline)
-                    .foregroundColor(Color("Text"))
-                    .multilineTextAlignment(.center)
-            }
+            Text(providerName)
+                .font(.headline)
+                .foregroundColor(Color("Text"))
+                .multilineTextAlignment(.center)
 
             HStack(spacing: 8) {
                 Image(systemName: "star.fill")
