@@ -6,7 +6,6 @@ struct EditBusinessProfileView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var logoItem: PhotosPickerItem? = nil
-    @State private var coverItem: PhotosPickerItem? = nil
     @State private var isAddingCategory = false
     
     let availableCategories = ["Temizlik", "Tesisatçı", "Elektrikçi", "Boya & Badana", "Marangoz", "Nakliyat", "Bahçe Bakım"]
@@ -158,13 +157,6 @@ struct EditBusinessProfileView: View {
                     }
                 }
             }
-            .onChange(of: coverItem) { _, newItem in
-                Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                        viewModel.selectedCoverData = data
-                    }
-                }
-            }
             .task {
                 await viewModel.loadBusinessInfo()
             }
@@ -175,83 +167,103 @@ struct EditBusinessProfileView: View {
     
     private var headerPhotosSection: some View {
         VStack(spacing: 0) {
-            ZStack(alignment: .bottomLeading) {
-                // Cover Image Area
-                Group {
-                    if let coverData = viewModel.selectedCoverData, let uiImage = UIImage(data: coverData) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                    } else if let cover = viewModel.coverUrl, let url = URL(string: cover) {
-                        AsyncImage(url: url) { img in
-                            img.resizable().scaledToFill()
-                        } placeholder: {
-                            Color.themeSecondaryText.opacity(0.15)
-                        }
-                    } else {
-                        Color.themeSecondaryText.opacity(0.2)
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(
+                    cornerRadius: 0,
+                    style: .continuous
+                )
+                .fill(Color.themePrimary.opacity(0.12))
+                .frame(height: 150)
+                .overlay {
+                    VStack(spacing: 8) {
+                        Image(systemName: "building.2.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(
+                                Color.themePrimary.opacity(0.6)
+                            )
+
+                        Text("İşletme Profili")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(
+                                Color.themeSecondaryText
+                            )
                     }
                 }
-                .frame(height: 150)
-                .frame(maxWidth: .infinity)
-                .clipped()
-                .overlay(
-                    PhotosPicker(selection: $coverItem, matching: .images) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.black.opacity(0.5))
-                                .frame(width: 32, height: 32)
-                            Image(systemName: "camera.fill")
-                                .foregroundColor(.white)
-                                .font(.caption)
-                        }
-                    }
-                    .padding(8),
-                    alignment: .topTrailing
-                )
-                
-                // Business Logo (circular, overlaps cover)
+
                 ZStack(alignment: .bottomTrailing) {
                     Group {
-                        if let logoData = viewModel.selectedLogoData, let uiImage = UIImage(data: logoData) {
-                            Image(uiImage: uiImage)
+                        if let logoData =
+                            viewModel.selectedLogoData,
+                           let image = UIImage(data: logoData) {
+                            Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
-                        } else if let logo = viewModel.logoUrl, let url = URL(string: logo) {
-                            AsyncImage(url: url) { img in
-                                img.resizable().scaledToFill()
-                            } placeholder: {
-                                Color.white.shimmer()
+                        } else if let logo = viewModel.logoUrl,
+                                  let url = URL(string: logo) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+
+                                case .failure:
+                                    logoPlaceholder
+
+                                case .empty:
+                                    ProgressView()
+
+                                @unknown default:
+                                    logoPlaceholder
+                                }
                             }
                         } else {
-                            ZStack {
-                                Color.white
-                                Image(systemName: "briefcase.fill")
-                                    .font(.title3)
-                                    .foregroundColor(Color.themeSecondaryText)
-                            }
+                            logoPlaceholder
                         }
                     }
-                    .frame(width: 80, height: 80)
+                    .frame(width: 92, height: 92)
                     .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white, lineWidth: 3.0))
+                    .overlay {
+                        Circle()
+                            .stroke(Color.white, lineWidth: 4)
+                    }
                     .shadow(radius: 5)
-                    
-                    PhotosPicker(selection: $logoItem, matching: .images) {
+
+                    PhotosPicker(
+                        selection: $logoItem,
+                        matching: .images
+                    ) {
                         Image(systemName: "pencil.circle.fill")
                             .resizable()
-                            .frame(width: 24, height: 24)
+                            .frame(width: 28, height: 28)
                             .symbolRenderingMode(.multicolor)
-                            .background(Color.white.clipShape(Circle()))
+                            .background(
+                                Color.white.clipShape(Circle())
+                            )
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.plain)
                 }
-                .offset(x: 16, y: 40)
+                .offset(y: 45)
             }
-            .padding(.bottom, 45) // Push details below logo
+            .padding(.bottom, 55)
+
+            Text("Logo, Değişiklikleri Kaydet butonuyla yüklenir.")
+                .font(.caption)
+                .foregroundColor(Color.themeSecondaryText)
         }
     }
-    
+
+    private var logoPlaceholder: some View {
+        ZStack {
+            Color.white
+
+            Image(systemName: "briefcase.fill")
+                .font(.title2)
+                .foregroundColor(Color.themeSecondaryText)
+        }
+    }
+
     private var certificationStatusBox: some View {
         CardView(cornerRadius: Constants.radiusM, shadowRadius: Constants.shadowRadiusS) {
             VStack(alignment: .leading, spacing: Constants.spacingS) {

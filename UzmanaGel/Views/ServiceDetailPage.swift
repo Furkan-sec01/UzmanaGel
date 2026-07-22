@@ -166,11 +166,20 @@ private extension ServiceDetailPage {
 
     var profileAvatar: some View {
         Group {
-            if let url = vm.coverImageURL {
+            if let url = providerProfileURL {
                 AsyncImage(url: url) { phase in
                     switch phase {
-                    case .success(let img):
-                        img.resizable().scaledToFill()
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+
+                    case .empty:
+                        ZStack {
+                            Color(.secondarySystemBackground)
+                            ProgressView()
+                        }
+
                     default:
                         avatarPlaceholder
                     }
@@ -179,6 +188,31 @@ private extension ServiceDetailPage {
                 avatarPlaceholder
             }
         }
+    }
+
+    var providerProfileURL: URL? {
+        let profileValue = vm.expertProfile?
+            .profileImageURL?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if let profileValue,
+           !profileValue.isEmpty,
+           let url = URL(string: profileValue) {
+            return url
+        }
+
+        let mergedValue = vm.service.providerImageURL
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !mergedValue.isEmpty else {
+            return nil
+        }
+
+        return URL(string: mergedValue)
     }
 
     var avatarPlaceholder: some View {
@@ -574,7 +608,31 @@ private extension ServiceDetailPage {
 
     var ctaButton: some View {
         VStack(spacing: 10) {
+            if let message = vm.reservationAvailabilityMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+
+                    Text(message.localized)
+                        .font(.system(size: 13, weight: .semibold))
+                        .multilineTextAlignment(.leading)
+
+                    Spacer(minLength: 0)
+                }
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Color.red.opacity(0.1))
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: 10,
+                        style: .continuous
+                    )
+                )
+            }
+
             Button {
+                guard vm.canCreateReservation else { return }
                 showReservationSheet = true
             } label: {
                 HStack(spacing: 8) {
@@ -587,7 +645,11 @@ private extension ServiceDetailPage {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color.blue)
+                .background(
+                    vm.canCreateReservation
+                    ? Color.blue
+                    : Color.gray
+                )
                 .clipShape(
                     RoundedRectangle(
                         cornerRadius: 14,
@@ -595,6 +657,7 @@ private extension ServiceDetailPage {
                     )
                 )
             }
+            .disabled(!vm.canCreateReservation)
 
             Button {
                 startConversation()

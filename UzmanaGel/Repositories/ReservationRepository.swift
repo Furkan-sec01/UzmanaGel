@@ -22,6 +22,8 @@ final class ReservationRepository {
         case invalidCustomerName
         case invalidReservation
         case slotUnavailable
+        case serviceUnavailable
+        case providerUnavailable
         case unauthorizedAction
         case invalidStatusTransition
 
@@ -39,6 +41,10 @@ final class ReservationRepository {
                 return "Rezervasyon bilgisi eksik."
             case .slotUnavailable:
                 return "Seçtiğiniz saat dolu. Lütfen başka bir saat seçin."
+            case .serviceUnavailable:
+                return "Bu hizmet şu anda rezervasyona kapalı."
+            case .providerUnavailable:
+                return "Uzman şu anda yeni rezervasyon kabul etmiyor."
             case .unauthorizedAction:
                 return "Bu rezervasyon işlemi için yetkiniz yok."
             case .invalidStatusTransition:
@@ -83,6 +89,60 @@ final class ReservationRepository {
 
         guard !trimmedCustomerName.isEmpty else {
             throw ReservationRepositoryError.invalidCustomerName
+        }
+
+        let serviceRef = db
+            .collection("services")
+            .document(trimmedServiceId)
+
+        let providerRef = db
+            .collection("service_providers")
+            .document(trimmedProviderId)
+
+        async let serviceSnapshotTask = serviceRef.getDocument()
+        async let providerSnapshotTask = providerRef.getDocument()
+
+        let (serviceSnapshot, providerSnapshot) = try await (
+            serviceSnapshotTask,
+            providerSnapshotTask
+        )
+
+        guard
+            serviceSnapshot.exists,
+            let serviceData = serviceSnapshot.data()
+        else {
+            throw ReservationRepositoryError.invalidService
+        }
+
+        guard
+            serviceData["providerId"] as? String == trimmedProviderId
+        else {
+            throw ReservationRepositoryError.invalidProvider
+        }
+
+        guard serviceData["isActive"] as? Bool == true else {
+            throw ReservationRepositoryError.serviceUnavailable
+        }
+
+        let serviceIsAvailable =
+            serviceData["isAvailable"] as? Bool ?? true
+
+        guard serviceIsAvailable else {
+            throw ReservationRepositoryError.serviceUnavailable
+        }
+
+        guard
+            providerSnapshot.exists,
+            let providerData = providerSnapshot.data()
+        else {
+            throw ReservationRepositoryError.invalidProvider
+        }
+
+        let providerIsAvailable =
+            providerData["isAvailable"] as? Bool ?? true
+
+        guard providerIsAvailable else {
+            throw ReservationRepositoryError.providerUnavailable
         }
 
         let documentRef = db.collection(collectionName).document()

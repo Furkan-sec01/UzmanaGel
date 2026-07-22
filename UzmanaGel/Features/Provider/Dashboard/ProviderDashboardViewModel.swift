@@ -1,49 +1,44 @@
 import Foundation
 import Combine
+import FirebaseAuth
+
+private enum DashboardError: LocalizedError {
+    case userNotFound
+
+    var errorDescription: String? {
+        switch self {
+        case .userNotFound:
+            return "Kullanıcı oturumu bulunamadı."
+        }
+    }
+}
 
 @MainActor
-class ProviderDashboardViewModel: ObservableObject {
-    // Availability
+final class ProviderDashboardViewModel: ObservableObject {
+
     @Published var isAvailable = true
-    
-    // Statistics metrics
-    @Published var todayEarnings = "₺1,500"
-    @Published var totalJobsCount = "124"
-    @Published var averageRating = "4.8"
-    @Published var profileViewsCount = "1,840"
-    @Published var responseRate = "%98"
-    
-    // Chart Data Structs
-    struct WeeklyEarning: Identifiable {
-        let id = UUID()
-        let dayName: String
-        let amount: Double
-    }
-    
+    @Published var isUpdatingAvailability = false
+
+    @Published var totalJobsCount = "0"
+    @Published var pendingBookingsCount = 0
+    @Published var upcomingBookingsCount = 0
+    @Published var unreadMessagesCount = 0
+
     struct MonthlyJob: Identifiable {
         let id = UUID()
         let monthName: String
         let count: Int
     }
-    
-    struct SatisfactionTrend: Identifiable {
-        let id = UUID()
-        let date: String
-        let rating: Double
-    }
-    
+
     struct ServiceShare: Identifiable {
         let id = UUID()
         let serviceName: String
         let value: Double
     }
-    
-    @Published var weeklyEarnings: [WeeklyEarning] = []
+
     @Published var monthlyJobs: [MonthlyJob] = []
-    @Published var satisfactionTrends: [SatisfactionTrend] = []
     @Published var popularServices: [ServiceShare] = []
-    
-    // Today's appointments
+
     struct Appointment: Identifiable {
         let id: String
         let customerName: String
@@ -51,72 +46,208 @@ class ProviderDashboardViewModel: ObservableObject {
         let serviceTitle: String
         let price: Double
     }
-    
+
     @Published var todayAppointments: [Appointment] = []
-    @Published var pendingBookingsCount = 3
-    @Published var unreadMessagesCount = 5
-    
+
     @Published var isLoading = false
-    
-    private let providerService: ProviderService
-    private let scheduleService: ScheduleService
-    
-    init(providerService: ProviderService = MockProviderService(),
-         scheduleService: ScheduleService = MockScheduleService()) {
-        self.providerService = providerService
-        self.scheduleService = scheduleService
+    @Published var errorMessage = ""
+    @Published var showError = false
+
+    private let reservationRepository: ReservationRepository
+    private let userRepository: UserRepository
+
+    init(
+        reservationRepository: ReservationRepository =
+            ReservationRepository(),
+        userRepository: UserRepository = UserRepository()
+    ) {
+        self.reservationRepository = reservationRepository
+        self.userRepository = userRepository
     }
-    
+
     func loadDashboardData() async {
+        guard !isLoading else { return }
+
         isLoading = true
-        // Simulate loading delays
-        try? await Task.sleep(nanoseconds: 500_000_000)
-        
-        // Populate chart data
-        weeklyEarnings = [
-            .init(dayName: "Pzt", amount: 800),
-            .init(dayName: "Sal", amount: 1500),
-            .init(dayName: "Çar", amount: 950),
-            .init(dayName: "Per", amount: 1200),
-            .init(dayName: "Cum", amount: 1750),
-            .init(dayName: "Cmt", amount: 2400),
-            .init(dayName: "Paz", amount: 600)
-        ]
-        
-        monthlyJobs = [
-            .init(monthName: "Oca", count: 12),
-            .init(monthName: "Şub", count: 18),
-            .init(monthName: "Mar", count: 15),
-            .init(monthName: "Nis", count: 22),
-            .init(monthName: "May", count: 28),
-            .init(monthName: "Haz", count: 35)
-        ]
-        
-        satisfactionTrends = [
-            .init(date: "Oca", rating: 4.5),
-            .init(date: "Şub", rating: 4.6),
-            .init(date: "Mar", rating: 4.7),
-            .init(date: "Nis", rating: 4.6),
-            .init(date: "May", rating: 4.8),
-            .init(date: "Haz", rating: 4.8)
-        ]
-        
-        popularServices = [
-            .init(serviceName: "Petek Bakımı", value: 45),
-            .init(serviceName: "Kombi Montajı", value: 30),
-            .init(serviceName: "Tıkanıklık Açma", value: 15),
-            .init(serviceName: "Diğer", value: 10)
-        ]
-        
-        todayAppointments = [
-            .init(id: "app_1", customerName: "Ayşe Yılmaz", timeString: "10:30", serviceTitle: "Petek Temizliği", price: 1500.0),
-            .init(id: "app_2", customerName: "Caner Kaya", timeString: "14:00", serviceTitle: "Tıkanıklık Açma", price: 600.0)
-        ]
-        
-        isLoading = false
+        errorMessage = ""
+        showError = false
+
+        defer {
+            isLoading = false
+        }
+
+        do {
+            guard let uid = Auth.auth().currentUser?.uid else {
+                throw DashboardError.userNotFound
+            }
+
+            let reservations =
+                try await reservationRepository.fetchProviderReservations()
+
+            let availability =
+                try await userRepository.fetchExpertAvailability(uid: uid)
+
+            isAvailable = availability
+            updateMetrics(from: reservations)
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
-    
-    func toggleAvailability() {
-        isAvailable.toggle()
+
+    func updateAvailability(to newValue: Bool) async {
+        guard !isUpdatingAvailability else { return }
+        guard newValue != isAvailable else { return }
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            errorMessage = DashboardError.userNotFound.localizedDescription
+            showError = true
+            return
+        }
+
+        let previousValue = isAvailable
+
+        isAvailable = newValue
+        isUpdatingAvailability = true
+        errorMessage = ""
+        showError = false
+
+        defer {
+            isUpdatingAvailability = false
+        }
+
+        do {
+            try await userRepository.updateExpertAvailability(
+                uid: uid,
+                isAvailable: newValue
+            )
+        } catch {
+            isAvailable = previousValue
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func updateMetrics(from reservations: [Reservation]) {
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: Date())
+        let startOfTomorrow = calendar.date(
+            byAdding: .day,
+            value: 1,
+            to: startOfToday
+        ) ?? Date()
+
+        totalJobsCount = String(
+            reservations.filter { $0.status == .completed }.count
+        )
+
+        pendingBookingsCount = reservations.filter {
+            $0.status == .pending
+        }.count
+
+        upcomingBookingsCount = reservations.filter {
+            isActiveAppointment($0)
+                && $0.reservationDate >= startOfTomorrow
+        }.count
+
+        let todayReservations = reservations
+            .filter {
+                isActiveAppointment($0)
+                    && calendar.isDateInToday($0.reservationDate)
+            }
+            .sorted {
+                $0.reservationDate < $1.reservationDate
+            }
+
+        todayAppointments = todayReservations.map { reservation in
+            Appointment(
+                id: reservation.reservationId,
+                customerName: reservation.customerName,
+                timeString: timeFormatter.string(
+                    from: reservation.reservationDate
+                ),
+                serviceTitle: reservation.serviceTitle,
+                price: Double(reservation.servicePrice)
+            )
+        }
+
+        monthlyJobs = makeMonthlyJobs(from: reservations)
+        popularServices = makePopularServices(from: reservations)
+    }
+
+    private func isActiveAppointment(
+        _ reservation: Reservation
+    ) -> Bool {
+        reservation.status == .accepted
+            || reservation.status == .inProgress
+    }
+
+    private func makeMonthlyJobs(
+        from reservations: [Reservation]
+    ) -> [MonthlyJob] {
+        let calendar = Calendar.current
+        let now = Date()
+
+        return (0..<6).reversed().compactMap { offset in
+            guard let monthDate = calendar.date(
+                byAdding: .month,
+                value: -offset,
+                to: now
+            ) else {
+                return nil
+            }
+
+            let count = reservations.filter {
+                $0.status == .completed
+                    && calendar.isDate(
+                        $0.reservationDate,
+                        equalTo: monthDate,
+                        toGranularity: .month
+                    )
+            }.count
+
+            return MonthlyJob(
+                monthName: monthFormatter.string(from: monthDate),
+                count: count
+            )
+        }
+    }
+
+    private func makePopularServices(
+        from reservations: [Reservation]
+    ) -> [ServiceShare] {
+        let completedReservations = reservations.filter {
+            $0.status == .completed
+        }
+
+        let groupedServices = Dictionary(
+            grouping: completedReservations,
+            by: \.serviceTitle
+        )
+
+        return groupedServices
+            .map { serviceTitle, reservations in
+                ServiceShare(
+                    serviceName: serviceTitle,
+                    value: Double(reservations.count)
+                )
+            }
+            .sorted {
+                $0.value > $1.value
+            }
+    }
+
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }
+
+    private var monthFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "MMM"
+        return formatter
     }
 }

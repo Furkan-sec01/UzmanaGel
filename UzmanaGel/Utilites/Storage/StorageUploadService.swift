@@ -192,4 +192,32 @@ final class StorageUploadService {
         let ref = storageRef(path: path, uid: uid)
         return try await putDataAndGetDownloadURL(data, ref: ref, contentType: "image/jpeg")
     }
+    // MARK: - Profile Photo
+
+    /// Uploads the current expert profile photo.
+    func uploadProfilePhoto(
+        imageData: Data,
+        quality: CGFloat = 0.75
+    ) async throws -> String {
+        guard
+            let image = UIImage(data: imageData),
+            let jpegData = image.jpegData(
+                compressionQuality: quality
+            )
+        else {
+            throw StorageUploadError.invalidData
+        }
+
+        let uid = try currentUID()
+        let filename = "profile_\(UUID().uuidString).jpg"
+        let path = "profile_photos/\(uid)/\(filename)"
+        let ref = try storageRef(path: path)
+
+        return try await putDataAndGetDownloadURL(
+            jpegData,
+            ref: ref,
+            contentType: "image/jpeg"
+        )
+    }
+
 }

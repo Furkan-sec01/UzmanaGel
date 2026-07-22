@@ -83,6 +83,36 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.customerId == request.auth.uid
         && request.resource.data.status == "pending"
+        && exists(
+          /databases/$(database)/documents/services/$(request.resource.data.serviceId)
+        )
+        && get(
+          /databases/$(database)/documents/services/$(request.resource.data.serviceId)
+        ).data.providerId == request.resource.data.providerId
+        && get(
+          /databases/$(database)/documents/services/$(request.resource.data.serviceId)
+        ).data.isActive == true
+        && (
+          !get(
+            /databases/$(database)/documents/services/$(request.resource.data.serviceId)
+          ).data.keys().hasAny(["isAvailable"])
+          ||
+          get(
+            /databases/$(database)/documents/services/$(request.resource.data.serviceId)
+          ).data.isAvailable == true
+        )
+        && exists(
+          /databases/$(database)/documents/service_providers/$(request.resource.data.providerId)
+        )
+        && (
+          !get(
+            /databases/$(database)/documents/service_providers/$(request.resource.data.providerId)
+          ).data.keys().hasAny(["isAvailable"])
+          ||
+          get(
+            /databases/$(database)/documents/service_providers/$(request.resource.data.providerId)
+          ).data.isAvailable == true
+        )
         && request.resource.data.keys().hasAll([
           "reservationId",
           "serviceId",

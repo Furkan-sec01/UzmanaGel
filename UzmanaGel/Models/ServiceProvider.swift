@@ -9,10 +9,12 @@ struct ServiceProvider: Identifiable, Codable {
     let businessName: String
     let city: String
     let isActive: Bool
+    let isAvailable: Bool
 
     // Opsiyonel alanlar (ileride eklenebilir)
     let description: String
     let image: String
+    let profileImageURL: String
     let phoneNumber: String
     let rating: Double
     let experienceYears: Int
@@ -25,8 +27,10 @@ struct ServiceProvider: Identifiable, Codable {
         case businessName
         case city
         case isActive
+        case isAvailable
         case description
         case image
+        case profileImageURL
         case phoneNumber
         case rating
         case experienceYears
@@ -42,9 +46,26 @@ struct ServiceProvider: Identifiable, Codable {
         businessName = try c.decodeIfPresent(String.self, forKey: .businessName) ?? ""
         city         = try c.decodeIfPresent(String.self, forKey: .city) ?? ""
         isActive     = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
-        description  = try c.decodeIfPresent(String.self, forKey: .description) ?? ""
-        image        = try c.decodeIfPresent(String.self, forKey: .image) ?? ""
-        phoneNumber  = try c.decodeIfPresent(String.self, forKey: .phoneNumber) ?? ""
+        isAvailable  = try c.decodeIfPresent(Bool.self, forKey: .isAvailable) ?? true
+        description = try c.decodeIfPresent(
+            String.self,
+            forKey: .description
+        ) ?? ""
+
+        image = try c.decodeIfPresent(
+            String.self,
+            forKey: .image
+        ) ?? ""
+
+        profileImageURL = try c.decodeIfPresent(
+            String.self,
+            forKey: .profileImageURL
+        ) ?? ""
+
+        phoneNumber = try c.decodeIfPresent(
+            String.self,
+            forKey: .phoneNumber
+        ) ?? ""
         isCertified  = try c.decodeIfPresent(Bool.self, forKey: .isCertified) ?? false
         acceptsCreditCard = try c.decodeIfPresent(Bool.self, forKey: .acceptsCreditCard) ?? false
 

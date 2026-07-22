@@ -17,6 +17,10 @@ final class ServiceDetailViewModel: ObservableObject {
     @Published var addressText: String = ""
     @Published var isFavorite: Bool
     @Published var isLoading = false
+    @Published var providerIsAvailable = true
+    @Published var didLoadProviderAvailability = false
+    @Published var providerAvailabilityLoadFailed = false
+
     /// Uzmanın çalışma saatleri / günleri (service_providers'dan; müşteri tarafında gösterilir)
     @Published var expertProfile: ExpertProfile?
 
@@ -32,6 +36,7 @@ final class ServiceDetailViewModel: ObservableObject {
         self.service = service
         self.coverImageURL = imageURL
         self.isFavorite = isFavorite
+        self.providerIsAvailable = service.providerIsAvailable
     }
 
     // MARK: - Public
@@ -41,10 +46,17 @@ final class ServiceDetailViewModel: ObservableObject {
         isLoading = true
 
         Task {
-            async let s: () = fetchProviderServices()
-            async let g: () = fetchGalleryImages()
-            async let a: () = resolveAddress()
-            _ = await (s, g, a)
+            async let servicesTask: () = fetchProviderServices()
+            async let galleryTask: () = fetchGalleryImages()
+            async let addressTask: () = resolveAddress()
+            async let availabilityTask: () = fetchProviderAvailability()
+
+            _ = await (
+                servicesTask,
+                galleryTask,
+                addressTask,
+                availabilityTask
+            )
 
             if coverImageURL == nil {
                 loadCoverImage()
@@ -52,6 +64,33 @@ final class ServiceDetailViewModel: ObservableObject {
 
             isLoading = false
         }
+    }
+
+    var canCreateReservation: Bool {
+        didLoadProviderAvailability
+            && service.isActive
+            && service.isAvailable
+            && providerIsAvailable
+    }
+
+    var reservationAvailabilityMessage: String? {
+        if providerAvailabilityLoadFailed {
+            return "Uzman müsaitliği doğrulanamadı. Lütfen tekrar deneyin."
+        }
+
+        if !didLoadProviderAvailability {
+            return "Uzman müsaitliği kontrol ediliyor."
+        }
+
+        if !service.isActive || !service.isAvailable {
+            return "Bu hizmet şu anda rezervasyona kapalı."
+        }
+
+        if !providerIsAvailable {
+            return "Uzman şu anda yeni rezervasyon kabul etmiyor."
+        }
+
+        return nil
     }
 
     /// Uzmanın çalışma günlerini Türkçe kısa isimle döndürür (workingDays: "1"=Pazartesi ... "7"=Pazar). Sıra: Pzt→Paz.
@@ -100,6 +139,34 @@ final class ServiceDetailViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    private func fetchProviderAvailability() async {
+        guard !service.providerId.isEmpty else {
+            providerIsAvailable = false
+            providerAvailabilityLoadFailed = true
+            didLoadProviderAvailability = true
+            return
+        }
+
+        do {
+            providerIsAvailable =
+                try await userRepo.fetchExpertAvailability(
+                    uid: service.providerId
+                )
+
+            providerAvailabilityLoadFailed = false
+        } catch {
+            providerIsAvailable = false
+            providerAvailabilityLoadFailed = true
+
+            print(
+                "⚠️ Uzman müsaitliği yüklenemedi: " +
+                error.localizedDescription
+            )
+        }
+
+        didLoadProviderAvailability = true
+    }
 
     private func fetchProviderServices() async {
         guard !service.providerId.isEmpty else { return }

@@ -108,6 +108,7 @@ final class UserRepository {
             "businessName": "",
             "city": "",
             "isActive": false,
+            "isAvailable": true,
             "description": "",
             "image": "",
             "rating": 0.0,
@@ -137,6 +138,28 @@ final class UserRepository {
     /// Profil %100 dolu olduğunda uzman "Onay için gönder" yapar; status "Pending" olur.
     func submitExpertForApproval(uid: String) async throws {
         try await db.collection("service_providers").document(uid).setData(["status": "Pending"], merge: true)
+    }
+
+    func fetchExpertAvailability(uid: String) async throws -> Bool {
+        let snapshot = try await db
+            .collection("service_providers")
+            .document(uid)
+            .getDocument()
+
+        return snapshot.data()?["isAvailable"] as? Bool ?? true
+    }
+
+    func updateExpertAvailability(
+        uid: String,
+        isAvailable: Bool
+    ) async throws {
+        try await db
+            .collection("service_providers")
+            .document(uid)
+            .setData([
+                "isAvailable": isAvailable,
+                "updatedAt": Timestamp(date: Date())
+            ], merge: true)
     }
 
     func fetchUserRole(uid: String) async throws -> String? {
