@@ -13,7 +13,6 @@ struct ServiceDetailPage: View {
     @State private var isStartingConversation = false
     
     @State private var showReservationSheet = false
-    @State private var showReviewsPage = false
 
     @State private var chatErrorMessage = ""
     @State private var showChatError = false
@@ -45,11 +44,9 @@ struct ServiceDetailPage: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                if !showReviewsPage && !showChatDetail {
-                    Button { dismiss() } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -68,12 +65,6 @@ struct ServiceDetailPage: View {
                     conversation: selectedConversation
                 )
             }
-        }
-        .navigationDestination(isPresented: $showReviewsPage) {
-            ReviewsPage(
-                providerId: vm.service.providerId,
-                providerName: vm.service.providerName
-            )
         }
         .sheet(isPresented: $showReservationSheet) {
             ReservationCreateSheet(
@@ -153,16 +144,14 @@ private extension ServiceDetailPage {
                 Text(String(format: "%.1f", vm.service.rating))
                     .font(.system(size: 14, weight: .semibold))
 
-                Text("(\(vm.service.reviewCount) yorum)")
+                Text("(0 yorum)".localized)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
 
                 Text("•")
                     .foregroundColor(.secondary)
 
-                Button("Yorumları Gör".localized) {
-                    showReviewsPage = true
-                }
+                Button("Yorumları Gör".localized) { }
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color("PrimaryColor"))
 
@@ -245,7 +234,7 @@ private extension ServiceDetailPage {
             statCard(
                 icon: "checkmark.seal.fill",
                 iconColor: .green,
-                value: "\(vm.service.completedJobCount)",
+                value: "0",
                 label: "İş Tamamlandı".localized
             )
             statCard(

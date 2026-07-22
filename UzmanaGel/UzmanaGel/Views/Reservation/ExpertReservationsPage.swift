@@ -136,14 +136,7 @@ struct ExpertReservationsPage: View {
             }
         }
         .sheet(item: $reservationToShowDetail) { reservation in
-            ReservationDetailPage(
-                reservation: reservation,
-                onStatusChanged: {
-                    Task {
-                        await viewModel.loadReservations()
-                    }
-                }
-            )
+            ReservationDetailPage(reservation: reservation)
         }
     }
 

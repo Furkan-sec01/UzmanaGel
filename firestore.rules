@@ -128,101 +128,7 @@ service cloud.firestore {
               )
             )
           )
-          ||
-          (
-            resource.data.providerId == request.auth.uid
-            && resource.data.status == "accepted"
-            && request.resource.data.status == "completed"
-            && resource.data.reservationDate <= request.time
-          )
         );
-
-      allow delete: if false;
-    }
-
-    // MARK: - Reviews
-
-    match /reviews/{reviewId} {
-      allow read: if signedIn();
-
-      allow create: if signedIn()
-        && request.resource.data.keys().hasAll([
-          "reviewId",
-          "reservationId",
-          "providerId",
-          "customerId",
-          "customerName",
-          "serviceId",
-          "serviceTitle",
-          "rating",
-          "comment",
-          "createdAt",
-          "updatedAt"
-        ])
-        && request.resource.data.keys().hasOnly([
-          "reviewId",
-          "reservationId",
-          "providerId",
-          "customerId",
-          "customerName",
-          "serviceId",
-          "serviceTitle",
-          "rating",
-          "comment",
-          "createdAt",
-          "updatedAt"
-        ])
-        && request.resource.data.reviewId == reviewId
-        && request.resource.data.reservationId == reviewId
-        && request.resource.data.customerId == request.auth.uid
-        && request.resource.data.rating is int
-        && request.resource.data.rating >= 1
-        && request.resource.data.rating <= 5
-        && request.resource.data.comment is string
-        && request.resource.data.comment.size() <= 500
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time
-        && exists(
-          /databases/$(database)/documents/reservations/$(reviewId)
-        )
-        && get(
-          /databases/$(database)/documents/reservations/$(reviewId)
-        ).data.customerId == request.auth.uid
-        && get(
-          /databases/$(database)/documents/reservations/$(reviewId)
-        ).data.status == "completed"
-        && get(
-          /databases/$(database)/documents/reservations/$(reviewId)
-        ).data.providerId == request.resource.data.providerId
-        && get(
-          /databases/$(database)/documents/reservations/$(reviewId)
-        ).data.serviceId == request.resource.data.serviceId
-        && get(
-          /databases/$(database)/documents/reservations/$(reviewId)
-        ).data.serviceTitle == request.resource.data.serviceTitle
-        && get(
-          /databases/$(database)/documents/reservations/$(reviewId)
-        ).data.customerName == request.resource.data.customerName;
-
-      allow update: if signedIn()
-        && resource.data.providerId == request.auth.uid
-        && request.resource.data
-          .diff(resource.data)
-          .affectedKeys()
-          .hasOnly([
-            "providerResponse",
-            "providerResponseAt",
-            "updatedAt"
-          ])
-        && (
-          !resource.data.keys().hasAny(["providerResponse"])
-          || resource.data.providerResponse == ""
-        )
-        && request.resource.data.providerResponse is string
-        && request.resource.data.providerResponse.size() > 0
-        && request.resource.data.providerResponse.size() <= 500
-        && request.resource.data.providerResponseAt == request.time
-        && request.resource.data.updatedAt == request.time;
 
       allow delete: if false;
     }
@@ -330,8 +236,7 @@ service cloud.firestore {
                 && request.resource.data.status in [
                   "accepted",
                   "rejected",
-                  "cancelled",
-                  "completed"
+                  "cancelled"
                 ]
                 && getAfter(
                   /databases/$(database)/documents/reservations/$(resource.data.reservationId)
@@ -351,11 +256,7 @@ service cloud.firestore {
                     getAfter(
                       /databases/$(database)/documents/reservations/$(resource.data.reservationId)
                     ).data.providerId == request.auth.uid
-                    && request.resource.data.status in [
-                      "accepted",
-                      "rejected",
-                      "completed"
-                    ]
+                    && request.resource.data.status in ["accepted", "rejected"]
                   )
                 )
               )

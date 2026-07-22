@@ -22,7 +22,6 @@ final class ReservationRepository {
         case invalidCustomerName
         case invalidReservation
         case slotUnavailable
-        case reservationNotReady
 
         var errorDescription: String? {
             switch self {
@@ -38,8 +37,6 @@ final class ReservationRepository {
                 return "Rezervasyon bilgisi eksik."
             case .slotUnavailable:
                 return "Seçtiğiniz saat dolu. Lütfen başka bir saat seçin."
-            case .reservationNotReady:
-                return "Randevu zamanı gelmeden hizmet tamamlanamaz."
             }
         }
     }
@@ -337,54 +334,6 @@ final class ReservationRepository {
         )
     }
     
-    func completeReservation(
-        reservationId: String
-    ) async throws {
-        guard let currentUser = Auth.auth().currentUser else {
-            throw ReservationRepositoryError.userNotFound
-        }
-
-        let trimmedReservationId = reservationId.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-
-        guard !trimmedReservationId.isEmpty else {
-            throw ReservationRepositoryError.invalidReservation
-        }
-
-        let reservationRef = db
-            .collection(collectionName)
-            .document(trimmedReservationId)
-
-        let snapshot = try await reservationRef.getDocument()
-
-        guard
-            let data = snapshot.data(),
-            let providerId = data["providerId"] as? String,
-            let statusRawValue = data["status"] as? String,
-            let reservationDateTimestamp = data["reservationDate"] as? Timestamp
-        else {
-            throw ReservationRepositoryError.invalidReservation
-        }
-
-        guard providerId == currentUser.uid else {
-            throw ReservationRepositoryError.invalidReservation
-        }
-
-        guard statusRawValue == ReservationStatus.accepted.rawValue else {
-            throw ReservationRepositoryError.invalidReservation
-        }
-
-        guard reservationDateTimestamp.dateValue() <= Date() else {
-            throw ReservationRepositoryError.reservationNotReady
-        }
-
-        try await updateReservationAndBookedSlotStatus(
-            reservationId: trimmedReservationId,
-            status: .completed
-        )
-    }
-
     private func updateReservationAndBookedSlotStatus(
         reservationId: String,
         status: ReservationStatus,
