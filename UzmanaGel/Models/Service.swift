@@ -33,7 +33,6 @@ struct Service: Identifiable, Codable, Hashable {
     var experienceYears: Int
     var rating: Double
     var reviewCount: Int
-    var completedJobCount: Int
     var isAvailable: Bool
     var isCertified: Bool
     var acceptsCreditCard: Bool
@@ -54,7 +53,6 @@ struct Service: Identifiable, Codable, Hashable {
         case experienceYears
         case rating
         case reviewCount
-        case completedJobCount
         case isAvailable
         case isCertified
         case acceptsCreditCard
@@ -113,14 +111,6 @@ struct Service: Identifiable, Codable, Hashable {
             reviewCount = Int(dblVal)
         } else {
             reviewCount = 0
-        }
-
-        if let intVal = try? c.decode(Int.self, forKey: .completedJobCount) {
-            completedJobCount = intVal
-        } else if let dblVal = try? c.decode(Double.self, forKey: .completedJobCount) {
-            completedJobCount = Int(dblVal)
-        } else {
-            completedJobCount = 0
         }
 
         locationGeo = try c.decodeIfPresent(GeoPoint.self, forKey: .locationGeo)
