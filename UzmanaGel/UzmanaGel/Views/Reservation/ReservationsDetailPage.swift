@@ -21,6 +21,9 @@ struct ReservationDetailPage: View {
     @State private var isUpdatingStatus = false
     @State private var showCancelConfirmation = false
     @State private var showRejectConfirmation = false
+    @State private var showStartConfirmation = false
+    @State private var showCompleteConfirmation = false
+    @State private var showNoShowConfirmation = false
 
     private let rejectionReasons = [
         "Takvimim bu saat için uygun değil",
@@ -107,6 +110,51 @@ struct ReservationDetailPage: View {
                 Button("Vazgeç".localized, role: .cancel) { }
             } message: {
                 Text(String(format: "%@ adlı müşterinin rezervasyon talebini neden reddetmek istiyorsunuz?".localized, reservation.customerName))
+            }
+            .confirmationDialog(
+                "Hizmeti başlat".localized,
+                isPresented: $showStartConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("İşi Başlat".localized) {
+                    Task {
+                        await updateReservationStatusFromDetail(.inProgress)
+                    }
+                }
+
+                Button("Vazgeç".localized, role: .cancel) { }
+            } message: {
+                Text("Hizmeti başlatmak istediğinizden emin misiniz?".localized)
+            }
+            .confirmationDialog(
+                "Hizmeti tamamla".localized,
+                isPresented: $showCompleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("İşi Tamamla".localized) {
+                    Task {
+                        await updateReservationStatusFromDetail(.completed)
+                    }
+                }
+
+                Button("Vazgeç".localized, role: .cancel) { }
+            } message: {
+                Text("Hizmetin tamamlandığını onaylıyor musunuz?".localized)
+            }
+            .confirmationDialog(
+                "Müşteri gelmedi".localized,
+                isPresented: $showNoShowConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Müşteri Gelmedi".localized, role: .destructive) {
+                    Task {
+                        await updateReservationStatusFromDetail(.noShow)
+                    }
+                }
+
+                Button("Vazgeç".localized, role: .cancel) { }
+            } message: {
+                Text("Müşterinin rezervasyona gelmediğini onaylıyor musunuz?".localized)
             }
         }
     }
@@ -405,8 +453,21 @@ struct ReservationDetailPage: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader(icon: "bolt.fill", title: "İşlemler".localized)
             messageButton
-            if canProviderDecide { providerDecisionButtons }
-            if canCustomerCancel { cancelButton }
+            if canProviderDecide {
+                providerDecisionButtons
+            }
+
+            if canProviderStart || canProviderMarkNoShow {
+                providerAcceptedActionButtons
+            }
+
+            if canProviderComplete {
+                providerCompleteButton
+            }
+
+            if canCustomerCancel {
+                cancelButton
+            }
         }
     }
 
@@ -497,6 +558,98 @@ struct ReservationDetailPage: View {
         }
     }
 
+    // MARK: - Provider Accepted Actions
+    private var providerAcceptedActionButtons: some View {
+        HStack(spacing: 10) {
+            Button {
+                showNoShowConfirmation = true
+            } label: {
+                Text("Müşteri Gelmedi".localized)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(Color.red.opacity(0.08))
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: 14,
+                            style: .continuous
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: 14,
+                            style: .continuous
+                        )
+                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(isUpdatingStatus || !canProviderMarkNoShow)
+
+            Button {
+                showStartConfirmation = true
+            } label: {
+                HStack(spacing: 8) {
+                    if isUpdatingStatus {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "play.fill")
+                    }
+
+                    Text("İşi Başlat".localized)
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(accentYellow)
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: 14,
+                        style: .continuous
+                    )
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(isUpdatingStatus || !canProviderStart)
+        }
+    }
+
+    // MARK: - Provider Complete Button
+    private var providerCompleteButton: some View {
+        Button {
+            showCompleteConfirmation = true
+        } label: {
+            HStack(spacing: 8) {
+                if isUpdatingStatus {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .tint(.white)
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                }
+
+                Text("İşi Tamamla".localized)
+                    .font(.system(size: 14, weight: .bold))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(primaryColor)
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: 14,
+                    style: .continuous
+                )
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isUpdatingStatus || !canProviderComplete)
+    }
+
     // MARK: - Cancel Button
     private var cancelButton: some View {
         Button {
@@ -580,8 +733,31 @@ struct ReservationDetailPage: View {
     }
 
     private var canProviderDecide: Bool {
-        guard let uid = Auth.auth().currentUser?.uid else { return false }
-        return uid == reservation.providerId && reservation.status == .pending
+        canProviderTransition(to: .accepted)
+            || canProviderTransition(to: .rejected)
+    }
+
+    private var canProviderStart: Bool {
+        canProviderTransition(to: .inProgress)
+    }
+
+    private var canProviderComplete: Bool {
+        canProviderTransition(to: .completed)
+    }
+
+    private var canProviderMarkNoShow: Bool {
+        canProviderTransition(to: .noShow)
+    }
+
+    private func canProviderTransition(
+        to newStatus: ReservationStatus
+    ) -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            return false
+        }
+
+        return uid == reservation.providerId
+            && reservation.status.canTransition(to: newStatus)
     }
 
     private func openChat() async {
@@ -630,8 +806,8 @@ struct ReservationDetailPage: View {
         _ status: ReservationStatus,
         rejectionReason: String? = nil
     ) async {
-        guard canProviderDecide else {
-            errorMessage = "Bu rezervasyon için karar verme yetkiniz yok.".localized
+        guard canProviderTransition(to: status) else {
+            errorMessage = "Bu rezervasyon işlemi için yetkiniz yok.".localized
             showError = true
             return
         }
