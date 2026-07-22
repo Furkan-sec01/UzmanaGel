@@ -625,7 +625,10 @@ struct ReservationDetailPage: View {
         defer { isUpdatingStatus = false }
         do {
             try await reservationRepository.updateReservationStatus(
-                reservationId: reservation.reservationId, status: status)
+                reservationId: reservation.reservationId,
+                status: status,
+                rejectionReason: rejectionReason
+            )
             reservation = updatedReservation(
                 status: status,
                 rejectionReason: rejectionReason
