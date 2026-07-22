@@ -199,9 +199,7 @@ class ScheduleViewModel: ObservableObject {
     }
 
     private func isBlockingStatus(_ status: ReservationStatus) -> Bool {
-        status == .pending
-            || status == .accepted
-            || status == .inProgress
+        status.isBlockingSlot
     }
 
     private var timeFormatter: DateFormatter {

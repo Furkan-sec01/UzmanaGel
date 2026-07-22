@@ -56,9 +56,13 @@ enum ReservationStatus: String, Codable, CaseIterable {
     }
 
     var isBlockingSlot: Bool {
-        self == .pending
-            || self == .accepted
-            || self == .inProgress
+        switch self {
+        case .rejected, .cancelled:
+            return false
+
+        case .pending, .accepted, .inProgress, .completed, .noShow:
+            return true
+        }
     }
 }
 
