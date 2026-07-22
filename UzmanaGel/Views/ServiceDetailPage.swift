@@ -574,7 +574,31 @@ private extension ServiceDetailPage {
 
     var ctaButton: some View {
         VStack(spacing: 10) {
+            if let message = vm.reservationAvailabilityMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+
+                    Text(message.localized)
+                        .font(.system(size: 13, weight: .semibold))
+                        .multilineTextAlignment(.leading)
+
+                    Spacer(minLength: 0)
+                }
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Color.red.opacity(0.1))
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: 10,
+                        style: .continuous
+                    )
+                )
+            }
+
             Button {
+                guard vm.canCreateReservation else { return }
                 showReservationSheet = true
             } label: {
                 HStack(spacing: 8) {
@@ -587,7 +611,11 @@ private extension ServiceDetailPage {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color.blue)
+                .background(
+                    vm.canCreateReservation
+                    ? Color.blue
+                    : Color.gray
+                )
                 .clipShape(
                     RoundedRectangle(
                         cornerRadius: 14,
@@ -595,6 +623,7 @@ private extension ServiceDetailPage {
                     )
                 )
             }
+            .disabled(!vm.canCreateReservation)
 
             Button {
                 startConversation()

@@ -352,6 +352,7 @@ final class ServiceRepository {
         var merged = service
         merged.providerName = provider.businessName
         merged.city = provider.city
+        merged.providerIsAvailable = provider.isAvailable
 
         // Provider'dan gelen ek alanlar (varsa)
         if merged.description.isEmpty && !provider.description.isEmpty {

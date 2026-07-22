@@ -33,6 +33,7 @@ struct Service: Identifiable, Codable, Hashable {
     var experienceYears: Int
     var rating: Double
     var isAvailable: Bool
+    var providerIsAvailable: Bool = true
     var isCertified: Bool
     var acceptsCreditCard: Bool
     var locationGeo: GeoPoint?
@@ -83,8 +84,15 @@ struct Service: Identifiable, Codable, Hashable {
         description  = try c.decodeIfPresent(String.self, forKey: .description) ?? ""
         image        = try c.decodeIfPresent(String.self, forKey: .image) ?? ""
 
-        isAvailable      = try c.decodeIfPresent(Bool.self, forKey: .isAvailable) ?? true
-        isCertified      = try c.decodeIfPresent(Bool.self, forKey: .isCertified) ?? false
+        isAvailable = try c.decodeIfPresent(
+            Bool.self,
+            forKey: .isAvailable
+        ) ?? true
+        providerIsAvailable = true
+        isCertified = try c.decodeIfPresent(
+            Bool.self,
+            forKey: .isCertified
+        ) ?? false
         acceptsCreditCard = try c.decodeIfPresent(Bool.self, forKey: .acceptsCreditCard) ?? false
 
         if let intVal = try? c.decode(Int.self, forKey: .experienceYears) {
