@@ -14,6 +14,7 @@ import UIKit
 struct ExpertHomepage: View {
 
     @EnvironmentObject var session: SessionViewModel
+    @ObservedObject private var langManager = LanguageManager.shared
 
     @State private var profile: ExpertProfile?
     @State private var isLoading = true

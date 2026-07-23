@@ -59,6 +59,43 @@ final class HomepageViewModel: ObservableObject {
             result = result.filter { $0.price <= max }
         }
 
+        // Mesafe filtresi (km)
+        if let maxKm = filter.maxDistanceKm, maxKm > 0 {
+            result = result.filter { service in
+                guard let geo = service.locationGeo else { return false }
+                guard let km = locationManager.distance(to: geo.latitude, geoLng: geo.longitude) else { return false }
+                return km <= maxKm
+            }
+        }
+
+        // Müsaitlik filtresi
+        if filter.isTodayAvailable || filter.isThisWeekAvailable || filter.selectedDate != nil || filter.startTime != nil || filter.endTime != nil {
+            result = result.filter { $0.isAvailable }
+        }
+
+        // Değerlendirme filtresi
+        if let minRating = filter.minRating, minRating > 0 {
+            result = result.filter { service in
+                let effectiveRating = service.reviewCount > 0 ? service.rating : 0.0
+                return effectiveRating >= minRating
+            }
+        }
+
+        // Gelişmiş filtreler
+        if filter.minExperienceYears > 0 {
+            result = result.filter { $0.experienceYears >= filter.minExperienceYears }
+        }
+        if filter.minCompletedJobs > 0 {
+            result = result.filter { $0.completedJobsCount >= filter.minCompletedJobs }
+        }
+        if filter.isCertifiedOnly {
+            result = result.filter { $0.isCertified }
+        }
+        if let type = filter.selectedServiceType, !type.isEmpty {
+            result = result.filter { $0.serviceType.lowercased() == type.lowercased() }
+        }
+
+
         // Sıralama
         switch filter.sortOption {
         case .priceLowToHigh:

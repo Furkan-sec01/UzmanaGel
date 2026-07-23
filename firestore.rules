@@ -43,8 +43,13 @@ service cloud.firestore {
       }
     }
 
-    // MARK: - Services
+    // ─── Reviews (Yorumlar) ────────────────────────────────────────────────────
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
 
+    // MARK: - Services
     match /services/{serviceId} {
       allow read: if signedIn();
 
@@ -63,11 +68,8 @@ service cloud.firestore {
 
     match /service_providers/{providerId} {
       allow read: if signedIn();
-
       allow create: if isOwner(providerId);
-
-      allow update: if isOwner(providerId);
-
+      allow update: if signedIn();
       allow delete: if false;
     }
 

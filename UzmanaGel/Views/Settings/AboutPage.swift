@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct AboutPage: View {
+    @ObservedObject private var langManager = LanguageManager.shared
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -26,14 +27,14 @@ struct AboutPage: View {
             Text("UzmanaGel")
                 .font(.system(size: 26, weight: .bold))
 
-            Text("UzmanaGel, kullanıcıların ihtiyaç duydukları hizmetler için uygun uzmanlara ulaşmasını sağlayan bir platformdur.")
+            Text("UzmanaGel, kullanıcıların ihtiyaç duydukları hizmetler için uygun uzmanlara ulaşmasını sağlayan bir platformdur.".localized)
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
 
             VStack(spacing: 6) {
-                Text("Version \(appVersion)")
+                Text("\("Sürüm".localized) \(appVersion)")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
 
@@ -48,7 +49,7 @@ struct AboutPage: View {
         .padding(.top, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color("BackgroundColor"))
-        .navigationTitle("Hakkında")
+        .navigationTitle("Hakkında".localized)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

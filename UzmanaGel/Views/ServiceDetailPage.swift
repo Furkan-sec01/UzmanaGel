@@ -7,10 +7,12 @@ struct ServiceDetailPage: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: ServiceDetailViewModel
     @StateObject private var messageVM = MessageViewModel()
+    @ObservedObject private var langManager = LanguageManager.shared
 
     @State private var selectedConversation: Conversation?
     @State private var showChatDetail = false
     @State private var isStartingConversation = false
+    @State private var showReviewsPage = false
     
     @State private var showReservationSheet = false
 
@@ -65,6 +67,13 @@ struct ServiceDetailPage: View {
                     conversation: selectedConversation
                 )
             }
+        }
+        .navigationDestination(isPresented: $showReviewsPage) {
+            ProviderReviewsPage(
+                providerId: vm.service.providerId,
+                providerName: vm.service.providerName,
+                serviceTitle: vm.service.title
+            )
         }
         .sheet(isPresented: $showReservationSheet) {
             ReservationCreateSheet(
@@ -141,17 +150,19 @@ private extension ServiceDetailPage {
                     .font(.system(size: 14))
                     .foregroundColor(.orange)
 
-                Text(String(format: "%.1f", vm.service.rating))
+                Text(String(format: "%.1f", vm.reviewCount > 0 ? vm.averageRating : 0.0))
                     .font(.system(size: 14, weight: .semibold))
 
-                Text("(0 yorum)".localized)
+                Text("(\(vm.reviewCount) yorum)".localized)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
 
                 Text("•")
                     .foregroundColor(.secondary)
 
-                Button("Yorumları Gör".localized) { }
+                Button("Yorumları Gör".localized) {
+                    showReviewsPage = true
+                }
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color("PrimaryColor"))
 

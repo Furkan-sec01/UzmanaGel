@@ -48,29 +48,23 @@ Status meanings:
 - Cloud Functions folder exists in the repository.
 - Firebase project was upgraded to Blaze plan.
 - Phone Auth / OTP flow was tested successfully with Firebase test phone numbers.
-- Firestore Security Rules are versioned in `firestore.rules`.
-- Firestore Security Rules can be compiled and deployed from the repository.
-- Firestore rules were deployed successfully after removing the duplicate review implementation.
-- FCM token saving is implemented for authenticated users.
-- APNs registration is connected to Firebase Messaging.
-- Cloud Functions are deployed for new messages, new reservations, and reservation status changes.
-- Duplicate review Cloud Functions were removed from Firebase after the review rollback.
-- Notification payloads include the identifiers required for app routing.
+- Firestore Security Rules were improved for users, services, service providers, conversations, messages, and reservations.
+- Reservation and conversation/message rules were updated manually in Firebase Console.
 
 ### Partially Completed
 - Real phone number OTP may still be temporarily throttled after repeated attempts.
-- APNs / Firebase Messaging works in development, but production configuration still needs final review.
-- The current notification token model stores one `fcmToken` per user, so the most recently registered device replaces the previous device.
-- Notification preference switches are not yet enforced by the notification Cloud Functions.
+- Firestore Rules are improved but still not versioned in the repository.
+- Firebase backend setup works for current tested flows, but production notification/payment setup is not complete.
 
 ### Missing / To Do
+- Move current Firestore Rules into repository.
+- Review Cloud Functions.
 - Check Firebase Analytics setup.
 - Check Firebase Crashlytics setup.
 - Check Firebase Remote Config setup.
-- Review APNs configuration for production distribution.
-- Add multi-device FCM token storage.
-- Add stale or invalid FCM token cleanup.
-- Connect notification preferences to backend delivery rules.
+- Check Firebase Cloud Messaging setup.
+- Review APNs setup for production Phone Auth / push notifications.
+
 ---
 
 ## 3. Authentication and User Management
@@ -255,42 +249,47 @@ Status meanings:
 - ExpertReservationsPage was added.
 - ExpertHomepage links to incoming reservations.
 - Customer-side reservation create/list/cancel flow was tested.
-- Expert-side incoming reservations page was tested.
+- Expert-side incoming reservations page was tested after Blaze/OTP issue was solved.
 - Expert can accept pending reservations.
 - Expert can reject pending reservations.
 - Reservation status updates correctly after expert accept/reject.
+- Firestore reservation rules were updated manually in Firebase Console.
 - Customer can cancel pending/accepted reservations from reservation detail.
 - Expert can accept/reject pending reservations from reservation detail.
 - Reservation detail page includes a Send Message shortcut.
 - Customer and expert can open the related chat from reservation detail.
 - Expert reservation list includes a View Details action.
 - Expert reservation list refreshes after detail status changes.
-- A push notification is sent to the provider when a new reservation is created.
-- Reservation status push notifications are sent for accept, reject, and cancel changes.
-- Tapping a reservation notification opens the related reservation detail page.
-- Reservation notification routing was tested on a physical iPhone.
+- Provider schedule is connected to real reservation data.
+- Customer can select reservation date and time.
+- Duplicate reservations for the same provider, date and time are blocked.
+- Booked slot status is synced when reservations are accepted, rejected or cancelled.
+- Firestore rules for provider_booked_slots were tightened manually in Firebase Console.
+- ReservationCreateSheet shows service, provider, duration and estimated price summary.
+- Reservation creation saves addressText, servicePrice and serviceDuration.
+- Reservation detail page shows address, duration and estimated price.
+- Reservation creation requires confirmation consent before submit.
+- Reservation success alert shows a short reservation code.
 
 ### Partially Completed
 - Reservation system is stronger than MVP-level but still not full guide-level.
-- Status transitions exist for pending, accepted, rejected, and cancelled, but there is no completed flow yet.
-- Firestore reservation rules are versioned, but the final transition rules still need team review.
-- Calendar/schedule screens exist, but real availability integration needs final verification.
+- Status transitions exist for pending, accepted, rejected and cancelled, but there is no completed flow yet.
+- Firestore reservation rules were updated manually but are not versioned in the repository.
+- Calendar/schedule screen is connected to real reservation data, but full working-hour availability rules still need improvement.
+- Reservation success feedback exists as an alert, but a full success screen with actions is not implemented yet.
 
 ### Missing / To Do
 - Reject reason selection.
 - Reservation status transition validation as a central helper/service.
-- In-progress, completed, and no-show flows.
 - Reservation detail timeline.
-- Address selection during reservation.
-- Full real-provider availability and time-slot integration.
+- Working-hour based availability rules.
 - Payment step.
-- Reservation success screen.
-- EventKit calendar integration.
+- Full reservation success screen with actions.
+- Reservation notification flow.
 - Map/navigation shortcut from reservation detail.
 - Completion flow after service is done.
-- Reminder notifications.
-- Rich reservation notification actions.
 - Customer review/rating flow after completed reservation.
+
 ---
 
 ## 9. Messaging System
@@ -308,26 +307,22 @@ Status meanings:
 - Conversations list shows last message.
 - Message persistence was tested.
 - Conversation security rules were improved.
-- Messaging rules use nested `conversations/{conversationId}/messages/{messageId}` paths.
+- Messaging rules now use nested conversations/{conversationId}/messages/{messageId}.
 - ExpertHomepage includes Messages access.
 - Expert side menu includes Messages access.
 - Customer can send a message from reservation detail.
 - Expert can send a message from reservation detail.
 - Customer-to-expert and expert-to-customer messaging were tested successfully.
-- `sendMessageNotification` sends a push notification when a new message is created.
-- The receiver FCM token is loaded from the related user document.
-- Message notification payloads include the related conversation ID.
-- Tapping a message notification opens the correct ChatDetailPage.
-- The complete simulator-to-physical-iPhone message notification flow was tested successfully.
 
 ### Partially Completed
 - Read/unread logic exists but the UI does not clearly show read receipts yet.
-- Message UI is still basic.
-- Messaging currently supports text messages only.
+- Message UI is basic.
+- Messaging works for text messages only.
+- Firestore rules were updated manually but are not versioned in the repository.
 - Message pagination is not added yet.
-- The notification token model supports only one active token per user document.
 
 ### Missing / To Do
+- Push notifications for new messages.
 - Typing indicator.
 - Media attachments.
 - Message delete/archive/mute.
@@ -335,8 +330,7 @@ Status meanings:
 - Online/presence indicator.
 - Pagination for long chats.
 - Better unread/read receipt UI.
-- Reply-to-message support.
-- Notification badge count management.
+
 ---
 
 ## 10. Notifications
@@ -351,34 +345,21 @@ Status meanings:
   - Marketing notifications.
 - User can request/check notification permission from the app.
 - Notification preferences screen opens from SettingsPage.
-- APNs device registration is connected to Firebase Messaging.
-- The current FCM token is saved to the authenticated user's Firestore document.
-- FCM token refresh handling is implemented.
-- Foreground notifications can be displayed as banner, list, and sound.
-- New message push notifications are implemented.
-- New reservation push notifications are implemented.
-- Reservation status push notifications are implemented.
-- Notification tap routing exists for messages and reservations.
-- Message notification routing opens the related conversation.
-- Reservation notification routing opens the related reservation detail.
-- Push notification delivery and routing were tested on a physical iPhone.
 
 ### Partially Completed
-- Notification preference switches currently exist at UI/local level.
-- Notification Cloud Functions do not yet check the user's preference switches.
-- Firebase Cloud Messaging / APNs needs production distribution review.
-- Only one FCM token is currently stored per user.
+- Notification preferences are currently local/UI-level.
+- Real push notification delivery is not implemented yet.
+- Firebase Cloud Messaging / APNs setup still needs production review.
 
 ### Missing / To Do
-- Multi-device FCM token collection.
-- Invalid/stale token cleanup.
+- FCM token saving.
+- Reservation notification.
+- Message notification.
+- Provider accept/reject notification.
 - In-app notification center.
 - Connect notification preferences to real notification delivery.
 - Store notification preferences in Firestore if needed.
-- Badge count management.
-- Notification grouping.
-- Rich notifications and notification action buttons.
-- Local reminder notifications.
+
 ---
 
 ## 11. Payment System
@@ -407,25 +388,22 @@ Status meanings:
 ## 12. Reviews and Ratings
 
 ### Completed
-- The duplicate review implementation was removed from main.
-- Review-related duplicate Cloud Functions were removed from Firebase.
-- Review-related Firestore rule changes from the duplicate implementation were rolled back.
-
-### Partially Completed
-- The review module is assigned to another team member.
-- The final review implementation should be integrated through that owner's branch and pull request.
-- The current main branch does not contain the removed duplicate review implementation.
+- Review model (`Models/Review.swift` & `ProviderReviewSummary`).
+- Review repository (`Repositories/ReviewRepository.swift`).
+- Review submission sheet with custom star rating, category ratings, text editor, photo upload (`Features/Reviews/ReviewSubmissionSheet.swift`).
+- Provider reviews list & rating summary page (`Features/Reviews/ProviderReviewsPage.swift` & `ReviewCardView.swift`).
+- Star distribution progress bar charts & category average bar charts.
+- Sorting (newest, highest, lowest) & filtering (with photos, verified booking).
+- Anonymized user name toggle option.
+- Review photo gallery with fullscreen swipe (`ReviewPhotoGalleryView.swift`).
+- Provider response interface with character limits and preview (`ProviderResponseSheet.swift`).
+- Helpful (thumbs up) toggle counter.
+- Report review modal to moderation queue (`ReviewReportSheet.swift`).
+- Wired `ServiceDetailPage.swift` ("Yorumları Gör" button & dynamic review counts/averages) and `HistoryFavoritesView.swift`.
 
 ### Missing / To Do
-- Review model.
-- Review submission after completed reservation.
-- Rating UI.
-- Provider review list.
-- Review validation.
-- Provider response to review.
-- Report review flow.
-- Review photo upload.
-- Rating breakdown and sorting.
+- All client-side iOS review features completed.
+
 ---
 
 ## 13. Settings and Preferences
@@ -439,28 +417,28 @@ Status meanings:
 - Side menu navigation was improved.
 - NotificationPreferencesPage was added.
 - TermsOfServicePage was added.
-- AboutPage shows the dynamic version and build number.
+- AboutPage now shows dynamic version and build number.
 - HelpPage was expanded with more FAQ items.
 - Forgot password/reset password flow was improved.
-- Settings, Help, About, KVKK, Terms, and Notification Preferences screens build and open successfully.
-- Baran's PreferencesView was connected from ProfilePage.
-- A real push notification backend exists for message and reservation events.
+- Settings, Help, About, KVKK, Terms and Notification Preferences screens build and open successfully.
+- Baran’s PreferencesView was connected from ProfilePage.
+- Rezervasyon, Şifre Değiştirme ve Konum Seçici ekranları Türkçe ve İngilizce dillerini destekleyecek şekilde yerelleştirildi (Language Manager entegrasyonu).
 
 ### Partially Completed
 - Legal/support pages are still basic and need final legal review.
-- Notification preferences exist, but the backend does not yet enforce each preference.
+- Notification preferences exist but real push notification backend is not connected.
 - PreferencesView is connected but needs review for real data persistence.
 
 ### Missing / To Do
-- Connect notification preferences to backend delivery.
+- Real push notification backend integration.
 - Privacy preferences.
-- Language settings review.
 - Delete account.
 - Data export.
 - Clear cache.
 - Support/contact form.
 - App feedback/report problem flow.
 - Final Terms/KVKK legal review.
+
 ---
 
 ## 14. Location and Map Features
@@ -519,31 +497,28 @@ Status meanings:
 ### Completed
 - Firestore rules were tightened from public rules.
 - Conversations are limited to participants.
-- Message writes are restricted to the sender.
+- Message writes are restricted to sender.
 - Services and service providers use ownership-based write rules.
-- Reservation create/cancel rules were added.
-- Reservation accept/reject rules were added.
-- Firestore rules are versioned in `firestore.rules`.
-- Firestore rules compile successfully through Firebase CLI.
-- Firestore rules were deployed from the repository.
+- Reservation create/cancel rules were added manually.
+- Reservation accept/reject rules were added manually.
 - Negative security tests were performed for conversations, users, services, and service providers.
-- Local GoogleService-Info.plist / signing / bundle ID changes are excluded from commits.
+- Local GoogleService-Info.plist / signing / bundle ID changes were excluded from commits.
 
 ### Partially Completed
-- Users read access is still broad for the existing duplicate-check flow.
-- Reservation and conversation/message rules should receive a final team review.
-- Storage security rules still need a complete review.
-- The application stores one FCM token per user and needs a safer multi-device token structure.
+- Users read access is still broad for phone duplicate check.
+- Firestore rules are not fully versioned in repo.
+- Reservation and conversation/message rules should be reviewed by the team.
+- Storage security rules still need review.
 
 ### Missing / To Do
+- Move final Firestore rules into repo.
 - Admin role handling.
-- More negative security tests.
+- More negative tests.
 - Storage security rules review.
 - App privacy labels.
 - Data deletion / GDPR flow.
 - Account deletion flow.
-- Data retention policy.
-- Sensitive local data / Keychain review.
+
 ---
 
 ## 17. Analytics and Reporting
@@ -610,25 +585,18 @@ Status meanings:
   - Settings navigation
   - Notification permission screen
   - Password reset email flow
-  - Expert provider screens integrated from Baran's work
-  - Customer profile feature screens integrated from Baran's work
+  - Expert provider screens integrated from Baran’s work
+  - Customer profile feature screens integrated from Baran’s work
 - Security negative tests were performed manually for important Firestore access cases.
 - Build and phone tests were completed after provider/customer feature screen integration.
 - Existing expert screens were tested after new full-screen presentation changes.
-- Customer profile menu links were tested after connecting Baran's customer feature screens.
-- Message push notification delivery was tested from the iOS Simulator to a physical iPhone.
-- Message notification tap routing was tested and opened the correct chat.
-- Reservation notification delivery was tested on a physical iPhone.
-- Reservation notification tap routing was tested and opened the correct reservation detail.
-- Firestore rules compilation and deployment were tested through Firebase CLI.
-- The project built successfully after the duplicate review implementation was removed.
+- Customer profile menu links were tested after connecting Baran’s customer feature screens.
 
 ### Partially Completed
 - Multi-device and multi-user testing should continue.
-- Provider/customer feature screens open correctly, but real data integration still needs separate testing.
-- Security rules were manually tested but need broader regression coverage.
+- Baran’s provider/customer feature screens open correctly, but real data integration still needs separate testing.
+- Security rules were manually tested but should be versioned and reviewed.
 - Regression testing should continue after each merge.
-- Notification testing currently focuses on development builds and physical-device testing.
 
 ### Missing / To Do
 - Unit tests.
@@ -636,11 +604,10 @@ Status meanings:
 - Repository mock tests.
 - UI tests.
 - End-to-end booking tests.
-- Multi-device notification tests.
+- Multi-device testing.
 - Regression checklist.
 - Automated smoke test checklist.
-- Instruments performance tests.
-- TestFlight beta testing.
+
 ---
 
 ## 20. Deployment and App Store Preparation

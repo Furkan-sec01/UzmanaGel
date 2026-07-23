@@ -17,12 +17,17 @@ final class ServiceDetailViewModel: ObservableObject {
     @Published var addressText: String = ""
     @Published var isFavorite: Bool
     @Published var isLoading = false
+<<<<<<< HEAD
     @Published var providerIsAvailable = true
     @Published var didLoadProviderAvailability = false
     @Published var providerAvailabilityLoadFailed = false
 
     /// Uzmanın çalışma saatleri / günleri (service_providers'dan; müşteri tarafında gösterilir)
+=======
+>>>>>>> d7dac80 (feat: Apply advanced filters, review functionality and compact UI)
     @Published var expertProfile: ExpertProfile?
+    @Published var reviewCount: Int = 0
+    @Published var averageRating: Double = 0.0
 
     let service: Service
 
@@ -50,12 +55,14 @@ final class ServiceDetailViewModel: ObservableObject {
             async let galleryTask: () = fetchGalleryImages()
             async let addressTask: () = resolveAddress()
             async let availabilityTask: () = fetchProviderAvailability()
+            async let reviewTask: () = fetchReviewSummary()
 
             _ = await (
                 servicesTask,
                 galleryTask,
                 addressTask,
-                availabilityTask
+                availabilityTask,
+                reviewTask
             )
 
             if coverImageURL == nil {
@@ -234,6 +241,24 @@ final class ServiceDetailViewModel: ObservableObject {
             }
         } catch {
             addressText = service.city
+        }
+    }
+
+    private func fetchReviewSummary() async {
+        guard !service.providerId.isEmpty else { return }
+        do {
+            let reviews = try await ReviewRepository().fetchReviews(forProviderId: service.providerId)
+            self.reviewCount = reviews.count
+            if !reviews.isEmpty {
+                let sum = reviews.reduce(0.0) { $0 + $1.rating }
+                self.averageRating = sum / Double(reviews.count)
+            } else {
+                self.reviewCount = service.reviewCount
+                self.averageRating = service.rating
+            }
+        } catch {
+            self.reviewCount = service.reviewCount
+            self.averageRating = service.rating
         }
     }
 }

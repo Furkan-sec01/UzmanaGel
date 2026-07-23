@@ -85,6 +85,9 @@ struct Reservation: Identifiable, Codable, Hashable {
     let note: String
     let status: ReservationStatus
     let rejectionReason: String
+    
+    var isRated: Bool?
+    var rating: Double?
 
     let createdAt: Date
     let updatedAt: Date

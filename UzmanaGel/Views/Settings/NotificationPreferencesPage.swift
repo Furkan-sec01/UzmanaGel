@@ -27,6 +27,7 @@ struct NotificationPreferencesPage: View {
 
     @State private var permissionStatusText = "Kontrol ediliyor...".localized
     @State private var showPermissionAlert = false
+    @ObservedObject private var langManager = LanguageManager.shared
     
     private let preferencesService = FirestorePreferencesService()
 

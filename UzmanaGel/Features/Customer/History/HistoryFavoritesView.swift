@@ -1,4 +1,6 @@
 import SwiftUI
+import Firebase
+import FirebaseAuth
 
 struct HistoryFavoritesView: View {
     @StateObject private var viewModel = HistoryFavoritesViewModel()
@@ -323,49 +325,30 @@ struct HistoryFavoritesView: View {
     // Rating overlay sheet
     @ViewBuilder
     private func ratingView(orderId: String) -> some View {
-        NavigationStack {
-            VStack(spacing: Constants.spacingL) {
-                Text("Hizmeti Puanlayın")
-                    .font(.headline)
-                    .padding(.top)
-                
-                Text("Ustanın hizmet kalitesini değerlendirerek diğer kullanıcılara yardımcı olun.")
-                    .font(.caption)
-                    .foregroundColor(Color.themeSecondaryText)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                
-                HStack(spacing: 8) {
-                    ForEach(1...5, id: \.self) { rate in
-                        Button {
-                            Task {
-                                await viewModel.submitRating(orderId: orderId, rating: rate)
-                                ratingTargetId = nil
-                            }
-                        } label: {
-                            Image(systemName: "star.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 38, height: 38)
-                                .foregroundColor(Color.themeWarning)
+        if let order = viewModel.orders.first(where: { $0.id == orderId }) {
+            ReviewSubmissionSheet(
+                bookingId: order.id,
+                serviceId: order.serviceId,
+                serviceTitle: order.serviceTitle,
+                providerId: order.providerId ?? order.id,
+                providerName: order.providerName,
+                customerId: Auth.auth().currentUser?.uid ?? "",
+                customerName: "Müşteri"
+            ) { rating in
+                Task {
+                    await viewModel.submitRating(orderId: orderId, rating: Int(rating))
+                    ratingTargetId = nil
+                }
+            }
+        } else {
+            NavigationStack {
+                Text("Sipariş bulunamadı.")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Kapat") { ratingTargetId = nil }
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
-                }
-                .padding()
-                
-                Spacer()
             }
-            .navigationTitle("Değerlendirme")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
-                        ratingTargetId = nil
-                    }
-                }
-            }
-            .background(Color.themeBackground)
         }
     }
     

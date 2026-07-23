@@ -1,0 +1,45 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Yorum fotoğrafları: herkes görebilir, giriş yapmış kullanıcı yükleyebilir/düzenleyebilir
+    match /review_photos/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Uzman portföy fotoğrafları: herkes görebilir, sadece uzman kendisi yükleyebilir
+    match /portfolio/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // İlan görselleri: herkes görebilir, sadece ilan sahibi yükleyebilir
+    match /listing_images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Sertifikalar ve doğrulama belgeleri: giriş yapmış kullanıcılar okuyabilir, sadece kendi klasörüne yükleyebilir
+    match /certificates/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /verification_documents/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Kullanıcı profil fotoğrafları
+    match /profile_images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Genel olarak giriş yapmış kullanıcıların dosya yükleyebilmesi (eski veya dinamik yollar için)
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

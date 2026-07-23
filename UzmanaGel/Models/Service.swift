@@ -36,11 +36,18 @@ struct Service: Identifiable, Codable, Hashable {
 
     var experienceYears: Int
     var rating: Double
+    var reviewCount: Int
     var isAvailable: Bool
     var providerIsAvailable: Bool = true
     var isCertified: Bool
     var acceptsCreditCard: Bool
     var locationGeo: GeoPoint?
+
+    // Gelişmiş filtreler için ek alanlar (opsiyonel / varsayılanlar)
+    var completedJobsCount: Int
+    var serviceType: String
+    var paymentMethods: [String]
+    var languages: [String]
 
     enum CodingKeys: String, CodingKey {
         case serviceId
@@ -56,10 +63,63 @@ struct Service: Identifiable, Codable, Hashable {
         case image
         case experienceYears
         case rating
+        case reviewCount
         case isAvailable
         case isCertified
         case acceptsCreditCard
         case locationGeo
+        case completedJobsCount
+        case serviceType
+        case paymentMethods
+        case languages
+    }
+
+    init(
+        serviceId: String = "",
+        title: String = "",
+        category: String = "",
+        duration: String = "",
+        providerId: String = "",
+        isActive: Bool = true,
+        price: Int = 0,
+        providerName: String = "",
+        city: String = "",
+        description: String = "",
+        image: String = "",
+        experienceYears: Int = 0,
+        rating: Double = 0.0,
+        reviewCount: Int = 0,
+        isAvailable: Bool = true,
+        isCertified: Bool = false,
+        acceptsCreditCard: Bool = false,
+        locationGeo: GeoPoint? = nil,
+        completedJobsCount: Int = 0,
+        serviceType: String = "",
+        paymentMethods: [String] = [],
+        languages: [String] = ["Türkçe"]
+    ) {
+        self.serviceId = serviceId
+        self.title = title
+        self.category = category
+        self.duration = duration
+        self.providerId = providerId
+        self.isActive = isActive
+        self.price = price
+        self.providerName = providerName
+        self.city = city
+        self.description = description
+        self.image = image
+        self.experienceYears = experienceYears
+        self.rating = rating
+        self.reviewCount = reviewCount
+        self.isAvailable = isAvailable
+        self.isCertified = isCertified
+        self.acceptsCreditCard = acceptsCreditCard
+        self.locationGeo = locationGeo
+        self.completedJobsCount = completedJobsCount
+        self.serviceType = serviceType
+        self.paymentMethods = paymentMethods
+        self.languages = languages
     }
 
     init(from decoder: Decoder) throws {
@@ -115,6 +175,26 @@ struct Service: Identifiable, Codable, Hashable {
             rating = 0.0
         }
 
+        if let intVal = try? c.decode(Int.self, forKey: .reviewCount) {
+            reviewCount = intVal
+        } else if let dblVal = try? c.decode(Double.self, forKey: .reviewCount) {
+            reviewCount = Int(dblVal)
+        } else {
+            reviewCount = 0
+        }
+
         locationGeo = try c.decodeIfPresent(GeoPoint.self, forKey: .locationGeo)
+
+        if let intVal = try? c.decode(Int.self, forKey: .completedJobsCount) {
+            completedJobsCount = intVal
+        } else if let dblVal = try? c.decode(Double.self, forKey: .completedJobsCount) {
+            completedJobsCount = Int(dblVal)
+        } else {
+            completedJobsCount = 0
+        }
+
+        serviceType = try c.decodeIfPresent(String.self, forKey: .serviceType) ?? ""
+        paymentMethods = try c.decodeIfPresent([String].self, forKey: .paymentMethods) ?? []
+        languages = try c.decodeIfPresent([String].self, forKey: .languages) ?? ["Türkçe"]
     }
 }

@@ -267,6 +267,7 @@ final class ServiceRepository {
             "image": image,
             "experienceYears": profile.experienceYears,
             "rating": 0.0,
+            "reviewCount": 0,
             "isAvailable": true,
             "isCertified": !profile.certificateURLs.isEmpty,
             "acceptsCreditCard": false
@@ -279,6 +280,9 @@ final class ServiceRepository {
     /// Uzman profilini service_providers'a yazar; müşteri listesinde birleştirme çalışır. Konum (locationGeo) profildeki adresten gelir.
     func ensureExpertProvider(profile: ExpertProfile, providerId: String) async throws {
         let ref = db.collection("service_providers").document(providerId)
+        let existingData = try? await ref.getDocument().data()
+        let existingRating = existingData?["rating"] as? Double ?? 0.0
+        let existingReviewCount = existingData?["reviewCount"] as? Int ?? 0
         let city = profile.serviceCities.first ?? ""
         var data: [String: Any] = [
             "providerId": providerId,
@@ -288,7 +292,8 @@ final class ServiceRepository {
             "description": profile.about ?? "",
             "image": profile.profileImageURL ?? "",
             "phoneNumber": profile.phoneNumber,
-            "rating": 0.0,
+            "rating": existingRating,
+            "reviewCount": existingReviewCount,
             "experienceYears": profile.experienceYears,
             "isCertified": !profile.certificateURLs.isEmpty,
             "acceptsCreditCard": false
@@ -378,6 +383,9 @@ final class ServiceRepository {
         if merged.rating == 0 && provider.rating > 0 {
             merged.rating = provider.rating
         }
+        if merged.reviewCount == 0 && provider.reviewCount > 0 {
+            merged.reviewCount = provider.reviewCount
+        }
         if merged.experienceYears == 0 && provider.experienceYears > 0 {
             merged.experienceYears = provider.experienceYears
         }
@@ -389,6 +397,18 @@ final class ServiceRepository {
         }
         if merged.locationGeo == nil, let geo = provider.locationGeo {
             merged.locationGeo = geo
+        }
+        if merged.completedJobsCount == 0 && provider.completedJobsCount > 0 {
+            merged.completedJobsCount = provider.completedJobsCount
+        }
+        if merged.serviceType.isEmpty && !provider.serviceType.isEmpty {
+            merged.serviceType = provider.serviceType
+        }
+        if merged.paymentMethods.isEmpty && !provider.paymentMethods.isEmpty {
+            merged.paymentMethods = provider.paymentMethods
+        }
+        if (merged.languages.isEmpty || merged.languages == ["Türkçe"]) && !provider.languages.isEmpty {
+            merged.languages = provider.languages
         }
 
         return merged

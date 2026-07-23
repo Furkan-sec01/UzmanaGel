@@ -92,6 +92,8 @@ enum Language: String, Codable, CaseIterable {
 // MARK: - Order Model
 struct Order: Codable, Identifiable, Equatable {
     var id: String
+    var providerId: String?
+    var serviceId: String?
     var providerName: String
     var serviceTitle: String
     var price: Double

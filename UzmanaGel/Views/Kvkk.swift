@@ -7,6 +7,7 @@ struct Kvkk: View {
     let showsAcceptance: Bool
 
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var langManager = LanguageManager.shared
 
     @State private var reachedLastPage = false
 
@@ -23,7 +24,7 @@ struct Kvkk: View {
     var body: some View {
         VStack(spacing: 12) {
 
-            Text("KVKK / Gizlilik Politikası")
+            Text("KVKK / Gizlilik Politikası".localized)
                 .font(.headline)
                 .padding(.top, 8)
 
@@ -39,7 +40,7 @@ struct Kvkk: View {
                     hasRead = true
                     dismiss()
                 } label: {
-                    Text("Okudum ve Kabul Ediyorum")
+                    Text("Okudum ve Kabul Ediyorum".localized)
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)

@@ -87,15 +87,19 @@ class PreferencesViewModel: ObservableObject {
     func applyTheme(_ theme: AppTheme) {
         let scenes = UIApplication.shared.connectedScenes
         let windowScene = scenes.first as? UIWindowScene
-        let window = windowScene?.windows.first
         
+        let style: UIUserInterfaceStyle
         switch theme {
         case .light:
-            window?.overrideUserInterfaceStyle = .light
+            style = .light
         case .dark:
-            window?.overrideUserInterfaceStyle = .dark
+            style = .dark
         case .system:
-            window?.overrideUserInterfaceStyle = .unspecified
+            style = .unspecified
+        }
+        
+        windowScene?.windows.forEach { window in
+            window.overrideUserInterfaceStyle = style
         }
     }
     

@@ -34,6 +34,12 @@ struct ReservationDetailPage: View {
     ]
     @State private var errorMessage = ""
     @State private var showError = false
+    
+    @State private var showWriteReviewSheet = false
+
+    private var isCustomer: Bool {
+        Auth.auth().currentUser?.uid == reservation.customerId
+    }
 
     private let messageRepository = MessageRepository()
     private let reservationRepository = ReservationRepository()
@@ -155,6 +161,21 @@ struct ReservationDetailPage: View {
                 Button("Vazgeç".localized, role: .cancel) { }
             } message: {
                 Text("Müşterinin rezervasyona gelmediğini onaylıyor musunuz?".localized)
+            }
+            .sheet(isPresented: $showWriteReviewSheet) {
+                ReviewSubmissionSheet(
+                    bookingId: reservation.reservationId,
+                    serviceTitle: reservation.serviceTitle,
+                    providerId: reservation.providerId,
+                    providerName: reservation.providerName,
+                    customerId: reservation.customerId,
+                    customerName: reservation.customerName
+                ) { rating in
+                    // On success, we should probably set isRated = true locally so UI updates
+                    reservation.isRated = true
+                    reservation.rating = rating
+                    onStatusChanged?()
+                }
             }
         }
     }
@@ -453,6 +474,7 @@ struct ReservationDetailPage: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader(icon: "bolt.fill", title: "İşlemler".localized)
             messageButton
+<<<<<<< HEAD
             if canProviderDecide {
                 providerDecisionButtons
             }
@@ -467,6 +489,61 @@ struct ReservationDetailPage: View {
 
             if canCustomerCancel {
                 cancelButton
+=======
+            if canProviderDecide { providerDecisionButtons }
+            if canCustomerCancel { cancelButton }
+            
+            if reservation.status == .completed {
+                completedActions
+            }
+        }
+    }
+    
+    // MARK: - Completed Actions
+    private var completedActions: some View {
+        VStack(spacing: 12) {
+            if isCustomer {
+                if reservation.isRated == true {
+                    HStack(spacing: 8) {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.orange)
+                        Text(String(format: "Bu hizmeti %.1f yıldız ile değerlendirdiniz", reservation.rating ?? 5.0).localized)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.orange.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                } else {
+                    Button {
+                        showWriteReviewSheet = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "star.bubble.fill")
+                            Text("Uzmanı Değerlendir".localized)
+                                .font(.system(size: 15, weight: .bold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.orange)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
+                // Provider view for completed
+                if reservation.isRated != true {
+                    Text("Müşteri değerlendirmesi bekleniyor...".localized)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+>>>>>>> d7dac80 (feat: Apply advanced filters, review functionality and compact UI)
             }
         }
     }
@@ -867,6 +944,8 @@ struct ReservationDetailPage: View {
             note: reservation.note,
             status: status,
             rejectionReason: rejectionReason ?? reservation.rejectionReason,
+            isRated: reservation.isRated,
+            rating: reservation.rating,
             createdAt: reservation.createdAt,
             updatedAt: Date()
         )

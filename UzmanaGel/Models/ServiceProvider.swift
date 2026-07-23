@@ -17,10 +17,15 @@ struct ServiceProvider: Identifiable, Codable {
     let profileImageURL: String
     let phoneNumber: String
     let rating: Double
+    let reviewCount: Int
     let experienceYears: Int
     let isCertified: Bool
     let acceptsCreditCard: Bool
     let locationGeo: GeoPoint?
+    let completedJobsCount: Int
+    let serviceType: String
+    let paymentMethods: [String]
+    let languages: [String]
 
     enum CodingKeys: String, CodingKey {
         case providerId
@@ -33,10 +38,15 @@ struct ServiceProvider: Identifiable, Codable {
         case profileImageURL
         case phoneNumber
         case rating
+        case reviewCount
         case experienceYears
         case isCertified
         case acceptsCreditCard
         case locationGeo
+        case completedJobsCount
+        case serviceType
+        case paymentMethods
+        case languages
     }
 
     init(from decoder: Decoder) throws {
@@ -77,6 +87,14 @@ struct ServiceProvider: Identifiable, Codable {
             rating = 0.0
         }
 
+        if let intVal = try? c.decode(Int.self, forKey: .reviewCount) {
+            reviewCount = intVal
+        } else if let dblVal = try? c.decode(Double.self, forKey: .reviewCount) {
+            reviewCount = Int(dblVal)
+        } else {
+            reviewCount = 0
+        }
+
         if let intVal = try? c.decode(Int.self, forKey: .experienceYears) {
             experienceYears = intVal
         } else if let dblVal = try? c.decode(Double.self, forKey: .experienceYears) {
@@ -86,5 +104,17 @@ struct ServiceProvider: Identifiable, Codable {
         }
 
         locationGeo = try c.decodeIfPresent(GeoPoint.self, forKey: .locationGeo)
+
+        if let intVal = try? c.decode(Int.self, forKey: .completedJobsCount) {
+            completedJobsCount = intVal
+        } else if let dblVal = try? c.decode(Double.self, forKey: .completedJobsCount) {
+            completedJobsCount = Int(dblVal)
+        } else {
+            completedJobsCount = 0
+        }
+
+        serviceType = try c.decodeIfPresent(String.self, forKey: .serviceType) ?? ""
+        paymentMethods = try c.decodeIfPresent([String].self, forKey: .paymentMethods) ?? []
+        languages = try c.decodeIfPresent([String].self, forKey: .languages) ?? ["Türkçe"]
     }
 }

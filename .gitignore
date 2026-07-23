@@ -1,4 +1,6 @@
 .DS_Store
+.build/
+build_tmp/
 
 # Xcode personal user data
 **/xcuserdata/

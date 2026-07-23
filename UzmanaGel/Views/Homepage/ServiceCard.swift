@@ -70,11 +70,11 @@ struct ServiceCard: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.orange)
 
-                        Text(String(format: "%.1f", service.rating))
+                        Text(String(format: "%.1f", service.reviewCount > 0 ? service.rating : 0.0))
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.secondary)
 
-                        Text("(0 yorum)".localized)
+                        Text("(\(service.reviewCount) yorum)".localized)
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -133,21 +133,10 @@ struct ServiceCard: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
+                .fill(Color("CardBackground"))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.5),
-                                    Color.white.opacity(0.15),
-                                    Color.clear
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.8
-                        )
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 1)
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))

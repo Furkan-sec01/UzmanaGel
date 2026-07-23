@@ -1,5 +1,6 @@
 import SwiftUI
-
+import FirebaseAuth
+import FirebaseFirestore
 struct Homepage: View {
     
     @EnvironmentObject var session: SessionViewModel
@@ -142,16 +143,25 @@ struct Homepage: View {
                             HStack {
                                 Image(systemName: "line.3.horizontal.decrease.circle.fill")
                                     .foregroundColor(Color("PrimaryColor"))
-                                Text("Filtre aktif".localized)
-                                    .font(.system(size: 13, weight: .medium))
+                                Text("\(vm.filter.activeFilterCount) Filtre Aktif".localized)
+                                    .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(Color("PrimaryColor"))
                                 Spacer()
                                 Button("Temizle".localized) {
-                                    vm.filter.reset()
+                                #if os(iOS)
+                                    UISelectionFeedbackGenerator().selectionChanged()
+                                #endif
+                                    withAnimation {
+                                        vm.filter.reset()
+                                    }
                                 }
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(.red)
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color("PrimaryColor").opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .padding(.horizontal, 16)
                         }
                         
@@ -229,9 +239,30 @@ struct Homepage: View {
                         }
                     }
                     
-                    ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        Button { showFilter = true } label: {
-                            Image(systemName: "line.3.horizontal.decrease")
+
+                    
+                                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                        Button {
+                        #if os(iOS)
+                            UISelectionFeedbackGenerator().selectionChanged()
+                        #endif
+                            showFilter = true
+                        } label: {
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: vm.filter.isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(vm.filter.isActive ? Color("PrimaryColor") : .white)
+
+                                if vm.filter.activeFilterCount > 0 {
+                                    Text("\(vm.filter.activeFilterCount)")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 16, height: 16)
+                                        .background(Color.red)
+                                        .clipShape(Circle())
+                                        .offset(x: 6, y: -6)
+                                }
+                            }
                         }
                     }
                 }
@@ -242,21 +273,18 @@ struct Homepage: View {
                         },
                         onMessagesTap: {
                             showMenu = false
-
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                                 showMessagesPage = true
                             }
                         },
                         onSettingsTap: {
                             showMenu = false
-
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                                 showSettingsPage = true
                             }
                         },
                         onProfileTap: {
                             showMenu = false
-
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                                 showProfilePage = true
                             }
@@ -266,13 +294,12 @@ struct Homepage: View {
                         },
                         onReservationsTap: {
                             showMenu = false
-
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                                 showReservationsPage = true
                             }
                         }
                     )
-                    .presentationDetents([.fraction(0.75)])///ekranın %75'ini kapla
+                    .presentationDetents([.fraction(0.75)])
                     .presentationDragIndicator(.visible)
                 }
                 .navigationDestination(isPresented: $showProfilePage) {
@@ -281,18 +308,17 @@ struct Homepage: View {
                 .navigationDestination(isPresented: $showMessagesPage) {
                     MessagesPage()
                 }
-                
                 .navigationDestination(isPresented: $showSettingsPage) {
                     SettingsPage()
                 }
                 .navigationDestination(isPresented: $showReservationsPage) {
                     MyReservationsPage()
                 }
-                
                 .sheet(isPresented: $showFilter) {
                     FilterSheet(
                         filter: $vm.filter,
                         categories: vm.availableCategories,
+                        locationManager: vm.locationManager,
                         onApply: { showFilter = false }
                     )
                     .presentationDetents([.large])
@@ -309,5 +335,5 @@ struct Homepage: View {
             }
         }
     }
-    
+
 }

@@ -220,4 +220,15 @@ final class StorageUploadService {
         )
     }
 
+    /// Yorum fotoğrafı; review_photos/{uid}/{uuid}.jpg
+    func uploadReviewPhoto(image: UIImage, quality: CGFloat = 0.85, uid: String? = nil) async throws -> String {
+        let finalUid = try uid ?? currentUID()
+        guard let data = image.jpegData(compressionQuality: quality) else {
+            throw StorageUploadError.invalidData
+        }
+        let filename = "\(UUID().uuidString).jpg"
+        let path = "review_photos/\(finalUid)/\(filename)"
+        let ref = storageRef(path: path, uid: finalUid)
+        return try await putDataAndGetDownloadURL(data, ref: ref, contentType: "image/jpeg")
+    }
 }

@@ -56,7 +56,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
                 self?.saveFCMToken(token, for: user.uid)
             }
         }
-
+        
+        // ScoringAndFilterVerificationSuite.runAllTests() // İhtiyaç duyulduğunda testleri çalıştırmak için açılabilir
         return true
     }
 
@@ -238,6 +239,7 @@ struct UzmanaGelApp: App {
     // Session and theme
     @StateObject private var session = SessionViewModel()
     @StateObject private var themeManager = AppThemeManager()
+    @ObservedObject private var langManager = LanguageManager.shared
 
     @State private var showSplash = true
 
@@ -268,6 +270,7 @@ struct UzmanaGelApp: App {
                 RootView()
                     .environmentObject(session)
                     .environmentObject(themeManager)
+                    .environmentObject(langManager)
                     .preferredColorScheme(preferredColorScheme)
                     .tint(themeManager.accentColor)
 

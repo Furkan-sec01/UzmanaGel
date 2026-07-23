@@ -39,6 +39,7 @@ final class NotificationRouter: ObservableObject {
 struct RootView: View {
 
     @EnvironmentObject var session: SessionViewModel
+    @ObservedObject private var langManager = LanguageManager.shared
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     @ObservedObject private var notificationRouter = NotificationRouter.shared

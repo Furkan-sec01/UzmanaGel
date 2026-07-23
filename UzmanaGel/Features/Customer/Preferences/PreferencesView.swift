@@ -23,7 +23,6 @@ struct PreferencesView: View {
                 ScrollView {
                     VStack(spacing: 22) {
                         notificationSection
-                        appearanceSection
                         languageSection
                         privacySection
                         saveButtonSection
@@ -57,60 +56,6 @@ struct PreferencesView: View {
                 toggleRow("Rezervasyon Güncellemeleri", icon: "calendar.badge.clock", tint: .purple, value: $viewModel.bookingNotificationsEnabled)
                 Divider().background(accentYellow.opacity(0.2)).padding(.leading, 56)
                 toggleRow("Kampanya ve Tanıtımlar", icon: "tag.fill", tint: .orange, value: $viewModel.promoNotificationsEnabled)
-            }
-        }
-    }
-
-    // MARK: - 2. Appearance Section
-    private var appearanceSection: some View {
-        sectionCard(title: "Görünüm Ayarları", icon: "paintbrush.fill", iconColor: .indigo) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    iconBox("moon.stars.fill", tint: .indigo)
-                    Text("Uygulama Teması".localized)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(primaryColor)
-                }
-                .padding(.horizontal, 14)
-                .padding(.top, 14)
-
-                HStack(spacing: 10) {
-                    ForEach(AppTheme.allCases, id: \.self) { theme in
-                        let isSelected = viewModel.themeSelection == theme
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                viewModel.themeSelection = theme
-                            }
-                            viewModel.applyTheme(theme)
-                        } label: {
-                            VStack(spacing: 6) {
-                                Image(systemName: themeIcon(for: theme))
-                                    .font(.system(size: 20, weight: isSelected ? .bold : .regular))
-                                    .foregroundColor(isSelected ? .white : primaryColor)
-                                Text(theme.rawValue.localized)
-                                    .font(.system(size: 12, weight: isSelected ? .bold : .medium))
-                                    .foregroundColor(isSelected ? .white : primaryColor)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(
-                                isSelected
-                                    ? accentYellow
-                                    : Color.gray.opacity(0.08)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(isSelected ? Color.clear : Color.gray.opacity(0.2), lineWidth: 1)
-                            )
-                            .shadow(color: isSelected ? accentYellow.opacity(0.35) : .clear, radius: 6, x: 0, y: 3)
-                            .scaleEffect(isSelected ? 1.03 : 1.0)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.bottom, 14)
             }
         }
     }
@@ -287,20 +232,20 @@ struct PreferencesView: View {
                     .foregroundColor(iconColor)
                 Text(title.localized)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(primaryColor)
+                    .foregroundColor(.primary)
             }
             .padding(.leading, 4)
 
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color.white.opacity(0.95))
+            .background(Color("CardBackground"))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(accentYellow.opacity(0.35), lineWidth: 1)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
             )
-            .shadow(color: accentYellow.opacity(0.1), radius: 8, x: 0, y: 3)
+            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
         }
     }
 
@@ -309,7 +254,7 @@ struct PreferencesView: View {
             iconBox(icon, tint: tint)
             Text(title.localized)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(primaryColor)
+                .foregroundColor(.primary)
             Spacer()
             Toggle("", isOn: value)
                 .tint(accentYellow)

@@ -118,50 +118,50 @@ struct ProfilePage: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(height: 235)
+                .frame(height: 180)
 
             // Decorative circles
             Circle()
                 .fill(Color.white.opacity(0.06))
-                .frame(width: 160)
-                .offset(x: 130, y: -60)
+                .frame(width: 140)
+                .offset(x: 130, y: -50)
             Circle()
                 .fill(Color.white.opacity(0.04))
-                .frame(width: 100)
-                .offset(x: -120, y: 70)
+                .frame(width: 90)
+                .offset(x: -120, y: 50)
 
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 ZStack(alignment: .bottomTrailing) {
                     Group {
                         if let profileUIImage {
                             Image(uiImage: profileUIImage)
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 84, height: 84)
+                                .frame(width: 72, height: 72)
                         } else if let photoURL, let decodedImg = photoURL.decodeBase64ToImage() {
                             Image(uiImage: decodedImg)
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 84, height: 84)
+                                .frame(width: 72, height: 72)
                         } else if let photoURL, let url = URL(string: photoURL), !photoURL.isEmpty {
                             AsyncImage(url: url) { phase in
                                 switch phase {
                                 case .success(let img):
                                     img.resizable()
                                         .scaledToFill()
-                                        .frame(width: 84, height: 84)
+                                        .frame(width: 72, height: 72)
                                 default:
                                     Image(systemName: "person.crop.circle.fill")
                                         .resizable()
                                         .scaledToFill()
-                                        .frame(width: 84, height: 84)
+                                        .frame(width: 72, height: 72)
                                 }
                             }
                         } else {
                             Image(systemName: "person.crop.circle.fill")
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 84, height: 84)
+                                .frame(width: 72, height: 72)
                         }
                     }
                     .background(
@@ -171,7 +171,7 @@ struct ProfilePage: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 84, height: 84)
+                    .frame(width: 72, height: 72)
                     .clipShape(Circle())
                     .overlay(
                         Circle().stroke(Color.white, lineWidth: 2)
@@ -202,38 +202,27 @@ struct ProfilePage: View {
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.white)
 
-                HStack(spacing: 8) {
-                    // Üyelik süresi badge
-                    if !memberSince.isEmpty {
-                        HStack(spacing: 4) {
-                            Image(systemName: "calendar.badge.checkmark")
-                                .font(.system(size: 10))
-                            Text(memberSince)
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(Capsule())
+                // Düzenle butonu (Sade & Prominent)
+                NavigationLink(destination: UserInfoEditView()) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.system(size: 15))
+                        Text("Profili Düzenle".localized)
+                            .font(.system(size: 13, weight: .bold))
                     }
-
-                    // Düzenle butonu
-                    NavigationLink(destination: UserInfoEditView()) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "pencil")
-                                .font(.system(size: 10))
-                            Text("Düzenle".localized)
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 7)
+                    .background(Color.white.opacity(0.22))
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.35), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
                 }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
             }
         }
     }
