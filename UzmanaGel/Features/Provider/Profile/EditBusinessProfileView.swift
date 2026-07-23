@@ -1,11 +1,14 @@
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 
 struct EditBusinessProfileView: View {
     @StateObject private var viewModel = EditBusinessProfileViewModel()
     @Environment(\.dismiss) private var dismiss
     
     @State private var logoItem: PhotosPickerItem? = nil
+    @State private var certificateImageItem: PhotosPickerItem? = nil
+    @State private var showCertificateImporter = false
     @State private var isAddingCategory = false
     
     let availableCategories = ["Temizlik", "Tesisatçı", "Elektrikçi", "Boya & Badana", "Marangoz", "Nakliyat", "Bahçe Bakım"]
@@ -157,6 +160,48 @@ struct EditBusinessProfileView: View {
                     }
                 }
             }
+            .onChange(of: certificateImageItem) { _, newItem in
+                Task {
+                    guard let data = try? await newItem?.loadTransferable(type: Data.self) else {
+                        return
+                    }
+
+                    await viewModel.uploadCertificateImage(data: data)
+                    certificateImageItem = nil
+                }
+            }
+            .fileImporter(
+                isPresented: $showCertificateImporter,
+                allowedContentTypes: [.pdf],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else { return }
+
+                    Task {
+                        let hasAccess = url.startAccessingSecurityScopedResource()
+                        defer {
+                            if hasAccess {
+                                url.stopAccessingSecurityScopedResource()
+                            }
+                        }
+
+                        do {
+                            let data = try Data(contentsOf: url)
+                            await viewModel.uploadCertificateDocument(
+                                data: data,
+                                fileExtension: url.pathExtension
+                            )
+                        } catch {
+                            viewModel.errorMessage = error.localizedDescription
+                        }
+                    }
+
+                case .failure(let error):
+                    viewModel.errorMessage = error.localizedDescription
+                }
+            }
             .task {
                 await viewModel.loadBusinessInfo()
             }
@@ -302,6 +347,57 @@ struct EditBusinessProfileView: View {
                         }
                     }
                     .padding(.top, 4)
+
+                    if !viewModel.certificateURLs.isEmpty {
+                        Label(
+                            "\(viewModel.certificateURLs.count) belge yüklendi. İnceleme bekleniyor.",
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .font(.caption)
+                        .foregroundColor(Color.themeSuccess)
+                        .padding(.top, 6)
+                    }
+
+                    VStack(spacing: 8) {
+                        PhotosPicker(
+                            selection: $certificateImageItem,
+                            matching: .images
+                        ) {
+                            Label(
+                                "Fotoğraf Olarak Belge Yükle",
+                                systemImage: "photo.badge.plus"
+                            )
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.themePrimary)
+                        .disabled(viewModel.isUploadingCertificate)
+
+                        Button {
+                            showCertificateImporter = true
+                        } label: {
+                            Label(
+                                "PDF Belge Yükle",
+                                systemImage: "doc.badge.plus"
+                            )
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Color.themePrimary)
+                        .disabled(viewModel.isUploadingCertificate)
+
+                        if viewModel.isUploadingCertificate {
+                            ProgressView("Belge yükleniyor...")
+                                .font(.caption)
+                        }
+                    }
+                    .padding(.top, 8)
                 }
             }
         }
