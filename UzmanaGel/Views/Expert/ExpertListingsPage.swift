@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import PhotosUI
+import UIKit
 
 // MARK: - Design
 
@@ -280,6 +282,7 @@ struct ExpertEditListingView: View {
 
     @Environment(\.dismiss) private var dismiss
     private let serviceRepo = ServiceRepository()
+    private let storageUploadService = StorageUploadService()
 
     @State private var title: String = ""
     @State private var selectedCategory: String = ""
@@ -288,6 +291,8 @@ struct ExpertEditListingView: View {
     @State private var descriptionText: String = ""
     @State private var selectedCity: String = ""
     @State private var listingImageURL: String?
+    @State private var listingImageItem: PhotosPickerItem?
+    @State private var selectedListingImageData: Data?
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -295,17 +300,61 @@ struct ExpertEditListingView: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: EditListingDesign.sectionSpacing) {
-                    if let urlString = listingImageURL, let url = URL(string: urlString) {
-                        editSection(title: "İlan görseli", icon: "photo") {
-                            AsyncImage(url: url) { phase in
-                                switch phase {
-                                case .success(let img): img.resizable().scaledToFill()
-                                default: Color(.secondarySystemBackground).overlay(ProgressView())
+                    editSection(title: "İlan görseli", icon: "photo") {
+                        VStack(spacing: 12) {
+                            Group {
+                                if let selectedListingImageData,
+                                   let image = UIImage(data: selectedListingImageData) {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                } else if let urlString = listingImageURL,
+                                          let url = URL(string: urlString) {
+                                    AsyncImage(url: url) { phase in
+                                        switch phase {
+                                        case .success(let image):
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        case .empty:
+                                            ProgressView()
+                                        default:
+                                            listingImagePlaceholder
+                                        }
+                                    }
+                                } else {
+                                    listingImagePlaceholder
                                 }
                             }
-                            .frame(height: 140)
+                            .frame(height: 160)
                             .frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .clipShape(
+                                RoundedRectangle(
+                                    cornerRadius: 12,
+                                    style: .continuous
+                                )
+                            )
+                            .clipped()
+
+                            PhotosPicker(
+                                selection: $listingImageItem,
+                                matching: .images
+                            ) {
+                                Label(
+                                    "İlan Görselini Değiştir",
+                                    systemImage: "photo.badge.plus"
+                                )
+                                .font(.system(size: 14, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color("PrimaryColor"))
+                            .disabled(isSaving)
+
+                            Text("Yeni görsel kaydetme sırasında yüklenecek.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                     }
 
@@ -405,6 +454,17 @@ struct ExpertEditListingView: View {
                         .foregroundColor(Color("PrimaryColor"))
                 }
             }
+            .onChange(of: listingImageItem) { _, newItem in
+                Task {
+                    guard let data = try? await newItem?
+                        .loadTransferable(type: Data.self)
+                    else {
+                        return
+                    }
+
+                    selectedListingImageData = data
+                }
+            }
             .onAppear {
                 title = service.title
                 selectedCategory = service.category
@@ -414,6 +474,21 @@ struct ExpertEditListingView: View {
                 selectedCity = service.city
                 listingImageURL = service.image.isEmpty ? nil : service.image
             }
+        }
+    }
+
+    private var listingImagePlaceholder: some View {
+        ZStack {
+            Color(.tertiarySystemBackground)
+
+            VStack(spacing: 8) {
+                Image(systemName: "photo")
+                    .font(.system(size: 30))
+
+                Text("İlan görseli yok")
+                    .font(.caption)
+            }
+            .foregroundColor(.secondary)
         }
     }
 
@@ -454,15 +529,42 @@ struct ExpertEditListingView: View {
             return
         }
         do {
-            try await serviceRepo.updateService(serviceId: service.serviceId, fields: [
-                "title": title.trimmingCharacters(in: .whitespacesAndNewlines),
-                "category": selectedCategory,
-                "duration": duration,
-                "price": price,
-                "description": descriptionText.trimmingCharacters(in: .whitespacesAndNewlines),
-                "city": selectedCity,
-                "image": listingImageURL ?? service.image
-            ])
+            var finalImageURL = listingImageURL ?? service.image
+
+            if let selectedListingImageData {
+                guard let image = UIImage(data: selectedListingImageData) else {
+                    errorMessage = "Seçilen görsel okunamadı."
+                    return
+                }
+
+                finalImageURL = try await storageUploadService
+                    .uploadListingImage(
+                        image: image,
+                        uid: service.providerId
+                    )
+            }
+
+            try await serviceRepo.updateService(
+                serviceId: service.serviceId,
+                fields: [
+                    "title": title.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    ),
+                    "category": selectedCategory,
+                    "duration": duration,
+                    "price": price,
+                    "description": descriptionText.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    ),
+                    "city": selectedCity,
+                    "image": finalImageURL
+                ]
+            )
+
+            listingImageURL = finalImageURL
+            selectedListingImageData = nil
+            listingImageItem = nil
+
             onSave()
             dismiss()
         } catch {

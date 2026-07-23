@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 
@@ -8,6 +9,7 @@ private enum EditBusinessProfileError: LocalizedError {
     case userNotFound
     case profileNotFound
     case businessNameRequired
+    case invalidDocument
 
     var errorDescription: String? {
         switch self {
@@ -17,6 +19,8 @@ private enum EditBusinessProfileError: LocalizedError {
             return "Uzman profili bulunamadı."
         case .businessNameRequired:
             return "İşletme adı boş bırakılamaz."
+        case .invalidDocument:
+            return "Seçilen belge okunamadı."
         }
     }
 }
@@ -34,6 +38,10 @@ final class EditBusinessProfileViewModel: ObservableObject {
     // Logo state
     @Published var logoUrl: String?
     @Published var selectedLogoData: Data?
+
+    // Certificate state
+    @Published var certificateURLs: [String] = []
+    @Published var isUploadingCertificate = false
 
     // Status state
     @Published var isCertified = false
@@ -80,6 +88,7 @@ final class EditBusinessProfileViewModel: ObservableObject {
             description = profile.about ?? ""
             selectedCategories = profile.serviceCategories
             logoUrl = profile.profileImageURL
+            certificateURLs = profile.certificateURLs
 
             isCertified = !profile.certificateURLs.isEmpty
             updateMissingDocuments(from: profile)
@@ -159,6 +168,82 @@ final class EditBusinessProfileViewModel: ObservableObject {
             selectedLogoData = nil
 
             successMessage = "İşletme profili güncellendi."
+
+            NotificationCenter.default.post(
+                name: .userDataUpdated,
+                object: nil
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func uploadCertificateImage(data: Data) async {
+        guard let image = UIImage(data: data) else {
+            errorMessage = EditBusinessProfileError.invalidDocument.localizedDescription
+            return
+        }
+
+        await uploadCertificate {
+            try await storageUploadService.uploadCertificate(image: image)
+        }
+    }
+
+    func uploadCertificateDocument(
+        data: Data,
+        fileExtension: String
+    ) async {
+        let extensionValue = fileExtension.lowercased()
+
+        guard extensionValue == "pdf" else {
+            errorMessage = EditBusinessProfileError.invalidDocument.localizedDescription
+            return
+        }
+
+        await uploadCertificate {
+            try await storageUploadService.uploadCertificate(
+                data: data,
+                fileExtension: extensionValue
+            )
+        }
+    }
+
+    private func uploadCertificate(
+        using upload: () async throws -> String
+    ) async {
+        guard !isUploadingCertificate else { return }
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            errorMessage = EditBusinessProfileError.userNotFound.localizedDescription
+            return
+        }
+
+        isUploadingCertificate = true
+        errorMessage = nil
+        successMessage = nil
+
+        defer {
+            isUploadingCertificate = false
+        }
+
+        do {
+            let newURL = try await upload()
+            let updatedURLs = certificateURLs + [newURL]
+
+            try await userRepository.updateExpertProfile(
+                uid: uid,
+                fields: [
+                    "certificateURLs": updatedURLs,
+                    "updatedAt": FieldValue.serverTimestamp()
+                ]
+            )
+
+            certificateURLs = updatedURLs
+            missingDocuments.removeAll {
+                $0 == "Mesleki Yeterlilik Belgesi / Sertifika"
+            }
+
+            successMessage = "Belge yüklendi. Onay bekleniyor."
 
             NotificationCenter.default.post(
                 name: .userDataUpdated,
