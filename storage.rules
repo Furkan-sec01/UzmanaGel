@@ -1,45 +1,124 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    // Yorum fotoğrafları: herkes görebilir, giriş yapmış kullanıcı yükleyebilir/düzenleyebilir
-    match /review_photos/{userId}/{allPaths=**} {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isImageUpload(maxBytes) {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= maxBytes
+        && request.resource.contentType.matches(
+          'image/(jpeg|png|heic|heif|webp)'
+        );
+    }
+
+    function isDocumentUpload(maxBytes) {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= maxBytes
+        && request.resource.contentType.matches(
+          'image/(jpeg|png|heic|heif|webp)|application/pdf'
+        );
+    }
+
+    // Review photos
+    match /review_photos/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null;
+
+      allow create, update: if isOwner(userId)
+        && isImageUpload(10 * 1024 * 1024);
+
+      allow delete: if false;
     }
-    
-    // Uzman portföy fotoğrafları: herkes görebilir, sadece uzman kendisi yükleyebilir
-    match /portfolio/{userId}/{allPaths=**} {
+
+    // Portfolio photos
+    match /portfolio/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      allow create, update: if isOwner(userId)
+        && isImageUpload(10 * 1024 * 1024);
+
+      allow delete: if false;
     }
-    
-    // İlan görselleri: herkes görebilir, sadece ilan sahibi yükleyebilir
-    match /listing_images/{userId}/{allPaths=**} {
+
+    // Listing photos
+    match /listing_images/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      allow create, update: if isOwner(userId)
+        && isImageUpload(10 * 1024 * 1024);
+
+      allow delete: if false;
     }
-    
-    // Sertifikalar ve doğrulama belgeleri: giriş yapmış kullanıcılar okuyabilir, sadece kendi klasörüne yükleyebilir
-    match /certificates/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /verification_documents/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Kullanıcı profil fotoğrafları
-    match /profile_images/{userId}/{allPaths=**} {
+
+    // Profile photos
+    match /profile_photos/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      allow create, update: if isOwner(userId)
+        && isImageUpload(5 * 1024 * 1024);
+
+      allow delete: if false;
     }
-    
-    // Genel olarak giriş yapmış kullanıcıların dosya yükleyebilmesi (eski veya dinamik yollar için)
+
+    // Current flat profile image path: profile_images/{uid}.jpg
+    match /profile_images/{fileName} {
+      allow read: if true;
+
+      allow create, update: if signedIn()
+        && fileName == request.auth.uid + ".jpg"
+        && isImageUpload(5 * 1024 * 1024);
+
+      allow delete: if false;
+    }
+
+    // Legacy nested profile image path
+    match /profile_images/{userId}/{fileName} {
+      allow read: if true;
+
+      allow create, update: if isOwner(userId)
+        && isImageUpload(5 * 1024 * 1024);
+
+      allow delete: if false;
+    }
+
+    // Certificates
+    match /certificates/{userId}/{fileName} {
+      allow read: if isOwner(userId);
+
+      allow create, update: if isOwner(userId)
+        && isDocumentUpload(20 * 1024 * 1024);
+
+      allow delete: if false;
+    }
+
+    // Identity and verification documents
+    match /verification_documents/{userId}/{fileName} {
+      allow read: if isOwner(userId);
+
+      allow create, update: if isOwner(userId)
+        && isDocumentUpload(20 * 1024 * 1024);
+
+      allow delete: if false;
+    }
+
+    // Legacy service images are read-only.
+    match /service_images/{serviceId}/{fileName} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Deny every unknown path.
     match /{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

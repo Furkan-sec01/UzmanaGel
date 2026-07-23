@@ -262,7 +262,7 @@ service cloud.firestore {
     match /service_providers/{providerId} {
       allow read: if signedIn();
       allow create: if isOwner(providerId);
-      allow update: if signedIn();
+      allow update: if isOwner(providerId);
       allow delete: if false;
     }
 

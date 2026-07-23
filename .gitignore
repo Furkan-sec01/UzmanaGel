@@ -5,3 +5,10 @@ build_tmp/
 # Xcode personal user data
 **/xcuserdata/
 *.xcuserstate
+
+# Firebase emulator logs
+firestore-debug.log
+ui-debug.log
+storage-debug.log
+firebase-debug.log
+firebase-debug.*.log
