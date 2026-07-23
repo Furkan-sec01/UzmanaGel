@@ -27,6 +27,7 @@ struct ExpertHomepage: View {
     @State private var showProfilePage = false
     @State private var showReservationsPage = false
     @State private var showMessagesPage = false
+    @State private var showReviewsPage = false
     @State private var showExpertPortfolioPage = false
 
     @State private var showProviderDashboard = false
@@ -67,6 +68,16 @@ struct ExpertHomepage: View {
                         Image(systemName: "line.3.horizontal")
                             .font(.system(size: 18, weight: .semibold))
                     }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showReviewsPage = true
+                    } label: {
+                        Image(systemName: "star.bubble.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                    }
+                    .accessibilityLabel("Yorumlar")
                 }
             }
             .sheet(isPresented: $showMenu) {
@@ -142,6 +153,20 @@ struct ExpertHomepage: View {
                                 ToolbarItem(placement: .topBarLeading) {
                                     Button("Kapat") {
                                         showExpertPortfolioPage = false
+                                    }
+                                }
+                            }
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showReviewsPage) {
+                if let uid = session.userId {
+                    NavigationStack {
+                        ProviderReviewsPage(providerId: uid)
+                            .toolbar {
+                                ToolbarItem(placement: .topBarLeading) {
+                                    Button("Kapat") {
+                                        showReviewsPage = false
                                     }
                                 }
                             }

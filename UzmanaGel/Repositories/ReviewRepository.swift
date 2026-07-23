@@ -100,18 +100,7 @@ final class ReviewRepository {
         let docRef = db.collection(collectionName).document(review.reviewId)
         try docRef.setData(from: review)
         
-        // Rezervasyonu isRated olarak güncelle
-        if !review.bookingId.isEmpty {
-            try? await db.collection("reservations").document(review.bookingId).updateData([
-                "isRated": true,
-                "rating": review.rating
-            ])
-        }
-        
-        // Uzmanın ortalama puanını ve yorum sayısını asenkron güncelle
-        Task {
-            try? await updateProviderStats(providerId: review.providerId)
-        }
+        // Review statistics are updated by Cloud Functions.
     }
     
     // MARK: - Provider Response
@@ -175,40 +164,5 @@ final class ReviewRepository {
             "reportReason": reasonStr,
             "updatedAt": Timestamp(date: Date())
         ])
-    }
-    
-    // MARK: - Provider Stats Sync Helper
-    private func updateProviderStats(providerId: String) async throws {
-        guard !providerId.isEmpty else { return }
-        let allReviews = try await fetchReviews(forProviderId: providerId)
-        
-        let summary = ProviderReviewSummary(reviews: allReviews)
-        let roundedRating = allReviews.isEmpty ? 0.0 : Double(round(10 * summary.averageScore) / 10)
-        let reviewCount = summary.totalCount
-        
-        // service_providers tablosunu güncelle
-        let providerRef = db.collection("service_providers").document(providerId)
-        let providerData = try? await providerRef.getDocument().data()
-        let currentCompleted = providerData?["completedJobsCount"] as? Int ?? 0
-        
-        try? await providerRef.setData([
-            "rating": roundedRating,
-            "reviewCount": reviewCount,
-            "completedJobsCount": max(reviewCount, currentCompleted)
-        ], merge: true)
-        
-        // services tablosundaki ilgili provider servislerini güncelle
-        let servicesSnap = try? await db.collection("services").whereField("providerId", isEqualTo: providerId).getDocuments()
-        if let docs = servicesSnap?.documents {
-            let batch = db.batch()
-            for d in docs {
-                batch.updateData([
-                    "rating": roundedRating,
-                    "reviewCount": reviewCount,
-                    "completedJobsCount": max(reviewCount, d.data()["completedJobsCount"] as? Int ?? 0)
-                ], forDocument: d.reference)
-            }
-            try? await batch.commit()
-        }
     }
 }
