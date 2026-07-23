@@ -43,10 +43,203 @@ service cloud.firestore {
       }
     }
 
-    // ─── Reviews (Yorumlar) ────────────────────────────────────────────────────
+    // MARK: - Reviews
+
     match /reviews/{reviewId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+
+      allow create: if signedIn()
+        // Allow only known review fields.
+        && request.resource.data.keys().hasAll([
+          "reviewId",
+          "bookingId",
+          "reservationId",
+          "customerId",
+          "providerId",
+          "rating",
+          "comment",
+          "categoryRatings",
+          "photos",
+          "isReported",
+          "createdAt",
+          "updatedAt",
+          "helpfulCount",
+          "helpfulUsers",
+          "customerName",
+          "isVerifiedBooking"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "reviewId",
+          "bookingId",
+          "reservationId",
+          "serviceId",
+          "serviceTitle",
+          "customerId",
+          "providerId",
+          "rating",
+          "comment",
+          "categoryRatings",
+          "photos",
+          "isReported",
+          "createdAt",
+          "updatedAt",
+          "helpfulCount",
+          "helpfulUsers",
+          "customerName",
+          "customerAvatarURL",
+          "isVerifiedBooking"
+        ])
+
+        // Validate ownership and IDs.
+        && request.resource.data.reviewId == reviewId
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.bookingId is string
+        && request.resource.data.reservationId is string
+        && request.resource.data.reservationId
+          == request.resource.data.bookingId
+        && request.resource.data.providerId is string
+        && request.resource.data.providerId.size() > 0
+
+        // Validate review content.
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 500
+        && request.resource.data.categoryRatings is map
+        && request.resource.data.photos is list
+        && request.resource.data.photos.size() <= 5
+        && request.resource.data.customerName is string
+        && request.resource.data.customerName.size() > 0
+        && request.resource.data.customerName.size() <= 100
+
+        // Validate initial state.
+        && request.resource.data.isReported == false
+        && request.resource.data.helpfulCount == 0
+        && request.resource.data.helpfulUsers is list
+        && request.resource.data.helpfulUsers.size() == 0
+        && request.resource.data.isVerifiedBooking is bool
+        && (
+          // General review without a reservation.
+          (
+            request.resource.data.bookingId == ""
+            && request.resource.data.reservationId == ""
+            && request.resource.data.isVerifiedBooking == false
+          )
+
+          ||
+
+          // Verified review for a completed reservation.
+          (
+            request.resource.data.bookingId.size() > 0
+            && request.resource.data.reservationId
+              == request.resource.data.bookingId
+            && request.resource.data.isVerifiedBooking == true
+            && exists(
+              /databases/$(database)/documents/reservations/$(request.resource.data.bookingId)
+            )
+            && get(
+              /databases/$(database)/documents/reservations/$(request.resource.data.bookingId)
+            ).data.customerId == request.auth.uid
+            && get(
+              /databases/$(database)/documents/reservations/$(request.resource.data.bookingId)
+            ).data.providerId == request.resource.data.providerId
+            && get(
+              /databases/$(database)/documents/reservations/$(request.resource.data.bookingId)
+            ).data.status == "completed"
+          )
+        )
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+
+      allow update: if signedIn()
+        && (
+          // Provider can answer their own review once.
+          (
+            request.auth.uid == resource.data.providerId
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "providerResponse",
+              "providerResponseDate",
+              "updatedAt"
+            ])
+            && request.resource.data.providerResponse is string
+            && request.resource.data.providerResponse.size() > 0
+            && request.resource.data.providerResponse.size() <= 400
+            && request.resource.data.providerResponseDate is timestamp
+            && request.resource.data.updatedAt is timestamp
+            && (
+              !resource.data.keys().hasAny(["providerResponse"])
+              || resource.data.providerResponse == null
+              || resource.data.providerResponse == ""
+            )
+          )
+
+          ||
+
+          // Signed-in users can toggle only their own helpful state.
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "helpfulUsers",
+              "helpfulCount"
+            ])
+            && resource.data.helpfulUsers is list
+            && resource.data.helpfulCount is int
+            && resource.data.helpfulCount
+              == resource.data.helpfulUsers.size()
+            && request.resource.data.helpfulUsers is list
+            && request.resource.data.helpfulCount is int
+            && request.resource.data.helpfulCount >= 0
+            && request.resource.data.helpfulCount
+              == request.resource.data.helpfulUsers.size()
+            && request.resource.data.helpfulUsers.toSet().size()
+              == request.resource.data.helpfulUsers.size()
+            && (
+              (
+                !(request.auth.uid in resource.data.helpfulUsers)
+                && request.auth.uid in request.resource.data.helpfulUsers
+                && request.resource.data.helpfulCount
+                  == resource.data.helpfulCount + 1
+                && request.resource.data.helpfulUsers.toSet()
+                  .difference(resource.data.helpfulUsers.toSet())
+                  .hasOnly([request.auth.uid])
+                && resource.data.helpfulUsers.toSet()
+                  .difference(request.resource.data.helpfulUsers.toSet())
+                  .size() == 0
+              )
+              ||
+              (
+                request.auth.uid in resource.data.helpfulUsers
+                && !(request.auth.uid in request.resource.data.helpfulUsers)
+                && request.resource.data.helpfulCount
+                  == resource.data.helpfulCount - 1
+                && resource.data.helpfulUsers.toSet()
+                  .difference(request.resource.data.helpfulUsers.toSet())
+                  .hasOnly([request.auth.uid])
+                && request.resource.data.helpfulUsers.toSet()
+                  .difference(resource.data.helpfulUsers.toSet())
+                  .size() == 0
+              )
+            )
+          )
+
+          ||
+
+          // Signed-in users can only report a review.
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "isReported",
+              "reportReason",
+              "updatedAt"
+            ])
+            && request.resource.data.isReported == true
+            && request.resource.data.reportReason is string
+            && request.resource.data.reportReason.size() > 0
+            && request.resource.data.reportReason.size() <= 1000
+            && request.resource.data.updatedAt is timestamp
+          )
+        );
+
+      allow delete: if false;
     }
 
     // MARK: - Services

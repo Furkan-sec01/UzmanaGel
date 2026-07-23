@@ -433,3 +433,200 @@ export const sendReservationStatusNotification = onDocumentUpdated(
   }
 );
 
+
+export const syncReviewStatistics = onDocumentCreated(
+  {
+    document: "reviews/{reviewId}",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const reviewData = event.data?.data();
+
+    if (!reviewData) {
+      console.log("Yorum verisi bulunamadı.");
+      return;
+    }
+
+    const providerId =
+      typeof reviewData.providerId === "string" ?
+        reviewData.providerId.trim() :
+        "";
+
+    const bookingId =
+      typeof reviewData.bookingId === "string" ?
+        reviewData.bookingId.trim() :
+        "";
+
+    const reservationId =
+      bookingId ||
+      (
+        typeof reviewData.reservationId === "string" ?
+          reviewData.reservationId.trim() :
+          ""
+      );
+
+    const rating = Number(reviewData.rating);
+
+    if (
+      !providerId ||
+      !Number.isFinite(rating) ||
+      rating < 1 ||
+      rating > 5
+    ) {
+      console.log("Yorum istatistiği alanları geçersiz.");
+      return;
+    }
+
+    const reviewsSnapshot = await db
+      .collection("reviews")
+      .where("providerId", "==", providerId)
+      .get();
+
+    let totalRating = 0;
+    let reviewCount = 0;
+
+    reviewsSnapshot.docs.forEach((document) => {
+      const value = Number(document.data().rating);
+
+      if (Number.isFinite(value) && value >= 1 && value <= 5) {
+        totalRating += value;
+        reviewCount += 1;
+      }
+    });
+
+    const averageRating =
+      reviewCount > 0 ?
+        Math.round((totalRating / reviewCount) * 10) / 10 :
+        0;
+
+    const servicesSnapshot = await db
+      .collection("services")
+      .where("providerId", "==", providerId)
+      .get();
+
+    const batch = db.batch();
+
+    const providerRef = db
+      .collection("service_providers")
+      .doc(providerId);
+
+    batch.update(providerRef, {
+      rating: averageRating,
+      reviewCount: reviewCount,
+    });
+
+    servicesSnapshot.docs.forEach((document) => {
+      batch.update(document.ref, {
+        rating: averageRating,
+        reviewCount: reviewCount,
+      });
+    });
+
+    if (reservationId) {
+      const reservationRef = db
+        .collection("reservations")
+        .doc(reservationId);
+
+      batch.update(reservationRef, {
+        isRated: true,
+        rating: rating,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    await batch.commit();
+
+    console.log(
+      "Yorum istatistikleri güncellendi:",
+      event.params.reviewId
+    );
+  }
+);
+
+export const sendProviderResponseNotification = onDocumentUpdated(
+  {
+    document: "reviews/{reviewId}",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    if (!beforeData || !afterData) {
+      console.log("Yorum güncelleme verisi bulunamadı.");
+      return;
+    }
+
+    const beforeResponse =
+      typeof beforeData.providerResponse === "string" ?
+        beforeData.providerResponse.trim() :
+        "";
+
+    const afterResponse =
+      typeof afterData.providerResponse === "string" ?
+        afterData.providerResponse.trim() :
+        "";
+
+    // Send only for the first provider response.
+    if (beforeResponse || !afterResponse) {
+      return;
+    }
+
+    const customerId =
+      typeof afterData.customerId === "string" ?
+        afterData.customerId.trim() :
+        "";
+
+    const providerId =
+      typeof afterData.providerId === "string" ?
+        afterData.providerId.trim() :
+        "";
+
+    const reviewId =
+      String(event.params.reviewId ?? "").trim();
+
+    if (!customerId || !providerId || !reviewId) {
+      console.log("Yorum bildirimi alanları eksik.");
+      return;
+    }
+
+    const customerSnapshot = await db
+      .collection("users")
+      .doc(customerId)
+      .get();
+
+    const fcmToken = customerSnapshot.data()?.fcmToken;
+
+    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
+      console.log("Müşterinin FCM tokenı bulunamadı.");
+      return;
+    }
+
+    const notificationId = await admin.messaging().send({
+      token: fcmToken,
+      notification: {
+        title: "Uzman yorumunuza yanıt verdi",
+        body:
+          "Değerlendirmenize verilen yanıtı " +
+          "görüntüleyebilirsiniz.",
+      },
+      data: {
+        type: "review",
+        reviewId: reviewId,
+        providerId: providerId,
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+          },
+        },
+      },
+    });
+
+    console.log(
+      "Yorum yanıtı bildirimi gönderildi:",
+      notificationId
+    );
+  }
+);

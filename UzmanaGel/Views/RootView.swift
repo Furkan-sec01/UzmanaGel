@@ -16,6 +16,7 @@ final class NotificationRouter: ObservableObject {
 
     @Published private(set) var pendingReservationId: String?
     @Published private(set) var pendingConversationId: String?
+    @Published private(set) var pendingReviewProviderId: String?
 
     private init() {}
 
@@ -34,6 +35,14 @@ final class NotificationRouter: ObservableObject {
     func clearConversation() {
         pendingConversationId = nil
     }
+
+    func openReviews(providerId: String) {
+        pendingReviewProviderId = providerId
+    }
+
+    func clearReviews() {
+        pendingReviewProviderId = nil
+    }
 }
 
 struct RootView: View {
@@ -46,6 +55,8 @@ struct RootView: View {
 
     @State private var notificationReservation: Reservation?
     @State private var notificationConversation: Conversation?
+    @State private var notificationReviewProviderId = ""
+    @State private var showNotificationReviews = false
     @State private var notificationErrorMessage = ""
     @State private var showNotificationError = false
 
@@ -82,12 +93,16 @@ struct RootView: View {
         .task(id: notificationRouter.pendingConversationId) {
             await openPendingConversationIfPossible()
         }
+        .task(id: notificationRouter.pendingReviewProviderId) {
+            await openPendingReviewsIfPossible()
+        }
         .onChange(of: session.isAuthenticated) { _, isAuthenticated in
             guard isAuthenticated else { return }
 
             Task {
                 await openPendingReservationIfPossible()
                 await openPendingConversationIfPossible()
+                await openPendingReviewsIfPossible()
             }
         }
         .onChange(of: session.isCheckingProfile) { _, isCheckingProfile in
@@ -96,6 +111,7 @@ struct RootView: View {
             Task {
                 await openPendingReservationIfPossible()
                 await openPendingConversationIfPossible()
+                await openPendingReviewsIfPossible()
             }
         }
         .sheet(item: $notificationReservation) { reservation in
@@ -104,6 +120,13 @@ struct RootView: View {
         .sheet(item: $notificationConversation) { conversation in
             NavigationStack {
                 ChatDetailPage(conversation: conversation)
+            }
+        }
+        .sheet(isPresented: $showNotificationReviews) {
+            NavigationStack {
+                ProviderReviewsPage(
+                    providerId: notificationReviewProviderId
+                )
             }
         }
         .alert("Bildirim Açılamadı".localized, isPresented: $showNotificationError) {
@@ -159,5 +182,31 @@ struct RootView: View {
             showNotificationError = true
         }
     }
+
+
+    @MainActor
+    private func openPendingReviewsIfPossible() async {
+        guard session.isAuthenticated,
+              !session.isCheckingProfile,
+              let providerId = notificationRouter.pendingReviewProviderId else {
+            return
+        }
+
+        let trimmedProviderId = providerId.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        notificationRouter.clearReviews()
+
+        guard !trimmedProviderId.isEmpty else {
+            notificationErrorMessage = "Uzman bilgisi bulunamadı."
+            showNotificationError = true
+            return
+        }
+
+        notificationReviewProviderId = trimmedProviderId
+        showNotificationReviews = true
+    }
+
 
 }
