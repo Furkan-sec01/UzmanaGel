@@ -17,14 +17,11 @@ final class ServiceDetailViewModel: ObservableObject {
     @Published var addressText: String = ""
     @Published var isFavorite: Bool
     @Published var isLoading = false
-<<<<<<< HEAD
     @Published var providerIsAvailable = true
     @Published var didLoadProviderAvailability = false
     @Published var providerAvailabilityLoadFailed = false
 
     /// Uzmanın çalışma saatleri / günleri (service_providers'dan; müşteri tarafında gösterilir)
-=======
->>>>>>> d7dac80 (feat: Apply advanced filters, review functionality and compact UI)
     @Published var expertProfile: ExpertProfile?
     @Published var reviewCount: Int = 0
     @Published var averageRating: Double = 0.0

@@ -474,7 +474,6 @@ struct ReservationDetailPage: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader(icon: "bolt.fill", title: "İşlemler".localized)
             messageButton
-<<<<<<< HEAD
             if canProviderDecide {
                 providerDecisionButtons
             }
@@ -489,9 +488,7 @@ struct ReservationDetailPage: View {
 
             if canCustomerCancel {
                 cancelButton
-=======
-            if canProviderDecide { providerDecisionButtons }
-            if canCustomerCancel { cancelButton }
+            }
             
             if reservation.status == .completed {
                 completedActions
@@ -543,7 +540,6 @@ struct ReservationDetailPage: View {
                         .background(Color.gray.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
->>>>>>> d7dac80 (feat: Apply advanced filters, review functionality and compact UI)
             }
         }
     }
