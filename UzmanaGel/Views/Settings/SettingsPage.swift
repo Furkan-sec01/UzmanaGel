@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SettingsPage: View {
-        
+
     @AppStorage("notificationEnabled")
     private var notificationEnabled = true
     @ObservedObject private var langManager = LanguageManager.shared
@@ -39,6 +39,7 @@ struct SettingsPage: View {
             ScrollView {
                 VStack(spacing: 24) {
                     appSection
+
                     privacySection
                     supportSection
                 }
@@ -226,5 +227,6 @@ struct SettingsPage: View {
 #Preview {
     NavigationStack {
         SettingsPage()
+            .environmentObject(SessionViewModel())
     }
 }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1635CCFF30137C1200C3B021 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 1635CCFE30137C1200C3B021 /* FirebaseFunctions */; };
 		B91037A02F2F7E480099D2B0 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = B910379F2F2F7E480099D2B0 /* FirebaseAnalytics */; };
 		B91037A22F2F7E480099D2B0 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B91037A12F2F7E480099D2B0 /* FirebaseAuth */; };
 		B91037A42F2F7E480099D2B0 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = B91037A32F2F7E480099D2B0 /* FirebaseFirestore */; };
@@ -55,6 +56,7 @@
 				B91037A22F2F7E480099D2B0 /* FirebaseAuth in Frameworks */,
 				B91037A82F2F7E480099D2B0 /* FirebaseStorage in Frameworks */,
 				B91037A42F2F7E480099D2B0 /* FirebaseFirestore in Frameworks */,
+				1635CCFF30137C1200C3B021 /* FirebaseFunctions in Frameworks */,
 				B9A276E12F34EC3F002BC10C /* FirebaseCore in Frameworks */,
 				B91037DD2F30B8350099D2B0 /* GoogleSignIn in Frameworks */,
 			);
@@ -63,10 +65,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1635CCFD30137C1200C3B021 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		B95BD2ED2F2B7D200092E326 = {
 			isa = PBXGroup;
 			children = (
 				B95BD2F82F2B7D200092E326 /* UzmanaGel */,
+				1635CCFD30137C1200C3B021 /* Frameworks */,
 				B95BD2F72F2B7D200092E326 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -108,6 +118,7 @@
 				B91037DE2F30B8350099D2B0 /* GoogleSignInSwift */,
 				B9A276E02F34EC3F002BC10C /* FirebaseCore */,
 				B9A276E22F34EC3F002BC10C /* FirebaseFirestoreCombine-Community */,
+				1635CCFE30137C1200C3B021 /* FirebaseFunctions */,
 			);
 			productName = UzmanaGel;
 			productReference = B95BD2F62F2B7D200092E326 /* UzmanaGel.app */;
@@ -408,6 +419,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		1635CCFE30137C1200C3B021 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B910379E2F2F7E480099D2B0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
 		B910379F2F2F7E480099D2B0 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B910379E2F2F7E480099D2B0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

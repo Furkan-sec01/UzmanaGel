@@ -71,6 +71,9 @@ struct RootView: View {
                 ProgressView("Profil kontrol ediliyor...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color("BackgroundColor").ignoresSafeArea())
+            } else if session.isAuthenticated && session.isAdmin {
+                AdminDashboardView()
+                    .environmentObject(session)
             } else if session.isAuthenticated && session.isInExpertSignupFlow,
                       let vm = session.expertSignUpViewModel {// optional binding
                 ExpertSignUpView(vm: vm)

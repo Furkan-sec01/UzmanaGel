@@ -155,14 +155,59 @@ final class ReviewRepository {
     }
     
     // MARK: - Report Review
-    func reportReview(reviewId: String, category: ReviewReportCategory, description: String) async throws {
-        let docRef = db.collection(collectionName).document(reviewId)
-        let reasonStr = "\(category.displayName): \(description)"
-        
-        try await docRef.updateData([
+    func reportReview(
+        reviewId: String,
+        providerId: String,
+        category: ReviewReportCategory,
+        description: String
+    ) async throws {
+        guard let reporterId = Auth.auth().currentUser?.uid else {
+            throw NSError(
+                domain: "ReviewRepository",
+                code: 401,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Yorum bildirmek için giriş yapmalısınız."
+                ]
+            )
+        }
+
+        let cleanDescription = description.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard cleanDescription.count <= 500 else {
+            throw NSError(
+                domain: "ReviewRepository",
+                code: 400,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Açıklama en fazla 500 karakter olabilir."
+                ]
+            )
+        }
+
+        let reportId = "\(reviewId)_\(reporterId)"
+        let reviewRef = db.collection(collectionName).document(reviewId)
+        let reportRef = db.collection("review_reports").document(reportId)
+        let now = Timestamp(date: Date())
+
+        let batch = db.batch()
+
+        batch.setData([
+            "reportId": reportId,
+            "reviewId": reviewId,
+            "reporterId": reporterId,
+            "providerId": providerId,
+            "category": category.rawValue,
+            "description": cleanDescription,
+            "status": "pending",
+            "createdAt": now
+        ], forDocument: reportRef)
+
+        batch.updateData([
             "isReported": true,
-            "reportReason": reasonStr,
-            "updatedAt": Timestamp(date: Date())
-        ])
+            "updatedAt": now
+        ], forDocument: reviewRef)
+
+        try await batch.commit()
     }
 }

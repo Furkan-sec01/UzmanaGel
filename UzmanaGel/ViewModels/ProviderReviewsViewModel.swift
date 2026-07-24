@@ -133,7 +133,12 @@ final class ProviderReviewsViewModel: ObservableObject {
     func report(review: Review, category: ReviewReportCategory, description: String) async -> Bool {
         guard let reviewId = review.id else { return false }
         do {
-            try await repo.reportReview(reviewId: reviewId, category: category, description: description)
+            try await repo.reportReview(
+                reviewId: reviewId,
+                providerId: review.providerId,
+                category: category,
+                description: description
+            )
             if let idx = reviews.firstIndex(where: { $0.id == reviewId }) {
                 reviews[idx].isReported = true
             }

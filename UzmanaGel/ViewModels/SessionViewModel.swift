@@ -19,6 +19,7 @@ final class SessionViewModel: ObservableObject {// final bu sınıftan başka s�
     @Published var needsProfileSetup: Bool = false
     @Published var isCheckingProfile: Bool = false
     @Published var userRole: String = "user"
+    @Published var isAdmin: Bool = false
 
     /// Uzman başvuru akışındayken true; profil tamamlama yerine bu akışta kalınır.
     @Published var isInExpertSignupFlow: Bool = false
@@ -41,14 +42,29 @@ final class SessionViewModel: ObservableObject {// final bu sınıftan başka s�
                 if let user {
                     self.isAuthenticated = true
                     self.userId = user.uid
+                    await self.loadAdminClaim(user: user)
                     await self.checkProfileCompletion(uid: user.uid)
                 } else {
                     self.isAuthenticated = false
                     self.userId = nil
                     self.needsProfileSetup = false
                     self.userRole = "user"
+                    self.isAdmin = false
                 }
             }
+        }
+    }
+
+    private func loadAdminClaim(user: FirebaseAuth.User) async {
+        do {
+            let tokenResult = try await user.getIDTokenResult(
+                forcingRefresh: true
+            )
+
+            isAdmin = tokenResult.claims["admin"] as? Bool == true
+        } catch {
+            isAdmin = false
+            print("Admin claim load error:", error.localizedDescription)
         }
     }
 
