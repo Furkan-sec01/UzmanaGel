@@ -1,6 +1,7 @@
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {
   onDocumentCreated,
+  onDocumentDeleted,
   onDocumentUpdated,
 } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
@@ -628,5 +629,364 @@ export const sendProviderResponseNotification = onDocumentUpdated(
       "Yorum yanıtı bildirimi gönderildi:",
       notificationId
     );
+  }
+);
+
+// MARK: - Admin Review Moderation
+
+/**
+ * Recalculates review statistics for a provider.
+ * @param {string} providerId The provider ID.
+ * @return {Promise<void>} Resolves after the update.
+ */
+async function recalculateProviderReviewStatistics(
+  providerId: string
+): Promise<void> {
+  const reviewsSnapshot = await db
+    .collection("reviews")
+    .where("providerId", "==", providerId)
+    .get();
+
+  let totalRating = 0;
+  let reviewCount = 0;
+
+  reviewsSnapshot.docs.forEach((document) => {
+    const rating = Number(document.data().rating);
+
+    if (
+      Number.isFinite(rating) &&
+      rating >= 1 &&
+      rating <= 5
+    ) {
+      totalRating += rating;
+      reviewCount += 1;
+    }
+  });
+
+  const averageRating =
+    reviewCount > 0 ?
+      Math.round((totalRating / reviewCount) * 10) / 10 :
+      0;
+
+  const servicesSnapshot = await db
+    .collection("services")
+    .where("providerId", "==", providerId)
+    .get();
+
+  const batch = db.batch();
+
+  const providerRef = db
+    .collection("service_providers")
+    .doc(providerId);
+
+  batch.set(
+    providerRef,
+    {
+      rating: averageRating,
+      reviewCount: reviewCount,
+    },
+    {merge: true}
+  );
+
+  servicesSnapshot.docs.forEach((document) => {
+    batch.update(document.ref, {
+      rating: averageRating,
+      reviewCount: reviewCount,
+    });
+  });
+
+  await batch.commit();
+}
+
+export const syncReviewStatisticsOnDelete = onDocumentDeleted(
+  {
+    document: "reviews/{reviewId}",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const reviewData = event.data?.data();
+
+    if (!reviewData) {
+      console.log("Silinen yorum verisi bulunamadı.");
+      return;
+    }
+
+    const providerId =
+      typeof reviewData.providerId === "string" ?
+        reviewData.providerId.trim() :
+        "";
+
+    if (!providerId) {
+      console.log("Silinen yorumun uzman bilgisi bulunamadı.");
+      return;
+    }
+
+    await recalculateProviderReviewStatistics(providerId);
+
+    console.log(
+      "Yorum silme sonrası istatistikler güncellendi:",
+      providerId
+    );
+  }
+);
+
+export const moderateReviewReport = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Bu işlem için giriş yapmalısınız."
+      );
+    }
+
+    if (request.auth.token.admin !== true) {
+      throw new HttpsError(
+        "permission-denied",
+        "Bu işlem yalnızca yöneticiler tarafından yapılabilir."
+      );
+    }
+
+    const adminUid = request.auth.uid;
+
+    const rawReportId = request.data?.reportId;
+    const rawAction = request.data?.action;
+    const rawResolutionNote = request.data?.resolutionNote;
+
+    const reportId =
+      typeof rawReportId === "string" ?
+        rawReportId.trim() :
+        "";
+
+    const action =
+      typeof rawAction === "string" ?
+        rawAction.trim() :
+        "";
+
+    const resolutionNote =
+      typeof rawResolutionNote === "string" ?
+        rawResolutionNote.trim() :
+        "";
+
+    if (!reportId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Rapor kimliği bulunamadı."
+      );
+    }
+
+    if (action !== "dismiss" && action !== "remove") {
+      throw new HttpsError(
+        "invalid-argument",
+        "Geçersiz moderasyon işlemi."
+      );
+    }
+
+    if (resolutionNote.length > 500) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Açıklama en fazla 500 karakter olabilir."
+      );
+    }
+
+    const reportRef = db
+      .collection("review_reports")
+      .doc(reportId);
+
+    await db.runTransaction(async (transaction) => {
+      const reportSnapshot = await transaction.get(reportRef);
+
+      if (!reportSnapshot.exists) {
+        throw new HttpsError(
+          "not-found",
+          "İncelenecek rapor bulunamadı."
+        );
+      }
+
+      const reportData = reportSnapshot.data();
+
+      if (!reportData) {
+        throw new HttpsError(
+          "not-found",
+          "Rapor verisi bulunamadı."
+        );
+      }
+
+      if (reportData.status !== "pending") {
+        throw new HttpsError(
+          "failed-precondition",
+          "Bu rapor daha önce sonuçlandırılmış."
+        );
+      }
+
+      const reviewId =
+        typeof reportData.reviewId === "string" ?
+          reportData.reviewId.trim() :
+          "";
+
+      const providerId =
+        typeof reportData.providerId === "string" ?
+          reportData.providerId.trim() :
+          "";
+
+      if (!reviewId || !providerId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Raporun yorum veya uzman bilgisi eksik."
+        );
+      }
+
+      const resolvedFields = {
+        resolvedAt:
+          admin.firestore.FieldValue.serverTimestamp(),
+        resolvedBy: adminUid,
+        resolutionNote: resolutionNote,
+      };
+
+      const reviewRef = db
+        .collection("reviews")
+        .doc(reviewId);
+
+      const relatedReportsQuery = db
+        .collection("review_reports")
+        .where("reviewId", "==", reviewId);
+
+      if (action === "dismiss") {
+        const [
+          dismissedReviewSnapshot,
+          dismissedReportsSnapshot,
+        ] = await Promise.all([
+          transaction.get(reviewRef),
+          transaction.get(relatedReportsQuery),
+        ]);
+
+        if (!dismissedReviewSnapshot.exists) {
+          throw new HttpsError(
+            "not-found",
+            "Raporlanan yorum bulunamadı."
+          );
+        }
+
+        const dismissedReviewData =
+          dismissedReviewSnapshot.data();
+
+        if (
+          !dismissedReviewData ||
+          dismissedReviewData.providerId !== providerId
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Rapor ve yorum bilgileri eşleşmiyor."
+          );
+        }
+
+        const hasOtherPendingReport =
+          dismissedReportsSnapshot.docs.some((document) => {
+            return (
+              document.id !== reportId &&
+              document.data().status === "pending"
+            );
+          });
+
+        const dismissedArchiveRef = db
+          .collection("review_report_archive")
+          .doc();
+
+        transaction.set(dismissedArchiveRef, {
+          ...reportData,
+          originalReportId: reportId,
+          status: "dismissed",
+          ...resolvedFields,
+          archivedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        transaction.delete(reportRef);
+
+        transaction.update(reviewRef, {
+          isReported: hasOtherPendingReport,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        return;
+      }
+
+      const [
+        reviewSnapshot,
+        relatedReportsSnapshot,
+      ] = await Promise.all([
+        transaction.get(reviewRef),
+        transaction.get(relatedReportsQuery),
+      ]);
+
+      if (!reviewSnapshot.exists) {
+        throw new HttpsError(
+          "not-found",
+          "Kaldırılacak yorum bulunamadı."
+        );
+      }
+
+      const reviewData = reviewSnapshot.data();
+
+      if (!reviewData) {
+        throw new HttpsError(
+          "not-found",
+          "Yorum verisi bulunamadı."
+        );
+      }
+
+      if (reviewData.providerId !== providerId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Rapor ve yorum uzman bilgileri eşleşmiyor."
+        );
+      }
+
+      const pendingReportIds = relatedReportsSnapshot.docs
+        .filter((document) => {
+          return document.data().status === "pending";
+        })
+        .map((document) => {
+          return document.id;
+        });
+
+      const archiveRef = db
+        .collection("review_moderation_archive")
+        .doc(reviewId);
+
+      transaction.set(archiveRef, {
+        ...reviewData,
+        originalReviewId: reviewId,
+        moderationAction: "removed",
+        moderationReportId: reportId,
+        relatedReportIds: pendingReportIds,
+        removedAt:
+          admin.firestore.FieldValue.serverTimestamp(),
+        removedBy: adminUid,
+        resolutionNote: resolutionNote,
+      });
+
+      relatedReportsSnapshot.docs.forEach((document) => {
+        if (document.data().status !== "pending") {
+          return;
+        }
+
+        transaction.update(document.ref, {
+          status: "removed",
+          ...resolvedFields,
+        });
+      });
+
+      transaction.delete(reviewRef);
+    });
+
+    return {
+      success: true,
+      reportId: reportId,
+      action: action,
+    };
   }
 );

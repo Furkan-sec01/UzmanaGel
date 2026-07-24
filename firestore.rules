@@ -11,6 +11,12 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    function isAdmin() {
+      return signedIn()
+        && "admin" in request.auth.token
+        && request.auth.token.admin == true;
+    }
+
     function isConversationParticipant(conversationId) {
       return signedIn()
         && request.auth.uid in get(
@@ -224,20 +230,99 @@ service cloud.firestore {
 
           ||
 
-          // Signed-in users can only report a review.
+          // Users can only mark a review as reported.
           (
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               "isReported",
-              "reportReason",
               "updatedAt"
             ])
             && request.resource.data.isReported == true
-            && request.resource.data.reportReason is string
-            && request.resource.data.reportReason.size() > 0
-            && request.resource.data.reportReason.size() <= 1000
             && request.resource.data.updatedAt is timestamp
+            && existsAfter(
+              /databases/$(database)/documents/review_reports/$(reviewId + "_" + request.auth.uid)
+            )
           )
         );
+
+      allow delete: if false;
+    }
+
+
+    // MARK: - Review Reports
+
+    match /review_reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll([
+          "reportId",
+          "reviewId",
+          "reporterId",
+          "providerId",
+          "category",
+          "description",
+          "status",
+          "createdAt"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "reportId",
+          "reviewId",
+          "reporterId",
+          "providerId",
+          "category",
+          "description",
+          "status",
+          "createdAt"
+        ])
+        && request.resource.data.reportId == reportId
+        && request.resource.data.reporterId == request.auth.uid
+        && reportId
+          == request.resource.data.reviewId + "_" + request.auth.uid
+        && request.resource.data.reviewId is string
+        && request.resource.data.reviewId.size() > 0
+        && request.resource.data.providerId is string
+        && request.resource.data.providerId.size() > 0
+        && request.resource.data.category in [
+          "Uygunsuz İçerik",
+          "Spam / Reklam",
+          "Sahte Yorum",
+          "Kişisel Saldırı / Hakaret",
+          "Diğer"
+        ]
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.status == "pending"
+        && request.resource.data.createdAt is timestamp
+        && exists(
+          /databases/$(database)/documents/reviews/$(request.resource.data.reviewId)
+        )
+        && get(
+          /databases/$(database)/documents/reviews/$(request.resource.data.reviewId)
+        ).data.providerId == request.resource.data.providerId
+        && getAfter(
+          /databases/$(database)/documents/reviews/$(request.resource.data.reviewId)
+        ).data.isReported == true;
+
+      allow read: if signedIn()
+        && (
+          resource.data.reporterId == request.auth.uid
+          || isAdmin()
+        );
+
+      allow update: if isAdmin()
+        && resource.data.status == "pending"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status",
+          "resolvedAt",
+          "resolvedBy",
+          "resolutionNote"
+        ])
+        && request.resource.data.status in [
+          "dismissed",
+          "removed"
+        ]
+        && request.resource.data.resolvedAt is timestamp
+        && request.resource.data.resolvedBy == request.auth.uid
+        && request.resource.data.resolutionNote is string
+        && request.resource.data.resolutionNote.size() <= 500;
 
       allow delete: if false;
     }
