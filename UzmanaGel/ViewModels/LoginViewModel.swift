@@ -10,6 +10,8 @@ import FirebaseAuth
 import Combine
 import GoogleSignIn
 import FirebaseCore
+import AuthenticationServices
+import CryptoKit
 
 @MainActor
 final class LoginViewModel: ObservableObject {
@@ -23,6 +25,7 @@ final class LoginViewModel: ObservableObject {
 
     let attemptTracker = LoginAttemptTracker.shared //singleton pattern
     private let userRepository = UserRepository()
+    private var currentNonce: String?
 
     func signInWithGoogle(presenting: UIViewController) {
         print("🟢 SIGN IN WITH GOOGLE ÇAĞRILDI")
@@ -122,6 +125,233 @@ final class LoginViewModel: ObservableObject {
                     }
                 }            }
         }
+    }
+    func prepareAppleRequest(
+        _ request: ASAuthorizationAppleIDRequest
+    ) {
+        guard !attemptTracker.isLocked else {
+            errorMessage = attemptTracker.lockMessage
+            return
+        }
+
+        let nonce = randomNonceString()
+        currentNonce = nonce
+
+        isLoading = true
+        errorMessage = nil
+
+        request.requestedScopes = [
+            .fullName,
+            .email
+        ]
+
+        request.nonce = sha256(nonce)
+    }
+
+    func handleAppleCompletion(
+        _ result: Result<ASAuthorization, Error>
+    ) {
+        switch result {
+        case .failure(let error):
+            currentNonce = nil
+            isLoading = false
+
+            if let authorizationError = error as? ASAuthorizationError,
+               authorizationError.code == .canceled {
+                return
+            }
+
+            attemptTracker.recordFailure()
+            errorMessage =
+                "Apple ile giriş yapılamadı: \(error.localizedDescription)"
+
+        case .success(let authorization):
+            guard let appleCredential =
+                    authorization.credential
+                        as? ASAuthorizationAppleIDCredential
+            else {
+                currentNonce = nil
+                isLoading = false
+                errorMessage = "Apple kullanıcı bilgisi alınamadı."
+                return
+            }
+
+            guard let nonce = currentNonce else {
+                isLoading = false
+                errorMessage = "Apple giriş isteği doğrulanamadı."
+                return
+            }
+
+            guard let identityToken = appleCredential.identityToken,
+                  let idTokenString = String(
+                    data: identityToken,
+                    encoding: .utf8
+                  )
+            else {
+                currentNonce = nil
+                isLoading = false
+                errorMessage = "Apple kimlik tokenı alınamadı."
+                return
+            }
+
+            currentNonce = nil
+
+            let appleDisplayName = formattedAppleName(
+                from: appleCredential.fullName
+            )
+
+            let firebaseCredential =
+                OAuthProvider.appleCredential(
+                    withIDToken: idTokenString,
+                    rawNonce: nonce,
+                    fullName: appleCredential.fullName
+                )
+
+            Auth.auth().signIn(
+                with: firebaseCredential
+            ) { [weak self] authResult, error in
+                guard let self else {
+                    return
+                }
+
+                if let error {
+                    self.isLoading = false
+                    self.attemptTracker.recordFailure()
+                    self.errorMessage =
+                        "Apple ile Firebase girişi başarısız: \(error.localizedDescription)"
+                    return
+                }
+
+                guard let firebaseUser = authResult?.user else {
+                    self.isLoading = false
+                    self.errorMessage =
+                        "Firebase kullanıcı bilgisi alınamadı."
+                    return
+                }
+
+                Task {
+                    await self.prepareAppleUserDocument(
+                        firebaseUser: firebaseUser,
+                        appleDisplayName: appleDisplayName
+                    )
+                }
+            }
+        }
+    }
+
+    private func prepareAppleUserDocument(
+        firebaseUser: User,
+        appleDisplayName: String?
+    ) async {
+        do {
+            let exists = try await userRepository
+                .userDocumentExists(uid: firebaseUser.uid)
+
+            if !exists {
+                let firebaseDisplayName = firebaseUser.displayName?
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+
+                let displayName: String
+
+                if let firebaseDisplayName,
+                   !firebaseDisplayName.isEmpty {
+                    displayName = firebaseDisplayName
+                } else if let appleDisplayName,
+                          !appleDisplayName.isEmpty {
+                    displayName = appleDisplayName
+                } else {
+                    displayName = "Kullanıcı"
+                }
+
+                try await userRepository.createUserDocument(
+                    uid: firebaseUser.uid,
+                    displayName: displayName,
+                    email: firebaseUser.email ?? "",
+                    phoneNumber: firebaseUser.phoneNumber
+                )
+            }
+
+            isLoading = false
+            attemptTracker.recordSuccess()
+            didLogin = true
+
+            print("✅ Apple ile giriş başarılı")
+            print("✅ Apple UID:", firebaseUser.uid)
+
+        } catch {
+            isLoading = false
+            errorMessage =
+                "Apple kullanıcı profili hazırlanamadı: \(error.localizedDescription)"
+
+            print("❌ Apple profil hatası:", error)
+        }
+    }
+
+    private func formattedAppleName(
+        from components: PersonNameComponents?
+    ) -> String? {
+        guard let components else {
+            return nil
+        }
+
+        let name = PersonNameComponentsFormatter
+            .localizedString(
+                from: components,
+                style: .default
+            )
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return name.isEmpty ? nil : name
+    }
+
+    private func sha256(
+        _ input: String
+    ) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+
+        return hashedData
+            .compactMap {
+                String(format: "%02x", $0)
+            }
+            .joined()
+    }
+
+    private func randomNonceString(
+        length: Int = 32
+    ) -> String {
+        precondition(length > 0)
+
+        var randomBytes = [UInt8](
+            repeating: 0,
+            count: length
+        )
+
+        let status = SecRandomCopyBytes(
+            kSecRandomDefault,
+            randomBytes.count,
+            &randomBytes
+        )
+
+        guard status == errSecSuccess else {
+            fatalError(
+                "Nonce oluşturulamadı. OSStatus: \(status)"
+            )
+        }
+
+        let characterSet = Array(
+            "0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._"
+        )
+
+        let nonce = randomBytes.map { byte in
+            characterSet[Int(byte) % characterSet.count]
+        }
+
+        return String(nonce)
     }
 
     func login() {
