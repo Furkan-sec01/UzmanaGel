@@ -1269,3 +1269,232 @@ export const sendRemovedReviewNotification =
       await Promise.all(notificationJobs);
     }
   );
+
+// MARK: - Admin Provider Application Moderation
+
+export const moderateProviderApplication = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Bu işlem için giriş yapmalısınız."
+      );
+    }
+
+    if (request.auth.token.admin !== true) {
+      throw new HttpsError(
+        "permission-denied",
+        "Bu işlem yalnızca yöneticiler tarafından yapılabilir."
+      );
+    }
+
+    const rawProviderId = request.data?.providerId;
+    const rawAction = request.data?.action;
+    const rawAdminNote = request.data?.adminNote;
+
+    const providerId =
+      typeof rawProviderId === "string" ?
+        rawProviderId.trim() :
+        "";
+
+    const action =
+      typeof rawAction === "string" ?
+        rawAction.trim() :
+        "";
+
+    const adminNote =
+      typeof rawAdminNote === "string" ?
+        rawAdminNote.trim() :
+        "";
+
+    if (!providerId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Uzman kimliği bulunamadı."
+      );
+    }
+
+    if (
+      action !== "approve" &&
+      action !== "reject" &&
+      action !== "requestDocuments"
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Geçersiz başvuru işlemi."
+      );
+    }
+
+    if (adminNote.length > 500) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Admin açıklaması en fazla 500 karakter olabilir."
+      );
+    }
+
+    if (
+      (action === "reject" || action === "requestDocuments") &&
+      !adminNote
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Bu işlem için admin açıklaması zorunludur."
+      );
+    }
+
+    const adminUid = request.auth.uid;
+    const providerRef = db
+      .collection("service_providers")
+      .doc(providerId);
+
+    const historyRef = db
+      .collection("provider_application_history")
+      .doc();
+
+    let nextStatus = "";
+    let isActive = false;
+    let notificationTitle = "";
+    let notificationBody = "";
+
+    switch (action) {
+    case "approve":
+      nextStatus = "approved";
+      isActive = true;
+      notificationTitle = "Uzman başvurunuz onaylandı";
+      notificationBody =
+        "Başvurunuz onaylandı. Uzman hesabınızı kullanabilirsiniz.";
+      break;
+
+    case "reject":
+      nextStatus = "rejected";
+      notificationTitle = "Uzman başvurunuz reddedildi";
+      notificationBody = adminNote;
+      break;
+
+    case "requestDocuments":
+      nextStatus = "documentsRequired";
+      notificationTitle = "Eksik belge bildirimi";
+      notificationBody = adminNote;
+      break;
+
+    default:
+      throw new HttpsError(
+        "invalid-argument",
+        "Geçersiz başvuru işlemi."
+      );
+    }
+
+    await db.runTransaction(async (transaction) => {
+      const providerSnapshot = await transaction.get(providerRef);
+
+      if (!providerSnapshot.exists) {
+        throw new HttpsError(
+          "not-found",
+          "Uzman başvurusu bulunamadı."
+        );
+      }
+
+      const providerData = providerSnapshot.data();
+
+      if (!providerData) {
+        throw new HttpsError(
+          "not-found",
+          "Uzman başvuru verisi bulunamadı."
+        );
+      }
+
+      const rawCurrentStatus = providerData.status;
+      const currentStatus =
+        typeof rawCurrentStatus === "string" ?
+          rawCurrentStatus.trim().toLowerCase() :
+          "";
+
+      if (currentStatus !== "pending") {
+        throw new HttpsError(
+          "failed-precondition",
+          "Yalnızca bekleyen başvurular işleme alınabilir."
+        );
+      }
+
+      const serverTime =
+        admin.firestore.FieldValue.serverTimestamp();
+
+      transaction.update(providerRef, {
+        status: nextStatus,
+        verificationStatus: nextStatus,
+        isActive: isActive,
+        adminNote: adminNote,
+        applicationDecision: action,
+        reviewedAt: serverTime,
+        reviewedBy: adminUid,
+        updatedAt: serverTime,
+      });
+
+      transaction.set(historyRef, {
+        historyId: historyRef.id,
+        providerId: providerId,
+        action: action,
+        previousStatus: currentStatus,
+        status: nextStatus,
+        adminNote: adminNote,
+        reviewedAt: serverTime,
+        reviewedBy: adminUid,
+      });
+    });
+
+    const notificationData = {
+      type: "providerApplication",
+      action: action,
+      providerId: providerId,
+      status: nextStatus,
+    };
+
+    try {
+      const notificationRef = db
+        .collection("notifications")
+        .doc();
+
+      await notificationRef.set({
+        notificationId: notificationRef.id,
+        userId: providerId,
+        title: notificationTitle,
+        body: notificationBody,
+        type: "providerApplication",
+        data: notificationData,
+        isRead: false,
+        createdAt:
+          admin.firestore.FieldValue.serverTimestamp(),
+        actionUrl: "providerApplication",
+      });
+    } catch (error) {
+      console.error(
+        "Başvuru uygulama bildirimi kaydedilemedi:",
+        error
+      );
+    }
+
+    try {
+      await sendUserPushNotification(
+        providerId,
+        notificationTitle,
+        notificationBody,
+        notificationData
+      );
+    } catch (error) {
+      console.error(
+        "Başvuru push bildirimi gönderilemedi:",
+        error
+      );
+    }
+
+    return {
+      success: true,
+      providerId: providerId,
+      action: action,
+      status: nextStatus,
+    };
+  }
+);

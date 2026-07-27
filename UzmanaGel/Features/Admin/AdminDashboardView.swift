@@ -17,6 +17,30 @@ struct AdminDashboardView: View {
                         .font(.title3.bold())
 
                     NavigationLink {
+                        AdminProviderApplicationsPage()
+                    } label: {
+                        moduleCard(
+                            title: "Uzman Başvuruları ve Belgeler",
+                            description: "Bekleyen uzman başvurularını ve doğrulama belgelerini incele.",
+                            systemImage: "person.badge.shield.checkmark.fill",
+                            iconColor: .blue
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        AdminProviderApplicationHistoryPage()
+                    } label: {
+                        moduleCard(
+                            title: "Uzman Başvuru Geçmişi",
+                            description: "Onay, ret ve eksik belge kararlarını görüntüle.",
+                            systemImage: "person.crop.circle.badge.clock",
+                            iconColor: .indigo
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
                         AdminReviewReportsPage()
                     } label: {
                         moduleCard(

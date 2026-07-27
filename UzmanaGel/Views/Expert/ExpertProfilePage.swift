@@ -36,6 +36,8 @@ struct ExpertProfilePage: View {
     @State private var photoPickerItem: PhotosPickerItem?
     @State private var isUploadingPhoto = false
     @State private var isSubmittingForApproval = false
+    @State private var submissionError: String?
+
     var body: some View {
         Group {
             if isLoading {
@@ -223,6 +225,35 @@ struct ExpertProfilePage: View {
         let statusLower = profile.status.lowercased()
         let isDraft = statusLower == "draft" || statusLower.isEmpty
         let isPending = statusLower == "pending" || statusLower == "beklemede"
+        let requiresDocuments =
+            statusLower == "documentsrequired" ||
+            statusLower == "documents_required"
+        let isRejected =
+            statusLower == "rejected" ||
+            statusLower == "reddedildi"
+        let canSubmitForApproval =
+            pct >= 100 &&
+            (isDraft || requiresDocuments || isRejected)
+
+        let completionText: String
+        if pct < 100 {
+            completionText = "İlan açmak için %100 olmalı"
+        } else if isComplete {
+            completionText = "İlan açabilirsiniz"
+        } else if isPending {
+            completionText = "Onay bekleniyor"
+        } else if requiresDocuments {
+            completionText = "Belgeleri güncelleyip tekrar gönderin"
+        } else if isRejected {
+            completionText = "Bilgileri düzenleyip tekrar gönderin"
+        } else {
+            completionText = "Onay için gönderin"
+        }
+
+        let submitButtonTitle =
+            requiresDocuments || isRejected
+                ? "Tekrar incelemeye gönder"
+                : "İncelemeye gönder"
 
         return VStack(spacing: 16) {
             HStack(alignment: .top) {
@@ -230,27 +261,39 @@ struct ExpertProfilePage: View {
                     Text("Profil tamamlanma")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.secondary)
+
                     Text("%\(pct)")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.primary)
-                    Text(pct >= 100 ? (isComplete ? "İlan açabilirsiniz" : (isPending ? "Onay bekleniyor" : "Onay için gönderin")) : "İlan açmak için %100 olmalı")
+
+                    Text(completionText)
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(.secondary)
                 }
+
                 Spacer()
+
                 ZStack(alignment: .center) {
                     Circle()
                         .stroke(Color(.tertiarySystemFill), lineWidth: 7)
                         .frame(width: 64, height: 64)
+
                     Circle()
                         .trim(from: 0, to: CGFloat(pct) / 100)
                         .stroke(
                             isComplete ? Color.green : Color("PrimaryColor"),
-                            style: StrokeStyle(lineWidth: 7, lineCap: .round)
+                            style: StrokeStyle(
+                                lineWidth: 7,
+                                lineCap: .round
+                            )
                         )
                         .frame(width: 64, height: 64)
                         .rotationEffect(.degrees(-90))
-                        .animation(.easeInOut(duration: 0.4), value: pct)
+                        .animation(
+                            .easeInOut(duration: 0.4),
+                            value: pct
+                        )
+
                     Text("\(pct)")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.primary)
@@ -260,8 +303,13 @@ struct ExpertProfilePage: View {
             .background(Color(.secondarySystemBackground))
             .cornerRadius(ProfileDesign.cardCorner)
             .overlay(
-                RoundedRectangle(cornerRadius: ProfileDesign.cardCorner)
-                    .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                RoundedRectangle(
+                    cornerRadius: ProfileDesign.cardCorner
+                )
+                .stroke(
+                    Color.black.opacity(0.06),
+                    lineWidth: 1
+                )
             )
 
             if isComplete {
@@ -269,6 +317,7 @@ struct ExpertProfilePage: View {
                     Image(systemName: "checkmark.seal.fill")
                         .font(.system(size: 18))
                         .foregroundColor(.green)
+
                     Text("Profiliniz tamam. İlan açabilirsiniz.")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.green)
@@ -282,17 +331,59 @@ struct ExpertProfilePage: View {
                     Image(systemName: "clock.badge.checkmark")
                         .font(.system(size: 18))
                         .foregroundColor(.orange)
-                    Text("Başvurunuz inceleniyor. Onaylandıktan sonra ilan açabileceksiniz.")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.primary)
+
+                    Text(
+                        "Başvurunuz inceleniyor. " +
+                        "Onaylandıktan sonra ilan açabileceksiniz."
+                    )
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
                 .background(Color.orange.opacity(0.12))
                 .cornerRadius(12)
-            } else if pct >= 100 && isDraft {
+            } else if canSubmitForApproval {
+                if requiresDocuments {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "doc.badge.ellipsis")
+                            .font(.system(size: 18))
+                            .foregroundColor(.orange)
+
+                        Text(
+                            "İstenen belgeleri güncelledikten sonra " +
+                            "başvurunuzu yeniden incelemeye gönderin."
+                        )
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(Color.orange.opacity(0.12))
+                    .cornerRadius(12)
+                } else if isRejected {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "arrow.clockwise.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.red)
+
+                        Text(
+                            "Gerekli düzeltmeleri yaptıktan sonra " +
+                            "başvurunuzu yeniden gönderebilirsiniz."
+                        )
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(Color.red.opacity(0.10))
+                    .cornerRadius(12)
+                }
+
                 Button {
-                    Task { await submitForApproval() }
+                    Task {
+                        await submitForApproval()
+                    }
                 } label: {
                     HStack(spacing: 10) {
                         if isSubmittingForApproval {
@@ -301,7 +392,8 @@ struct ExpertProfilePage: View {
                         } else {
                             Image(systemName: "paperplane.fill")
                                 .font(.system(size: 16))
-                            Text("İncelemeye gönder")
+
+                            Text(submitButtonTitle)
                                 .font(.system(size: 15, weight: .semibold))
                         }
                     }
@@ -313,20 +405,37 @@ struct ExpertProfilePage: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isSubmittingForApproval)
+
+                if let submissionError {
+                    Text(submissionError)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                }
             }
         }
     }
 
     private func submitForApproval() async {
-        guard !userId.isEmpty else { return }
+        guard !userId.isEmpty else {
+            submissionError = "Oturum bilgisi bulunamadı."
+            return
+        }
+
+        submissionError = nil
         isSubmittingForApproval = true
-        defer { isSubmittingForApproval = false }
+
+        defer {
+            isSubmittingForApproval = false
+        }
+
         do {
             try await userRepo.submitExpertForApproval(uid: userId)
             await loadProfile()
             await onRefresh()
         } catch {
-            // Hata durumunda kullanıcıya göstermek için state eklenebilir
+            submissionError = error.localizedDescription
         }
     }
 

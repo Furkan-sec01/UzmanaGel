@@ -10,6 +10,7 @@
 import SwiftUI
 import PhotosUI
 import UIKit
+import FirebaseCore
 
 struct ExpertHomepage: View {
 
@@ -300,7 +301,7 @@ private extension ExpertHomepage {
                 if listingCount == 0 {
                     profileCompletionCard(profile: profile)
                 }
-                statusBanner(status: profile.status)
+                statusBanner(profile: profile)
                 quickActionsSection(profile: profile)
                 Spacer().frame(height: 28)
             }
@@ -436,46 +437,174 @@ private extension ExpertHomepage {
         .shadow(color: .black.opacity(0.06), radius: ExpertHomeDesign.shadowRadius, x: 0, y: ExpertHomeDesign.shadowY)
     }
 
-    func statusBanner(status: String) -> some View {
-        let (icon, text, _, fgColor) = statusStyle(status)
+    func statusBanner(profile: ExpertProfile) -> some View {
+        let normalizedStatus = profile.status
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
 
-        return HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 22))
-                .foregroundColor(fgColor)
-                .frame(width: 40, height: 40)
-                .background(fgColor.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        let (icon, text, _, fgColor) = statusStyle(
+            profile.status
+        )
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Başvuru durumu")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.secondary)
-                Text(text)
-                    .font(.system(size: 16, weight: .semibold))
+        let adminNote = profile.adminNote?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? ""
+
+        let showsAdminNote =
+            !adminNote.isEmpty &&
+            (
+                normalizedStatus == "documentsrequired" ||
+                normalizedStatus == "rejected" ||
+                normalizedStatus == "reddedildi"
+            )
+
+        let needsDocumentUpdate =
+            normalizedStatus == "documentsrequired"
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 22))
                     .foregroundColor(fgColor)
+                    .frame(width: 40, height: 40)
+                    .background(fgColor.opacity(0.15))
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: 12,
+                            style: .continuous
+                        )
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Başvuru durumu")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+
+                    Text(text)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(fgColor)
+                }
+
+                Spacer()
             }
 
-            Spacer()
+            if showsAdminNote {
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Admin açıklaması")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.secondary)
+
+                    Text(adminNote)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primary)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+                }
+            }
+
+            if needsDocumentUpdate {
+                Button {
+                    showProfilePage = true
+                } label: {
+                    Label(
+                        "Belgeleri Güncelle",
+                        systemImage: "doc.badge.gearshape"
+                    )
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(fgColor)
+            }
+
+            if let reviewedAt = profile.reviewedAt?.dateValue(),
+               normalizedStatus != "pending",
+               normalizedStatus != "draft" {
+                Text(
+                    "Son işlem: " +
+                    reviewedAt.formatted(
+                        date: .abbreviated,
+                        time: .shortened
+                    )
+                )
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
         }
         .padding(ExpertHomeDesign.cardPadding)
         .background(fgColor.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: ExpertHomeDesign.cardRadius, style: .continuous))
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: ExpertHomeDesign.cardRadius,
+                style: .continuous
+            )
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: ExpertHomeDesign.cardRadius, style: .continuous)
-                .stroke(fgColor.opacity(0.25), lineWidth: 1)
+            RoundedRectangle(
+                cornerRadius: ExpertHomeDesign.cardRadius,
+                style: .continuous
+            )
+            .stroke(fgColor.opacity(0.25), lineWidth: 1)
         )
     }
 
-    func statusStyle(_ status: String) -> (icon: String, text: String, bg: Color, fg: Color) {
-        let lower = status.lowercased()
-        if lower == "approved" || lower == "onaylandı" {
-            return ("checkmark.circle.fill", "Onaylandı", Color.green, Color.green)
+    func statusStyle(
+        _ status: String
+    ) -> (
+        icon: String,
+        text: String,
+        bg: Color,
+        fg: Color
+    ) {
+        let lower = status
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        switch lower {
+        case "approved", "onaylandı":
+            return (
+                "checkmark.circle.fill",
+                "Başvuru Onaylandı",
+                Color.green,
+                Color.green
+            )
+
+        case "documentsrequired":
+            return (
+                "doc.badge.ellipsis",
+                "Eksik Belge İsteniyor",
+                Color.orange,
+                Color.orange
+            )
+
+        case "rejected", "reddedildi":
+            return (
+                "xmark.circle.fill",
+                "Başvuru Reddedildi",
+                Color.red,
+                Color.red
+            )
+
+        case "draft", "taslak":
+            return (
+                "pencil.circle.fill",
+                "Başvuru Taslak Durumunda",
+                Color.blue,
+                Color.blue
+            )
+
+        default:
+            return (
+                "clock.badge.checkmark",
+                "Başvuru İnceleniyor",
+                Color.orange,
+                Color.orange
+            )
         }
-        if lower == "rejected" || lower == "reddedildi" {
-            return ("xmark.circle.fill", "Reddedildi", Color.red, Color.red)
-        }
-        return ("clock.badge.checkmark", "İnceleme aşamasında", Color.orange, Color.orange)
     }
 
     func quickActionsSection(profile: ExpertProfile) -> some View {
