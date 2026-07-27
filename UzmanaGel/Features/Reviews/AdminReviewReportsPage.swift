@@ -10,6 +10,7 @@ struct AdminReviewReport: Identifiable {
     let category: String
     let description: String
     let reporterId: String
+    let status: String
     let createdAt: Date?
     let reviewComment: String
     let customerName: String
@@ -18,12 +19,15 @@ struct AdminReviewReport: Identifiable {
 
 private enum AdminModerationAction {
     case dismiss
+    case flag
     case remove
 
     var backendValue: String {
         switch self {
         case .dismiss:
             return "dismiss"
+        case .flag:
+            return "flag"
         case .remove:
             return "remove"
         }
@@ -33,6 +37,8 @@ private enum AdminModerationAction {
         switch self {
         case .dismiss:
             return "Rapor reddedilsin mi?"
+        case .flag:
+            return "Yorum incelemeye alınsın mı?"
         case .remove:
             return "Yorum kaldırılsın mı?"
         }
@@ -42,6 +48,8 @@ private enum AdminModerationAction {
         switch self {
         case .dismiss:
             return "Raporu Reddet"
+        case .flag:
+            return "İncelemeye Al"
         case .remove:
             return "Yorumu Kaldır"
         }
@@ -51,6 +59,8 @@ private enum AdminModerationAction {
         switch self {
         case .dismiss:
             return "Rapor kapatılacak ancak yorum yayında kalacak."
+        case .flag:
+            return "Rapor ileri inceleme kuyruğuna taşınacak."
         case .remove:
             return "Yorum yayından kaldırılacak ve moderasyon arşivine kaydedilecek."
         }
@@ -62,6 +72,8 @@ final class AdminReviewReportsViewModel: ObservableObject {
 
     @Published private(set) var reports: [AdminReviewReport] = []
     @Published private(set) var isLoading = false
+    @Published private(set) var isLoadingMore = false
+    @Published private(set) var hasMore = false
     @Published private(set) var processingReportId: String?
     @Published var errorMessage: String?
 
@@ -70,65 +82,184 @@ final class AdminReviewReportsViewModel: ObservableObject {
         region: "europe-west1"
     )
 
-    func loadPendingReports() async {
+    private let pageSize = 20
+    private var lastDocument: DocumentSnapshot?
+
+    func loadReports(status: String) async {
+        guard !isLoading else {
+            return
+        }
+
         isLoading = true
         errorMessage = nil
+        reports = []
+        lastDocument = nil
+        hasMore = false
 
         defer {
             isLoading = false
         }
 
         do {
-            let snapshot = try await db
-                .collection("review_reports")
-                .whereField("status", isEqualTo: "pending")
-                .getDocuments()
+            let page = try await fetchPage(
+                status: status,
+                after: nil
+            )
 
-            var loadedReports: [AdminReviewReport] = []
-
-            for document in snapshot.documents {
-                let data = document.data()
-
-                guard let reviewId = data["reviewId"] as? String else {
-                    continue
-                }
-
-                let reviewSnapshot = try? await db
-                    .collection("reviews")
-                    .document(reviewId)
-                    .getDocument()
-
-                let reviewData = reviewSnapshot?.data()
-
-                loadedReports.append(
-                    AdminReviewReport(
-                        id: document.documentID,
-                        reviewId: reviewId,
-                        providerId: data["providerId"] as? String ?? "",
-                        category: data["category"] as? String ?? "Diğer",
-                        description: data["description"] as? String ?? "",
-                        reporterId: data["reporterId"] as? String ?? "",
-                        createdAt: (
-                            data["createdAt"] as? Timestamp
-                        )?.dateValue(),
-                        reviewComment: reviewData?["comment"] as? String
-                            ?? "Yorum bulunamadı.",
-                        customerName: reviewData?["customerName"] as? String
-                            ?? "Bilinmeyen kullanıcı",
-                        rating: (
-                            reviewData?["rating"] as? NSNumber
-                        )?.doubleValue
-                    )
-                )
-            }
-
-            reports = loadedReports.sorted {
-                ($0.createdAt ?? .distantPast)
-                    > ($1.createdAt ?? .distantPast)
-            }
+            reports = page.reports
+            lastDocument = page.lastDocument
+            hasMore = page.documentCount == pageSize
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func loadMoreReports(status: String) async {
+        guard
+            !isLoading,
+            !isLoadingMore,
+            hasMore,
+            let lastDocument
+        else {
+            return
+        }
+
+        isLoadingMore = true
+        errorMessage = nil
+
+        defer {
+            isLoadingMore = false
+        }
+
+        do {
+            let page = try await fetchPage(
+                status: status,
+                after: lastDocument
+            )
+
+            let existingIds = Set(reports.map(\.id))
+
+            reports.append(
+                contentsOf: page.reports.filter {
+                    !existingIds.contains($0.id)
+                }
+            )
+
+            self.lastDocument = page.lastDocument
+            hasMore = page.documentCount == pageSize
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func fetchPage(
+        status: String,
+        after document: DocumentSnapshot?
+    ) async throws -> (
+        reports: [AdminReviewReport],
+        lastDocument: DocumentSnapshot?,
+        documentCount: Int
+    ) {
+        var query: Query = db
+            .collection("review_reports")
+            .whereField("status", isEqualTo: status)
+            .order(
+                by: "createdAt",
+                descending: true
+            )
+            .limit(to: pageSize)
+
+        if let document {
+            query = query.start(afterDocument: document)
+        }
+
+        let snapshot = try await query.getDocuments()
+
+        let reviewIds = snapshot.documents.compactMap {
+            $0.data()["reviewId"] as? String
+        }
+
+        let reviewsById = try await fetchReviews(
+            reviewIds: reviewIds
+        )
+
+        let loadedReports = snapshot.documents.compactMap {
+            document -> AdminReviewReport? in
+
+            let data = document.data()
+
+            guard let reviewId = data["reviewId"] as? String else {
+                return nil
+            }
+
+            let reviewData = reviewsById[reviewId]
+
+            return AdminReviewReport(
+                id: document.documentID,
+                reviewId: reviewId,
+                providerId: data["providerId"] as? String ?? "",
+                category: data["category"] as? String ?? "Diğer",
+                description: data["description"] as? String ?? "",
+                reporterId: data["reporterId"] as? String ?? "",
+                status: data["status"] as? String ?? status,
+                createdAt: (
+                    data["createdAt"] as? Timestamp
+                )?.dateValue(),
+                reviewComment: reviewData?["comment"] as? String
+                    ?? "Yorum bulunamadı.",
+                customerName: reviewData?["customerName"] as? String
+                    ?? "Bilinmeyen kullanıcı",
+                rating: (
+                    reviewData?["rating"] as? NSNumber
+                )?.doubleValue
+            )
+        }
+
+        return (
+            reports: loadedReports,
+            lastDocument: snapshot.documents.last,
+            documentCount: snapshot.documents.count
+        )
+    }
+
+    private func fetchReviews(
+        reviewIds: [String]
+    ) async throws -> [String: [String: Any]] {
+        let uniqueIds = Array(Set(reviewIds))
+
+        guard !uniqueIds.isEmpty else {
+            return [:]
+        }
+
+        var reviewsById: [String: [String: Any]] = [:]
+        var startIndex = 0
+
+        while startIndex < uniqueIds.count {
+            let endIndex = min(
+                startIndex + 10,
+                uniqueIds.count
+            )
+
+            let chunk = Array(
+                uniqueIds[startIndex..<endIndex]
+            )
+
+            let snapshot = try await db
+                .collection("reviews")
+                .whereField(
+                    FieldPath.documentID(),
+                    in: chunk
+                )
+                .getDocuments()
+
+            snapshot.documents.forEach {
+                reviewsById[$0.documentID] = $0.data()
+            }
+
+            startIndex = endIndex
+        }
+
+        return reviewsById
     }
 
     fileprivate func moderateReport(
@@ -158,7 +289,7 @@ final class AdminReviewReportsViewModel: ObservableObject {
             ])
 
             switch action {
-            case .dismiss:
+            case .dismiss, .flag:
                 reports.removeAll {
                     $0.id == report.id
                 }
@@ -184,6 +315,7 @@ struct AdminReviewReportsPage: View {
     @State private var selectedReport: AdminReviewReport?
     @State private var selectedAction: AdminModerationAction?
     @State private var showConfirmation = false
+    @State private var selectedStatus = "pending"
 
     private let backgroundColor = Color("BackgroundColor")
     private let cardColor = Color("CardBackground")
@@ -198,37 +330,21 @@ struct AdminReviewReportsPage: View {
                         "Bu ekran yalnızca yöneticiler tarafından kullanılabilir."
                     )
                 )
-            } else if viewModel.isLoading &&
-                        viewModel.reports.isEmpty {
-                ProgressView("Bildirimler yükleniyor...")
-                    .frame(
-                        maxWidth: .infinity,
-                        maxHeight: .infinity
-                    )
-            } else if let errorMessage = viewModel.errorMessage,
-                      viewModel.reports.isEmpty {
-                errorView(message: errorMessage)
-            } else if viewModel.reports.isEmpty {
-                ContentUnavailableView(
-                    "Bekleyen Bildirim Yok",
-                    systemImage: "checkmark.shield",
-                    description: Text(
-                        "İncelenmesi gereken bir yorum bildirimi bulunmuyor."
-                    )
-                )
             } else {
-                reportsList
+                adminContent
             }
         }
         .background(backgroundColor.ignoresSafeArea())
         .navigationTitle("Bildirilen Yorumlar")
         .navigationBarTitleDisplayMode(.inline)
-        .task(id: session.isAdmin) {
+        .task(id: "\(session.isAdmin)-\(selectedStatus)") {
             guard session.isAdmin else {
                 return
             }
 
-            await viewModel.loadPendingReports()
+            await viewModel.loadReports(
+                status: selectedStatus
+            )
         }
         .confirmationDialog(
             selectedAction?.dialogTitle ?? "",
@@ -254,17 +370,90 @@ struct AdminReviewReportsPage: View {
         }
     }
 
+    private var adminContent: some View {
+        VStack(spacing: 0) {
+            Picker(
+                "Rapor durumu",
+                selection: $selectedStatus
+            ) {
+                Text("Bekleyen")
+                    .tag("pending")
+
+                Text("İncelemede")
+                    .tag("flagged")
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 6)
+
+            Group {
+                if viewModel.isLoading &&
+                    viewModel.reports.isEmpty {
+                    ProgressView("Bildirimler yükleniyor...")
+                        .frame(
+                            maxWidth: .infinity,
+                            maxHeight: .infinity
+                        )
+                } else if let errorMessage =
+                            viewModel.errorMessage,
+                          viewModel.reports.isEmpty {
+                    errorView(message: errorMessage)
+                } else if viewModel.reports.isEmpty {
+                    ContentUnavailableView(
+                        selectedStatus == "pending"
+                            ? "Bekleyen Bildirim Yok"
+                            : "İncelemede Yorum Yok",
+                        systemImage: "checkmark.shield",
+                        description: Text(
+                            selectedStatus == "pending"
+                                ? "İncelenmesi gereken yeni bir yorum bildirimi bulunmuyor."
+                                : "İleri incelemeye alınmış bir yorum bulunmuyor."
+                        )
+                    )
+                } else {
+                    reportsList
+                }
+            }
+        }
+    }
+
     private var reportsList: some View {
         ScrollView {
             LazyVStack(spacing: 14) {
                 ForEach(viewModel.reports) { report in
                     reportCard(report)
                 }
+
+                if viewModel.hasMore {
+                    Button {
+                        Task {
+                            await viewModel.loadMoreReports(
+                                status: selectedStatus
+                            )
+                        }
+                    } label: {
+                        if viewModel.isLoadingMore {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Label(
+                                "Daha Fazla Yükle",
+                                systemImage: "arrow.down.circle"
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(viewModel.isLoadingMore)
+                }
             }
             .padding(16)
         }
         .refreshable {
-            await viewModel.loadPendingReports()
+            await viewModel.loadReports(
+                status: selectedStatus
+            )
         }
     }
 
@@ -275,6 +464,14 @@ struct AdminReviewReportsPage: View {
             switch action {
             case .dismiss:
                 Button("Raporu Reddet") {
+                    runModeration(
+                        report: report,
+                        action: action
+                    )
+                }
+
+            case .flag:
+                Button("İncelemeye Al") {
                     runModeration(
                         report: report,
                         action: action
@@ -316,6 +513,7 @@ struct AdminReviewReportsPage: View {
     ) -> some View {
         let isProcessing =
             viewModel.processingReportId == report.id
+        let isFlagged = report.status == "flagged"
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -328,13 +526,22 @@ struct AdminReviewReportsPage: View {
 
                 Spacer()
 
-                Text("İnceleniyor")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.orange.opacity(0.14))
-                    .clipShape(Capsule())
+                Text(
+                    isFlagged
+                        ? "İncelemede"
+                        : "Bekliyor"
+                )
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(
+                    isFlagged ? Color.purple : Color.orange
+                )
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    (isFlagged ? Color.purple : Color.orange)
+                        .opacity(0.14)
+                )
+                .clipShape(Capsule())
             }
 
             VStack(alignment: .leading, spacing: 5) {
@@ -402,34 +609,53 @@ struct AdminReviewReportsPage: View {
                 }
                 .frame(minHeight: 38)
             } else {
-                HStack(spacing: 10) {
-                    Button {
-                        prepareModeration(
-                            report: report,
-                            action: .dismiss
-                        )
-                    } label: {
-                        Label(
-                            "Raporu Reddet",
-                            systemImage: "xmark.circle"
-                        )
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 10) {
+                    if !isFlagged {
+                        Button {
+                            prepareModeration(
+                                report: report,
+                                action: .flag
+                            )
+                        } label: {
+                            Label(
+                                "İncelemeye Al",
+                                systemImage: "flag.fill"
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
                     }
-                    .buttonStyle(.bordered)
 
-                    Button(role: .destructive) {
-                        prepareModeration(
-                            report: report,
-                            action: .remove
-                        )
-                    } label: {
-                        Label(
-                            "Yorumu Kaldır",
-                            systemImage: "trash"
-                        )
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 10) {
+                        Button {
+                            prepareModeration(
+                                report: report,
+                                action: .dismiss
+                            )
+                        } label: {
+                            Label(
+                                "Raporu Reddet",
+                                systemImage: "xmark.circle"
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(role: .destructive) {
+                            prepareModeration(
+                                report: report,
+                                action: .remove
+                            )
+                        } label: {
+                            Label(
+                                "Yorumu Kaldır",
+                                systemImage: "trash"
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
                 .font(.system(size: 13, weight: .semibold))
             }
@@ -492,7 +718,9 @@ struct AdminReviewReportsPage: View {
 
             Button("Tekrar Dene") {
                 Task {
-                    await viewModel.loadPendingReports()
+                    await viewModel.loadReports(
+                        status: selectedStatus
+                    )
                 }
             }
             .buttonStyle(.borderedProminent)

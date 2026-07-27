@@ -28,6 +28,18 @@ struct AdminDashboardView: View {
                     }
                     .buttonStyle(.plain)
 
+                    NavigationLink {
+                        AdminModerationHistoryPage()
+                    } label: {
+                        moduleCard(
+                            title: "Moderasyon Geçmişi",
+                            description: "Tamamlanan yorum moderasyon işlemlerini görüntüle.",
+                            systemImage: "clock.arrow.circlepath",
+                            iconColor: .purple
+                        )
+                    }
+                    .buttonStyle(.plain)
+
                     futureModulesSection
                 }
                 .padding(16)
