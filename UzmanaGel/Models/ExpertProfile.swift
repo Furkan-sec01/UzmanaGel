@@ -41,6 +41,13 @@ struct ExpertProfile: Codable, Identifiable {
     var status: String
     var createdAt: Timestamp?
 
+    // Admin application decision fields
+    var verificationStatus: String?
+    var adminNote: String?
+    var applicationDecision: String?
+    var reviewedAt: Timestamp?
+    var reviewedBy: String?
+
     /// Uzman profil fotoğrafı (Storage URL)
     var profileImageURL: String?
 
@@ -78,6 +85,8 @@ struct ExpertProfile: Codable, Identifiable {
         case displayName, email, phoneNumber, businessName, serviceCategories
         case businessType, taxNumber, experienceYears, expertiseAreas, certificateURLs
         case educationLevel, schoolName, status, createdAt
+        case verificationStatus, adminNote, applicationDecision
+        case reviewedAt, reviewedBy
         case profileImageURL
         case serviceCities, workingDays, workingHoursStart, workingHoursEnd, minPrice, maxPrice, serviceType
         case bankName, iban, accountHolderName
@@ -111,6 +120,26 @@ struct ExpertProfile: Codable, Identifiable {
         schoolName = try c.decodeIfPresent(String.self, forKey: .schoolName) ?? ""
         status = try c.decodeIfPresent(String.self, forKey: .status) ?? "Pending"
         createdAt = try c.decodeIfPresent(Timestamp.self, forKey: .createdAt)
+        verificationStatus = try c.decodeIfPresent(
+            String.self,
+            forKey: .verificationStatus
+        )
+        adminNote = try c.decodeIfPresent(
+            String.self,
+            forKey: .adminNote
+        )
+        applicationDecision = try c.decodeIfPresent(
+            String.self,
+            forKey: .applicationDecision
+        )
+        reviewedAt = try c.decodeIfPresent(
+            Timestamp.self,
+            forKey: .reviewedAt
+        )
+        reviewedBy = try c.decodeIfPresent(
+            String.self,
+            forKey: .reviewedBy
+        )
         profileImageURL = try c.decodeIfPresent(String.self, forKey: .profileImageURL)
         serviceCities = try c.decodeIfPresent([String].self, forKey: .serviceCities) ?? []
         workingDays = try c.decodeIfPresent([String].self, forKey: .workingDays) ?? []
@@ -132,7 +161,45 @@ struct ExpertProfile: Codable, Identifiable {
         idBackURL = try c.decodeIfPresent(String.self, forKey: .idBackURL)
     }
 
-    init(id: String?, displayName: String, email: String, phoneNumber: String, businessName: String, serviceCategories: [String], businessType: String, taxNumber: String?, experienceYears: Int, expertiseAreas: [String], certificateURLs: [String], educationLevel: String, schoolName: String, status: String, createdAt: Timestamp?, profileImageURL: String? = nil, serviceCities: [String] = [], workingDays: [String] = [], workingHoursStart: String? = nil, workingHoursEnd: String? = nil, minPrice: Int? = nil, maxPrice: Int? = nil, serviceType: String? = nil, bankName: String? = nil, iban: String? = nil, accountHolderName: String? = nil, portfolioImageURLs: [String] = [], address: String? = nil, about: String? = nil, locationGeo: GeoPoint? = nil, idFrontURL: String? = nil, idBackURL: String? = nil) {
+    init(
+        id: String?,
+        displayName: String,
+        email: String,
+        phoneNumber: String,
+        businessName: String,
+        serviceCategories: [String],
+        businessType: String,
+        taxNumber: String?,
+        experienceYears: Int,
+        expertiseAreas: [String],
+        certificateURLs: [String],
+        educationLevel: String,
+        schoolName: String,
+        status: String,
+        createdAt: Timestamp?,
+        profileImageURL: String? = nil,
+        serviceCities: [String] = [],
+        workingDays: [String] = [],
+        workingHoursStart: String? = nil,
+        workingHoursEnd: String? = nil,
+        minPrice: Int? = nil,
+        maxPrice: Int? = nil,
+        serviceType: String? = nil,
+        bankName: String? = nil,
+        iban: String? = nil,
+        accountHolderName: String? = nil,
+        portfolioImageURLs: [String] = [],
+        address: String? = nil,
+        about: String? = nil,
+        locationGeo: GeoPoint? = nil,
+        idFrontURL: String? = nil,
+        idBackURL: String? = nil,
+        verificationStatus: String? = nil,
+        adminNote: String? = nil,
+        applicationDecision: String? = nil,
+        reviewedAt: Timestamp? = nil,
+        reviewedBy: String? = nil
+    ) {
         self.id = id
         self.displayName = displayName
         self.email = email
@@ -165,6 +232,11 @@ struct ExpertProfile: Codable, Identifiable {
         self.locationGeo = locationGeo
         self.idFrontURL = idFrontURL
         self.idBackURL = idBackURL
+        self.verificationStatus = verificationStatus
+        self.adminNote = adminNote
+        self.applicationDecision = applicationDecision
+        self.reviewedAt = reviewedAt
+        self.reviewedBy = reviewedBy
     }
 
     /// Admin tarafından onaylanmış mı

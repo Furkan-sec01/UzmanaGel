@@ -24,6 +24,13 @@ service cloud.firestore {
         ).data.participantIds;
     }
 
+    // MARK: - Provider Application History
+
+    match /provider_application_history/{historyId} {
+      allow get, list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
     // MARK: - Users
 
     match /users/{userId} {
