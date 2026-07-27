@@ -8,6 +8,7 @@
 import SwiftUI
 import AuthenticationServices
 
+@MainActor
 struct LoginPage: View {
     @EnvironmentObject private var session: SessionViewModel
     @StateObject private var vm = LoginViewModel()

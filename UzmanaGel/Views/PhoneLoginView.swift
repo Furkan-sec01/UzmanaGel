@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct PhoneLoginView: View {
 
     @StateObject private var vm = PhoneAuthViewModel()

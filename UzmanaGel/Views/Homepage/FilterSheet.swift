@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+@MainActor
 struct FilterSheet: View {
 
     @Binding var filter: ServiceFilter
@@ -219,11 +220,11 @@ struct FilterSheet: View {
                             VStack(alignment: .leading, spacing: 10) {
                                 Toggle("Bugün Müsait".localized, isOn: $filter.isTodayAvailable)
                                     .font(.system(size: 13, weight: .medium))
-                                    .onChange(of: filter.isTodayAvailable) { _ in triggerHaptic() }
+                                    .onChange(of: filter.isTodayAvailable) { _, _ in triggerHaptic() }
                                 
                                 Toggle("Bu Hafta Müsait".localized, isOn: $filter.isThisWeekAvailable)
                                     .font(.system(size: 13, weight: .medium))
-                                    .onChange(of: filter.isThisWeekAvailable) { _ in triggerHaptic() }
+                                    .onChange(of: filter.isThisWeekAvailable) { _, _ in triggerHaptic() }
                                 
                                 Divider().padding(.vertical, 2)
                                 
@@ -408,7 +409,7 @@ struct FilterSheet: View {
                                         Spacer()
                                         Stepper("", value: $filter.minExperienceYears, in: 0...50, step: 1)
                                             .labelsHidden()
-                                            .onChange(of: filter.minExperienceYears) { _ in
+                                            .onChange(of: filter.minExperienceYears) { _, _ in
                                                 triggerHaptic()
                                             }
                                     }
@@ -426,7 +427,7 @@ struct FilterSheet: View {
                                         Spacer()
                                         Stepper("", value: $filter.minCompletedJobs, in: 0...500, step: 5)
                                             .labelsHidden()
-                                            .onChange(of: filter.minCompletedJobs) { _ in
+                                            .onChange(of: filter.minCompletedJobs) { _, _ in
                                                 triggerHaptic()
                                             }
                                     }
@@ -437,7 +438,7 @@ struct FilterSheet: View {
                                         Text("Sadece Sertifikalı Uzmanlar".localized)
                                             .font(.system(size: 14, weight: .semibold))
                                     }
-                                    .onChange(of: filter.isCertifiedOnly) { _ in triggerHaptic() }
+                                    .onChange(of: filter.isCertifiedOnly) { _, _ in triggerHaptic() }
                                     Divider()
 
                                     // 4. Hizmet Türü (Segmented)

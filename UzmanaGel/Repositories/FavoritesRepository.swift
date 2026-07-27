@@ -4,6 +4,7 @@ import FirebaseFirestore
 
 ///FavoritesRepository, giriş yapan kullanıcının favori servislerini users/{uid}/favorites alt koleksiyonunda yönetir.
 
+
 final class FavoritesRepository {
 
     private let db = Firestore.firestore()

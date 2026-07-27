@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 
+@MainActor
 struct ForgotPasswordPage: View {
 
     @Environment(\.dismiss) private var dismiss

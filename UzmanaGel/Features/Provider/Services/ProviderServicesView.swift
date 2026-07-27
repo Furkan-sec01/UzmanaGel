@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 
+@MainActor
 struct ProviderServicesView: View {
     @StateObject private var viewModel = ProviderServicesViewModel()
     @State private var showingAddEditSheet = false

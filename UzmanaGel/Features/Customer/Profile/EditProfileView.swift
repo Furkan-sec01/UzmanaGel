@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 
+@MainActor
 struct EditProfileView: View {
     let profile: UserProfile
     var onProfileUpdate: (UserProfile) -> Void
@@ -393,6 +394,8 @@ struct EditProfileView: View {
         .animation(.easeInOut, value: isError ? viewModel.errorMessage : viewModel.successMessage)
     }
 }
+
+
 
 #Preview {
     NavigationStack {

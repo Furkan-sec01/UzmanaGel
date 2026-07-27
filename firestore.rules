@@ -45,7 +45,13 @@ service cloud.firestore {
         );
 
       allow update: if isOwner(userId)
-        && request.resource.data.role == resource.data.role;
+        && request.resource.data.role == resource.data.role
+        && (
+          // Standard profile update (role preserved)
+          true
+          // Note: favoriteProviderIds, recentlyViewedProviderIds, savedSearches
+          // are all allowed as long as role doesn't change (enforced above)
+        );
 
       allow delete: if false;
 

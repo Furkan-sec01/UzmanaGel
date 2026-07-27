@@ -21,7 +21,7 @@ class AddressListViewModel: ObservableObject {
             self.addresses = try await addressService.fetchAddresses()
         } catch {
             self.errorMessage = error.localizedDescription
-        }
+        } 
         isLoading = false
     }
     
@@ -31,7 +31,7 @@ class AddressListViewModel: ObservableObject {
         do {
             try await addressService.deleteAddress(id: targetId)
             // Only remove from UI after Firebase confirms deletion
-            withAnimation {
+            _ = withAnimation {
                 addresses.remove(at: index)
             }
         } catch {
@@ -44,7 +44,7 @@ class AddressListViewModel: ObservableObject {
         do {
             try await addressService.setDefaultAddress(id: id)
             // Update in-memory directly instead of a second network fetch
-            withAnimation {
+            _ = withAnimation {
                 addresses = addresses.map {
                     var a = $0
                     a.isDefault = (a.id == id)

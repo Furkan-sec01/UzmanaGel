@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct FinanceView: View {
     @StateObject private var viewModel = FinanceViewModel()
     @State private var showingWithdrawalForm = false

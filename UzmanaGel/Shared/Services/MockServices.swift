@@ -6,6 +6,7 @@ private func simulateDelay() async {
 }
 
 // MARK: - Mock Profile Service
+
 class MockProfileService: ProfileService {
     private var profile = UserProfile(
         id: "usr_customer_1",
@@ -54,6 +55,7 @@ class MockProfileService: ProfileService {
 }
 
 // MARK: - Mock Address Service
+
 class MockAddressService: AddressService {
     private var addresses: [Address] = [
         Address(
@@ -141,6 +143,7 @@ class MockAddressService: AddressService {
 }
 
 // MARK: - Mock Payment Service
+
 class MockPaymentService: PaymentService {
     private var cards: [PaymentCard] = [
         PaymentCard(
@@ -212,6 +215,7 @@ class MockPaymentService: PaymentService {
 }
 
 // MARK: - Mock Preferences Service
+
 class MockPreferencesService: PreferencesService {
     private var settings = NotificationSettings(
         pushNotificationsEnabled: true,
@@ -267,6 +271,7 @@ class MockPreferencesService: PreferencesService {
 }
 
 // MARK: - Mock Order History Service
+
 class MockOrderHistoryService: OrderHistoryService {
     private var orders: [Order] = [
         Order(
@@ -331,6 +336,7 @@ class MockOrderHistoryService: OrderHistoryService {
 }
 
 // MARK: - Mock Provider Service
+
 class MockProviderService: ProviderService {
     private var provider = Provider(
         id: "prv_1",
@@ -414,6 +420,7 @@ class MockProviderService: ProviderService {
 }
 
 // MARK: - Mock Schedule Service
+
 class MockScheduleService: ScheduleService {
     private var slots: [AvailabilitySlot] = [
         AvailabilitySlot(
@@ -456,6 +463,7 @@ class MockScheduleService: ScheduleService {
 }
 
 // MARK: - Mock Finance Service
+
 class MockFinanceService: FinanceService {
     private var earnings: [Earning] = [
         Earning(

@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct CustomerProfileView: View {
     @StateObject private var viewModel = CustomerProfileViewModel()
     @State private var showingEditProfile = false

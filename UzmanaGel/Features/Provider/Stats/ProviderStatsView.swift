@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 
+@MainActor
 struct ProviderStatsView: View {
     @StateObject private var viewModel = ProviderStatsViewModel()
     

@@ -90,7 +90,7 @@ struct ProviderResponseSheet: View {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                             )
-                            .onChange(of: responseText) { newValue in
+                            .onChange(of: responseText) { _, newValue in
                                 if newValue.count > characterLimit {
                                     responseText = String(newValue.prefix(characterLimit))
                                 }

@@ -12,6 +12,7 @@ import PhotosUI
 import UIKit
 import FirebaseCore
 
+@MainActor
 struct ExpertHomepage: View {
 
     @EnvironmentObject var session: SessionViewModel
@@ -71,15 +72,7 @@ struct ExpertHomepage: View {
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showReviewsPage = true
-                    } label: {
-                        Image(systemName: "star.bubble.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                    }
-                    .accessibilityLabel("Yorumlar")
-                }
+
             }
             .sheet(isPresented: $showMenu) {
                 expertMenuSheet
@@ -872,6 +865,15 @@ private extension ExpertHomepage {
                     ) {
                         showMenu = false
                         showMessagesPage = true
+                    }
+
+                    menuRow(
+                        icon: "star.bubble.fill",
+                        title: "Yorumlar",
+                        subtitle: "Müşteri yorumlarınızı görüntüleyin"
+                    ) {
+                        showMenu = false
+                        showReviewsPage = true
                     }
 
                     menuRow(icon: "photo.on.rectangle.angled", title: "Portföy", subtitle: "Portföyünüzü yönetin") {

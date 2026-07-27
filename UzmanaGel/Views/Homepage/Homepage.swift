@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
+@MainActor
 struct Homepage: View {
     
     @EnvironmentObject var session: SessionViewModel
@@ -66,6 +67,12 @@ struct Homepage: View {
                                 TextField("Hizmet, uzman veya kategori ara…".localized, text: $vm.searchText)
                                     .font(.system(size: 14))
                                     .autocorrectionDisabled()
+                                    .onSubmit {
+                                        let q = vm.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        if !q.isEmpty {
+                                            Task { try? await FirestoreFavoritesService().addSavedSearch(q) }
+                                        }
+                                    }
                                 
                                 if !vm.searchText.isEmpty {
                                     Button {

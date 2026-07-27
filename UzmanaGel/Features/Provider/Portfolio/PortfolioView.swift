@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 
+@MainActor
 struct PortfolioView: View {
     @StateObject private var viewModel = PortfolioViewModel()
     @State private var selectedItems: [PhotosPickerItem] = []

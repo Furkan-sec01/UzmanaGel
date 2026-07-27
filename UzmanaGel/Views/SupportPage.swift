@@ -6,6 +6,7 @@
 import SwiftUI
 import StoreKit
 
+@MainActor
 struct SupportPage: View {
 
     @State private var expandedFAQ: String? = nil

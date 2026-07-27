@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct ChatDetailPage: View {
 
     @StateObject private var vm: ChatDetailViewModel

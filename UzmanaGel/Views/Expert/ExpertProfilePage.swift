@@ -24,6 +24,7 @@ private enum ProfileDesign {
 
 // MARK: - Ana profil sayfası
 
+@MainActor
 struct ExpertProfilePage: View {
     let userId: String
     var onRefresh: () async -> Void

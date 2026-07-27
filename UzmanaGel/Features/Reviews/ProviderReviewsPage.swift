@@ -9,6 +9,7 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 
+@MainActor
 struct ProviderReviewsPage: View {
     let providerId: String
     let providerName: String

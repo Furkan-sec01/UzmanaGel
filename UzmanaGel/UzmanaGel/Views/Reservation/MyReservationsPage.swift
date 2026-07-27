@@ -39,6 +39,7 @@ private enum ReservationFilter: String, CaseIterable, Identifiable {
     }
 }
 
+@MainActor
 struct MyReservationsPage: View {
 
     @StateObject private var viewModel = MyReservationsViewModel()

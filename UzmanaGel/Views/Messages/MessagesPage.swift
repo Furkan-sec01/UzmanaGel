@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct MessagesPage: View {
     
     @StateObject private var vm = MessageViewModel()

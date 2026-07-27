@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct ScheduleView: View {
     @StateObject private var viewModel = ScheduleViewModel()
     @State private var selectedDate = Date()

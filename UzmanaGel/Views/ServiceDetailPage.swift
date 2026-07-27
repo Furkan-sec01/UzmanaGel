@@ -52,7 +52,7 @@ struct ServiceDetailPage: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button { } label: {
+                ShareLink(item: "UzmanaGel'de bu hizmete göz at: \(vm.service.title)\nhttps://uzmanagel.com/service/\(vm.service.serviceId)") {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 16, weight: .semibold))
                 }

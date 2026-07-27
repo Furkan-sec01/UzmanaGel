@@ -12,6 +12,7 @@ import FirebaseAuth
 import FirebaseStorage
 import FirebaseFirestore
 
+@MainActor
 struct ProfilePage: View {
 
     @Environment(\.dismiss) private var dismiss

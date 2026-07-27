@@ -215,7 +215,7 @@ struct ReviewSubmissionSheet: View {
                     .padding(8)
                     .scrollContentBackground(.hidden)
                     .background(Color("CardBackground"))
-                    .onChange(of: commentText) { newValue in
+                    .onChange(of: commentText) { _, newValue in
                         if newValue.count > characterLimit {
                             commentText = String(newValue.prefix(characterLimit))
                         }
@@ -279,7 +279,7 @@ struct ReviewSubmissionSheet: View {
                 }
             }
         }
-        .onChange(of: selectedItems) { newItems in
+        .onChange(of: selectedItems) { _, newItems in
             Task {
                 var loaded: [UIImage] = []
                 for item in newItems {

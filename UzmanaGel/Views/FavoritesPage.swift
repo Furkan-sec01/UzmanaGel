@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct FavoritesPage: View {
 
     @StateObject private var vm = FavoritesViewModel()

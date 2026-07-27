@@ -5,6 +5,7 @@
 
 import SwiftUI
 
+@MainActor
 struct PreferencesView: View {
     @StateObject private var viewModel = PreferencesViewModel()
     @ObservedObject private var langManager = LanguageManager.shared

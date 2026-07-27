@@ -158,7 +158,7 @@ struct Review: Identifiable, Codable, Hashable {
         reviewId = try c.decodeIfPresent(String.self, forKey: .reviewId) ?? decodedID ?? UUID().uuidString
         
         let bId = (try? c.decodeIfPresent(String.self, forKey: .bookingId)) ?? (try? addC?.decodeIfPresent(String.self, forKey: .reservationId)) ?? ""
-        bookingId = bId ?? ""
+        bookingId = bId
         reservationId = (try? addC?.decodeIfPresent(String.self, forKey: .reservationId)) ?? bookingId
         serviceId = try? addC?.decodeIfPresent(String.self, forKey: .serviceId)
         serviceTitle = try? addC?.decodeIfPresent(String.self, forKey: .serviceTitle)
@@ -190,7 +190,7 @@ struct Review: Identifiable, Codable, Hashable {
         providerResponse = try? c.decodeIfPresent(String.self, forKey: .providerResponse)
         
         let pDate = (try? c.decodeIfPresent(Timestamp.self, forKey: .providerResponseDate)) ?? (try? addC?.decodeIfPresent(Timestamp.self, forKey: .providerResponseAt))
-        providerResponseDate = pDate ?? nil
+        providerResponseDate = pDate
         
         isReported = (try? c.decodeIfPresent(Bool.self, forKey: .isReported)) ?? false
         reportReason = try? c.decodeIfPresent(String.self, forKey: .reportReason)

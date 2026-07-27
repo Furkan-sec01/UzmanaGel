@@ -42,6 +42,20 @@ protocol PreferencesService {
     func savePrivacySettings(_ settings: [String: Bool]) async throws
 }
 
+// MARK: - FavoritesService Protocol
+protocol FavoritesService {
+    func fetchFavoriteProviders() async throws -> [Provider]
+    func toggleFavorite(providerId: String) async throws
+    
+    func fetchRecentlyViewed() async throws -> [Provider]
+    func addRecentlyViewed(providerId: String) async throws
+    
+    func fetchSavedSearches() async throws -> [String]
+    func addSavedSearch(_ query: String) async throws
+    func removeSavedSearch(_ query: String) async throws
+}
+
+
 // MARK: - OrderHistoryService Protocol
 protocol OrderHistoryService {
     func fetchOrders() async throws -> [Order]

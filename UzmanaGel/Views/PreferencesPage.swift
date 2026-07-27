@@ -6,6 +6,7 @@
 import SwiftUI
 import UserNotifications
 
+@MainActor
 struct PreferencesPage: View {
 
     // MARK: - Notification Prefs

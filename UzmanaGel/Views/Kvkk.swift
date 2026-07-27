@@ -1,6 +1,7 @@
 import SwiftUI
 import PDFKit
 
+@MainActor
 struct Kvkk: View {
 
     @Binding var hasRead: Bool

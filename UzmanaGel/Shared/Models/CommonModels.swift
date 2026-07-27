@@ -9,6 +9,9 @@ struct UserProfile: Codable, Identifiable, Equatable {
     var photoURL: String?
     var role: UserRole
     var memberSince: Date
+    var favoriteProviderIds: [String]?
+    var recentlyViewedProviderIds: [String]?
+    var savedSearches: [String]?
     
     enum UserRole: String, Codable {
         case customer = "customer"

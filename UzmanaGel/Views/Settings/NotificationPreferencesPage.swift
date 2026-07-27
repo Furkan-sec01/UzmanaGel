@@ -8,6 +8,7 @@
 import SwiftUI
 import UserNotifications
 
+@MainActor
 struct NotificationPreferencesPage: View {
 
     @AppStorage("notificationEnabled")

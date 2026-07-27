@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 
+@MainActor
 struct ProviderDashboardView: View {
     @StateObject private var viewModel = ProviderDashboardViewModel()
     @State private var showingEditProfile = false

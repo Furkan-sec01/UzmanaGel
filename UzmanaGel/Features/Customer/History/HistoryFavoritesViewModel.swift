@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import FirebaseFirestore
 
 @MainActor
 class HistoryFavoritesViewModel: ObservableObject {
@@ -17,7 +18,7 @@ class HistoryFavoritesViewModel: ObservableObject {
     // Favorites States
     @Published var favoriteProviders: [Provider] = []
     @Published var recentlyViewed: [Provider] = []
-    @Published var savedSearches: [String] = ["Su tesisatçısı Kadıköy", "Ev temizliği Beşiktaş", "Duvar boyama boyacı"]
+    @Published var savedSearches: [String] = []
     
     enum OrderFilter: String, CaseIterable {
         case all = "Tümü"
@@ -26,33 +27,38 @@ class HistoryFavoritesViewModel: ObservableObject {
     }
     
     private let orderHistoryService: OrderHistoryService
-    private let providerService: ProviderService
+    private let favoritesService: FavoritesService
+    private let serviceRepository = ServiceRepository()
     
-    init(orderHistoryService: OrderHistoryService = MockOrderHistoryService(),
-         providerService: ProviderService = MockProviderService()) {
+    init(orderHistoryService: OrderHistoryService = FirestoreOrderHistoryService(),
+         favoritesService: FavoritesService = FirestoreFavoritesService()) {
         self.orderHistoryService = orderHistoryService
-        self.providerService = providerService
+        self.favoritesService = favoritesService
     }
     
     func loadAllData() async {
         isLoading = true
         errorMessage = nil
+        
+        // Load orders independently
         do {
             self.orders = try await orderHistoryService.fetchOrders()
-            let prov = try await providerService.fetchProviderProfile()
-            // Construct a mock list of favorites using provider profile
-            self.favoriteProviders = [
-                prov,
-                Provider(id: "prv_2", businessName: "Umut Temizlik ve Halı Yıkama", rating: 4.9, experienceYears: 5, acceptsCreditCard: true, description: "Profesyonel temizlik ekibi", imageUrl: nil, isCertified: true),
-                Provider(id: "prv_3", businessName: "Barış Boya Badana", rating: 4.7, experienceYears: 8, acceptsCreditCard: false, description: "Hızlı ve tertemiz iç boyama hizmetleri", imageUrl: nil, isCertified: false)
-            ]
-            self.recentlyViewed = [
-                Provider(id: "prv_4", businessName: "Yılmaz Cam Balkon", rating: 4.6, experienceYears: 7, acceptsCreditCard: true, description: "Cam balkon imalat ve montajı", imageUrl: nil, isCertified: true),
-                Provider(id: "prv_5", businessName: "Kartal Çilingir", rating: 5.0, experienceYears: 15, acceptsCreditCard: true, description: "7/24 kapı ve kasa kilit servisi", imageUrl: nil, isCertified: true)
-            ]
         } catch {
-            self.errorMessage = error.localizedDescription
+            self.errorMessage = "Siparişler yüklenemedi: \(error.localizedDescription)"
         }
+        
+        // Load favorites independently (so orders failure doesn't block favorites)
+        do {
+            self.favoriteProviders = try await favoritesService.fetchFavoriteProviders()
+            self.recentlyViewed = try await favoritesService.fetchRecentlyViewed()
+            self.savedSearches = try await favoritesService.fetchSavedSearches()
+        } catch {
+            // Don't overwrite orders error — show favorites error only if no orders error
+            if self.errorMessage == nil {
+                self.errorMessage = "Favoriler yüklenemedi: \(error.localizedDescription)"
+            }
+        }
+        
         isLoading = false
     }
     
@@ -84,18 +90,22 @@ class HistoryFavoritesViewModel: ObservableObject {
         }
     }
     
-    // Actions
-    func repeatOrder(id: String) async {
-        isLoading = true
-        do {
-            let repeated = try await orderHistoryService.repeatOrder(orderId: id)
-            orders.insert(repeated, at: 0)
-            successMessage = "Tekrar sipariş talebi oluşturuldu."
-        } catch {
-            errorMessage = error.localizedDescription
+    // Fetch the original Service to navigate to ServiceDetailPage ("Hizmeti Yeniden Al")
+    func fetchServiceForReorder(order: Order) async -> Service? {
+        if let serviceId = order.serviceId, !serviceId.isEmpty {
+            if let service = try? await serviceRepository.fetchServicesByServiceIds([serviceId]).first {
+                return service
+            }
         }
-        isLoading = false
+        return await fetchFirstService(forProviderId: order.providerId)
     }
+
+    func fetchFirstService(forProviderId providerId: String?) async -> Service? {
+        guard let providerId = providerId, !providerId.isEmpty else { return nil }
+        let services = (try? await serviceRepository.fetchServicesByProviderId(providerId)) ?? []
+        return services.first
+    }
+
     
     func submitRating(orderId: String, rating: Int) async {
         isLoading = true
@@ -111,11 +121,37 @@ class HistoryFavoritesViewModel: ObservableObject {
     }
     
     func toggleFavorite(id: String) {
-        favoriteProviders.removeAll(where: { $0.id == id })
-        successMessage = "Favorilerden çıkarıldı."
+        Task {
+            do {
+                try await favoritesService.toggleFavorite(providerId: id)
+                await MainActor.run {
+                    favoriteProviders.removeAll(where: { $0.id == id })
+                    successMessage = "Favorilerden çıkarıldı."
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
     
     func deleteSavedSearch(at indexSet: IndexSet) {
-        savedSearches.remove(atOffsets: indexSet)
+        let indices = Array(indexSet)
+        Task {
+            do {
+                for index in indices {
+                    let query = savedSearches[index]
+                    try await favoritesService.removeSavedSearch(query)
+                }
+                await MainActor.run {
+                    savedSearches.remove(atOffsets: indexSet)
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
 }

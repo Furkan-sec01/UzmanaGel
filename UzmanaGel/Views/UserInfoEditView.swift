@@ -21,6 +21,7 @@ import FirebaseAuth
 import FirebaseStorage
 import FirebaseFirestore
 
+@MainActor
 struct UserInfoEditView: View {
 
     @Environment(\.dismiss) private var dismiss

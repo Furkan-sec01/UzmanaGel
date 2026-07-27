@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct AboutPage: View {
     @ObservedObject private var langManager = LanguageManager.shared
 

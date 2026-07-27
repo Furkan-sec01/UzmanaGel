@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct CustomerAddressListView: View {
     @StateObject private var viewModel = AddressListViewModel()
     @State private var showingAddAddress = false

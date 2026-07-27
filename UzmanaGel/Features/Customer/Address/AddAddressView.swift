@@ -9,6 +9,7 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
+@MainActor
 struct AddAddressView: View {
     let address: Address?
     var onSaveSuccess: (Address) -> Void
@@ -281,29 +282,32 @@ struct AddAddressView: View {
         let location = CLLocation(latitude: centerCoordinate.latitude, longitude: centerCoordinate.longitude)
         
         do {
-            let placemarks = try await CLGeocoder().reverseGeocodeLocation(location)
-            if let placemark = placemarks.first {
-                if let adminArea = placemark.administrativeArea {
-                    self.city = adminArea
-                }
-                if let subAdminArea = placemark.subAdministrativeArea ?? placemark.locality {
-                    self.district = subAdminArea
-                }
-                
-                var addressParts: [String] = []
-                if let thoroughfare = placemark.thoroughfare {
-                    addressParts.append(thoroughfare)
-                }
-                if let subThoroughfare = placemark.subThoroughfare {
-                    addressParts.append("No: \(subThoroughfare)")
-                    self.buildingNo = subThoroughfare
-                }
-                if let subLocality = placemark.subLocality {
-                    addressParts.append(subLocality)
-                }
-                
-                if !addressParts.isEmpty {
-                    self.fullAddress = addressParts.joined(separator: ", ")
+            if let request = MKReverseGeocodingRequest(location: location) {
+                let mapItems = try await request.mapItems
+                if let mapItem = mapItems.first {
+                    let placemark = mapItem.placemark
+                    if let adminArea = placemark.administrativeArea {
+                        self.city = adminArea
+                    }
+                    if let subAdminArea = placemark.subAdministrativeArea ?? placemark.locality {
+                        self.district = subAdminArea
+                    }
+                    
+                    var addressParts: [String] = []
+                    if let thoroughfare = placemark.thoroughfare {
+                        addressParts.append(thoroughfare)
+                    }
+                    if let subThoroughfare = placemark.subThoroughfare {
+                        addressParts.append("No: \(subThoroughfare)")
+                        self.buildingNo = subThoroughfare
+                    }
+                    if let subLocality = placemark.subLocality {
+                        addressParts.append(subLocality)
+                    }
+                    
+                    if !addressParts.isEmpty {
+                        self.fullAddress = addressParts.joined(separator: ", ")
+                    }
                 }
             }
         } catch {

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct ServiceCard: View {
 
     let service: Service

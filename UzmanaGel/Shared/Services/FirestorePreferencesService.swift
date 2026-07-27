@@ -10,6 +10,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import SwiftUI
 
+
 class FirestorePreferencesService: PreferencesService {
     private let db = Firestore.firestore()
     

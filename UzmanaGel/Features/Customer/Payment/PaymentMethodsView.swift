@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct PaymentMethodsView: View {
     @StateObject private var viewModel = PaymentMethodsViewModel()
     @State private var showingAddCard = false

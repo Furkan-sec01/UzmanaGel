@@ -48,6 +48,11 @@ final class ServiceDetailViewModel: ObservableObject {
         isLoading = true
 
         Task {
+            // Record as recently viewed
+            if !service.providerId.isEmpty {
+                try? await FirestoreFavoritesService().addRecentlyViewed(providerId: service.providerId)
+            }
+
             async let servicesTask: () = fetchProviderServices()
             async let galleryTask: () = fetchGalleryImages()
             async let addressTask: () = resolveAddress()

@@ -25,6 +25,7 @@ private enum ExpertReservationFilter: String, CaseIterable, Identifiable {
     }
 }
 
+@MainActor
 struct ExpertReservationsPage: View {
 
     @StateObject private var viewModel = ExpertReservationsViewModel()

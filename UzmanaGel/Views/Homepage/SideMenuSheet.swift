@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct SideMenuSheet: View {
     @EnvironmentObject var session: SessionViewModel
     @StateObject private var vm = SideMenuViewModel()

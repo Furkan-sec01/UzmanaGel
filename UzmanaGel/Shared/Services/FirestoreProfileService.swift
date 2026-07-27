@@ -12,6 +12,7 @@ import FirebaseStorage
 
 /// Real Firestore-backed implementation of ProfileService.
 /// Reads/writes from users/{uid} in Firestore and Firebase Storage for photos.
+
 class FirestoreProfileService: ProfileService {
 
     private let db = Firestore.firestore()

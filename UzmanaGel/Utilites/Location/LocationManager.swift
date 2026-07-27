@@ -4,7 +4,8 @@ import Combine
 
 ///LocationManager, kullanıcının GPS veya manuel seçilen konumunu koordinata dönüştürür, koordinatı şehir/ilçe adına çevirir ve hizmetlere olan kuş uçuşu mesafeyi hesaplar.
 
-final class LocationManager: ObservableObject, @unchecked Sendable {
+@MainActor
+final class LocationManager: ObservableObject {
 
     // MARK: - Published
 
@@ -60,7 +61,7 @@ final class LocationManager: ObservableObject, @unchecked Sendable {
         let query = district != nil ? "\(district!), \(city), Türkiye" : "\(city), Türkiye"
         isLoading = true
         geocoder.geocodeAddressString(query) { [weak self] placemarks, error in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isLoading = false
                 if let location = placemarks?.first?.location {
@@ -85,7 +86,7 @@ final class LocationManager: ObservableObject, @unchecked Sendable {
 
     fileprivate func reverseGeocode(_ location: CLLocation) {
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isLoading = false
 
@@ -123,7 +124,7 @@ private final class LocationDelegate: NSObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             guard let owner = self?.owner else { return }
             owner.coordinate = location.coordinate
             owner.reverseGeocode(location)
@@ -132,7 +133,7 @@ private final class LocationDelegate: NSObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("❌ Konum hatası: \(error.localizedDescription)")
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             guard let owner = self?.owner else { return }
             owner.isLoading = false
             owner.locationText = "Konum alınamadı"
@@ -141,7 +142,7 @@ private final class LocationDelegate: NSObject, CLLocationManagerDelegate {
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             guard let owner = self?.owner else { return }
             owner.authStatus = status
             switch status {

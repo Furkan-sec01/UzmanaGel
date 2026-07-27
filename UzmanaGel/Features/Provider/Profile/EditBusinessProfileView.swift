@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
 
+@MainActor
 struct EditBusinessProfileView: View {
     @StateObject private var viewModel = EditBusinessProfileViewModel()
     @Environment(\.dismiss) private var dismiss

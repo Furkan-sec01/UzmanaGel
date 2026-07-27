@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct SignUp: View {
 
     @StateObject private var vm = SignUpViewModel()
