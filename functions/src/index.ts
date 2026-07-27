@@ -128,6 +128,57 @@ export const rejectHelpRequest = onCall(async (request) => {
   };
 });
 
+/**
+ * Sends a push notification to a user.
+ *
+ * @param {string} userId Target user ID.
+ * @param {string} title Notification title.
+ * @param {string} body Notification body.
+ * @param {Record<string, string>} data Notification data.
+ * @return {Promise<void>} Completes after sending or skipping.
+ */
+async function sendUserPushNotification(
+  userId: string,
+  title: string,
+  body: string,
+  data: Record<string, string>
+): Promise<void> {
+  const userSnapshot = await db
+    .collection("users")
+    .doc(userId)
+    .get();
+
+  const fcmToken = userSnapshot.data()?.fcmToken;
+
+  if (typeof fcmToken !== "string" || !fcmToken.trim()) {
+    console.log("Kullanıcının FCM tokenı bulunamadı:", userId);
+    return;
+  }
+
+  const notificationId = await admin.messaging().send({
+    token: fcmToken,
+    notification: {
+      title: title,
+      body: body,
+    },
+    data: data,
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+        },
+      },
+    },
+  });
+
+  console.log(
+    "Kullanıcı bildirimi gönderildi:",
+    userId,
+    notificationId
+  );
+}
+
+
 export const sendMessageNotification = onDocumentCreated(
   "conversations/{conversationId}/messages/{messageId}",
   async (event) => {
@@ -777,7 +828,11 @@ export const moderateReviewReport = onCall(
       );
     }
 
-    if (action !== "dismiss" && action !== "remove") {
+    if (
+      action !== "dismiss" &&
+      action !== "remove" &&
+      action !== "flag"
+    ) {
       throw new HttpsError(
         "invalid-argument",
         "Geçersiz moderasyon işlemi."
@@ -814,10 +869,21 @@ export const moderateReviewReport = onCall(
         );
       }
 
-      if (reportData.status !== "pending") {
+      const reportStatus =
+        typeof reportData.status === "string" ?
+          reportData.status :
+          "";
+
+      const canProcessReport =
+        action === "flag" ?
+          reportStatus === "pending" :
+          reportStatus === "pending" ||
+            reportStatus === "flagged";
+
+      if (!canProcessReport) {
         throw new HttpsError(
           "failed-precondition",
-          "Bu rapor daha önce sonuçlandırılmış."
+          "Bu rapor mevcut işlem için uygun durumda değil."
         );
       }
 
@@ -853,6 +919,48 @@ export const moderateReviewReport = onCall(
         .collection("review_reports")
         .where("reviewId", "==", reviewId);
 
+      if (action === "flag") {
+        const flaggedReviewSnapshot =
+          await transaction.get(reviewRef);
+
+        if (!flaggedReviewSnapshot.exists) {
+          throw new HttpsError(
+            "not-found",
+            "İncelemeye alınacak yorum bulunamadı."
+          );
+        }
+
+        const flaggedReviewData =
+          flaggedReviewSnapshot.data();
+
+        if (
+          !flaggedReviewData ||
+          flaggedReviewData.providerId !== providerId
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Rapor ve yorum bilgileri eşleşmiyor."
+          );
+        }
+
+        transaction.update(reportRef, {
+          status: "flagged",
+          flaggedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+          flaggedBy: adminUid,
+          flagNote: resolutionNote,
+        });
+
+        transaction.update(reviewRef, {
+          isReported: true,
+          moderationStatus: "flagged",
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        return;
+      }
+
       if (action === "dismiss") {
         const [
           dismissedReviewSnapshot,
@@ -882,12 +990,22 @@ export const moderateReviewReport = onCall(
           );
         }
 
-        const hasOtherPendingReport =
-          dismissedReportsSnapshot.docs.some((document) => {
-            return (
-              document.id !== reportId &&
-              document.data().status === "pending"
-            );
+        const otherReports =
+          dismissedReportsSnapshot.docs.filter((document) => {
+            return document.id !== reportId;
+          });
+
+        const hasOtherOpenReport =
+          otherReports.some((document) => {
+            const status = document.data().status;
+
+            return status === "pending" ||
+              status === "flagged";
+          });
+
+        const hasOtherFlaggedReport =
+          otherReports.some((document) => {
+            return document.data().status === "flagged";
           });
 
         const dismissedArchiveRef = db
@@ -906,7 +1024,10 @@ export const moderateReviewReport = onCall(
         transaction.delete(reportRef);
 
         transaction.update(reviewRef, {
-          isReported: hasOtherPendingReport,
+          isReported: hasOtherOpenReport,
+          moderationStatus: hasOtherFlaggedReport ?
+            "flagged" :
+            admin.firestore.FieldValue.delete(),
           updatedAt:
             admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -945,13 +1066,45 @@ export const moderateReviewReport = onCall(
         );
       }
 
-      const pendingReportIds = relatedReportsSnapshot.docs
+      const openReportIds = relatedReportsSnapshot.docs
         .filter((document) => {
-          return document.data().status === "pending";
+          const status = document.data().status;
+
+          return status === "pending" ||
+            status === "flagged";
         })
         .map((document) => {
           return document.id;
         });
+
+      const reporterIds =
+        relatedReportsSnapshot.docs.reduce<string[]>(
+          (result, document) => {
+            const status = document.data().status;
+            const rawReporterId =
+              document.data().reporterId;
+
+            const reporterId =
+              typeof rawReporterId === "string" ?
+                rawReporterId.trim() :
+                "";
+
+            const isOpen =
+              status === "pending" ||
+              status === "flagged";
+
+            if (
+              isOpen &&
+              reporterId &&
+              !result.includes(reporterId)
+            ) {
+              result.push(reporterId);
+            }
+
+            return result;
+          },
+          []
+        );
 
       const archiveRef = db
         .collection("review_moderation_archive")
@@ -962,7 +1115,8 @@ export const moderateReviewReport = onCall(
         originalReviewId: reviewId,
         moderationAction: "removed",
         moderationReportId: reportId,
-        relatedReportIds: pendingReportIds,
+        relatedReportIds: openReportIds,
+        reporterIds: reporterIds,
         removedAt:
           admin.firestore.FieldValue.serverTimestamp(),
         removedBy: adminUid,
@@ -970,7 +1124,9 @@ export const moderateReviewReport = onCall(
       });
 
       relatedReportsSnapshot.docs.forEach((document) => {
-        if (document.data().status !== "pending") {
+        const status = document.data().status;
+
+        if (status !== "pending" && status !== "flagged") {
           return;
         }
 
@@ -990,3 +1146,126 @@ export const moderateReviewReport = onCall(
     };
   }
 );
+
+export const sendDismissedReviewReportNotification =
+  onDocumentCreated(
+    {
+      document: "review_report_archive/{archiveId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const archiveData = event.data?.data();
+
+      if (!archiveData || archiveData.status !== "dismissed") {
+        return;
+      }
+
+      const reporterId =
+        typeof archiveData.reporterId === "string" ?
+          archiveData.reporterId.trim() :
+          "";
+
+      const reviewId =
+        typeof archiveData.reviewId === "string" ?
+          archiveData.reviewId.trim() :
+          "";
+
+      if (!reporterId) {
+        console.log("Rapor sahibi bulunamadı.");
+        return;
+      }
+
+      await sendUserPushNotification(
+        reporterId,
+        "Yorum bildiriminiz incelendi",
+        "Bildiriminiz değerlendirildi. Yorum yayında kalmaya devam ediyor.",
+        {
+          type: "reviewModeration",
+          action: "dismissed",
+          reviewId: reviewId,
+        }
+      );
+    }
+  );
+
+
+export const sendRemovedReviewNotification =
+  onDocumentCreated(
+    {
+      document: "review_moderation_archive/{reviewId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const archiveData = event.data?.data();
+
+      if (
+        !archiveData ||
+        archiveData.moderationAction !== "removed"
+      ) {
+        return;
+      }
+
+      const reviewId =
+        String(event.params.reviewId ?? "").trim();
+
+      const customerId =
+        typeof archiveData.customerId === "string" ?
+          archiveData.customerId.trim() :
+          "";
+
+      const reporterIds: string[] = [];
+      const rawReporterIds = archiveData.reporterIds;
+
+      if (Array.isArray(rawReporterIds)) {
+        rawReporterIds.forEach((value) => {
+          if (typeof value !== "string") {
+            return;
+          }
+
+          const reporterId = value.trim();
+
+          if (
+            reporterId &&
+            !reporterIds.includes(reporterId)
+          ) {
+            reporterIds.push(reporterId);
+          }
+        });
+      }
+
+      const notificationJobs = reporterIds.map(
+        async (reporterId) => {
+          await sendUserPushNotification(
+            reporterId,
+            "Bildirilen yorum kaldırıldı",
+            "Bildiriminiz sonucunda yorum yayından kaldırıldı.",
+            {
+              type: "reviewModeration",
+              action: "removed",
+              reviewId: reviewId,
+            }
+          );
+        }
+      );
+
+      if (
+        customerId &&
+        !reporterIds.includes(customerId)
+      ) {
+        notificationJobs.push(
+          sendUserPushNotification(
+            customerId,
+            "Yorumunuz kaldırıldı",
+            "Yorumunuz moderasyon kuralları nedeniyle yayından kaldırıldı.",
+            {
+              type: "reviewModeration",
+              action: "removed",
+              reviewId: reviewId,
+            }
+          )
+        );
+      }
+
+      await Promise.all(notificationJobs);
+    }
+  );
