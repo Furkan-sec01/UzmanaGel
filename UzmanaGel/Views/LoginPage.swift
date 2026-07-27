@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AuthenticationServices
 
 struct LoginPage: View {
     @EnvironmentObject private var session: SessionViewModel
@@ -193,7 +194,28 @@ struct LoginPage: View {
                         .opacity(vm.attemptTracker.isLocked ? 0.4 : 1)
                     }
                     .padding(.top, 10)
-
+                    SignInWithAppleButton(
+                        .continue,
+                        onRequest: { request in
+                            vm.prepareAppleRequest(request)
+                        },
+                        onCompletion: { result in
+                            vm.handleAppleCompletion(result)
+                        }
+                    )
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .cornerRadius(14)
+                    .disabled(
+                        vm.attemptTracker.isLocked ||
+                        vm.isLoading
+                    )
+                    .opacity(
+                        vm.attemptTracker.isLocked
+                            ? 0.4
+                            : 1
+                    )
                     // Sign up + Expert
                     VStack(spacing: 10) {
                         NavigationLink {
