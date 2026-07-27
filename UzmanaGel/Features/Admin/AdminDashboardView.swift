@@ -39,8 +39,6 @@ struct AdminDashboardView: View {
                         )
                     }
                     .buttonStyle(.plain)
-
-                    futureModulesSection
                 }
                 .padding(16)
             }
@@ -80,11 +78,9 @@ struct AdminDashboardView: View {
                 Text("Admin Hesabı")
                     .font(.headline)
 
-                Text(
-                    "Platform yönetimi ve moderasyon işlemleri"
-                )
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Text("Platform yönetimi ve moderasyon işlemleri")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -157,60 +153,5 @@ struct AdminDashboardView: View {
             )
             .stroke(Color.primary.opacity(0.08))
         }
-    }
-
-    private var futureModulesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Sonraki Yönetim Modülleri")
-                .font(.title3.bold())
-
-            futureModuleRow(
-                title: "Uzman Başvuruları",
-                systemImage: "person.badge.clock"
-            )
-
-            futureModuleRow(
-                title: "Doğrulama Belgeleri",
-                systemImage: "doc.text.magnifyingglass"
-            )
-
-            futureModuleRow(
-                title: "İlan Moderasyonu",
-                systemImage: "rectangle.stack.badge.person.crop"
-            )
-
-            futureModuleRow(
-                title: "Kullanıcı Yönetimi",
-                systemImage: "person.2.fill"
-            )
-        }
-    }
-
-    private func futureModuleRow(
-        title: String,
-        systemImage: String
-    ) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .frame(width: 32)
-                .foregroundStyle(.secondary)
-
-            Text(title)
-                .font(.subheadline.weight(.medium))
-
-            Spacer()
-
-            Text("Yakında")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-        }
-        .padding(14)
-        .background(cardColor.opacity(0.7))
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-        )
     }
 }
