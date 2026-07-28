@@ -127,6 +127,7 @@ struct Provider: Codable, Identifiable, Equatable {
     var id: String
     var businessName: String
     var rating: Double
+    var reviewCount: Int? // Added to match service logic
     var experienceYears: Int
     var acceptsCreditCard: Bool
     var description: String
