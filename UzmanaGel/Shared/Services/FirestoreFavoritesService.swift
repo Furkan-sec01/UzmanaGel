@@ -140,6 +140,7 @@ class FirestoreFavoritesService: FavoritesService {
         let id = data["providerId"] as? String ?? doc.documentID
         let businessName = data["businessName"] as? String ?? "Bilinmeyen Usta"
         let rating = data["rating"] as? Double ?? 0.0
+        let reviewCount = data["reviewCount"] as? Int ?? 0
         let experienceYears = data["experienceYears"] as? Int ?? 0
         let acceptsCreditCard = data["acceptsCreditCard"] as? Bool ?? false
         let description = data["description"] as? String ?? ""
@@ -151,6 +152,7 @@ class FirestoreFavoritesService: FavoritesService {
             id: id,
             businessName: businessName,
             rating: rating,
+            reviewCount: reviewCount,
             experienceYears: experienceYears,
             acceptsCreditCard: acceptsCreditCard,
             description: description,

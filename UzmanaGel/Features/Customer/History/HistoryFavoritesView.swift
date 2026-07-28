@@ -26,8 +26,8 @@ struct HistoryFavoritesView: View {
             VStack(spacing: 0) {
                 // ── Main Tab Picker ──────────────────────────────────────
                 HStack(spacing: 0) {
-                    mainTabButton(title: "Geçmiş Siparişler", icon: "clock.fill", index: 0)
-                    mainTabButton(title: "Favoriler & Arama", icon: "heart.fill",  index: 1)
+                    mainTabButton(title: "Geçmiş Siparişler".localized, icon: "clock.fill", index: 0)
+                    mainTabButton(title: "Favoriler & Arama".localized, icon: "heart.fill",  index: 1)
                 }
                 .padding(6)
                 .background(appCard)
@@ -43,7 +43,7 @@ struct HistoryFavoritesView: View {
                     Spacer()
                     VStack(spacing: 14) {
                         ProgressView().tint(appPrimary).scaleEffect(1.2)
-                        Text("Yükleniyor...").font(.footnote).foregroundColor(appSecondary)
+                        Text("Yükleniyor...".localized).font(.footnote).foregroundColor(appSecondary)
                     }
                     Spacer()
                 } else {
@@ -58,7 +58,7 @@ struct HistoryFavoritesView: View {
             if let msg = viewModel.successMessage { toast(msg, isError: false) }
             if let msg = viewModel.errorMessage   { toast(msg, isError: true)  }
         }
-        .navigationTitle("Geçmiş ve Favoriler")
+        .navigationTitle("Geçmiş ve Favoriler".localized)
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadAllData() }
         .navigationDestination(isPresented: $navigateToService) {
@@ -140,7 +140,7 @@ struct HistoryFavoritesView: View {
         return Button {
             withAnimation(.easeInOut(duration: 0.18)) { viewModel.orderFilter = filter }
         } label: {
-            Text(filter.rawValue)
+            Text(filter.rawValue.localized)
                 .font(.caption2)
                 .fontWeight(sel ? .bold : .regular)
                 .foregroundColor(sel ? appPrimary : appSecondary)
@@ -162,9 +162,9 @@ struct HistoryFavoritesView: View {
                     .font(.system(size: 36))
                     .foregroundColor(appPrimary.opacity(0.5))
             }
-            Text("Sipariş Geçmişiniz Boş")
+            Text("Sipariş Geçmişiniz Boş".localized)
                 .font(.headline).fontWeight(.bold).foregroundColor(appText)
-            Text("Daha önce hiçbir hizmet siparişi oluşturmadınız.")
+            Text("Daha önce hiçbir hizmet siparişi oluşturmadınız.".localized)
                 .font(.footnote).foregroundColor(appSecondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 32)
             Spacer()
@@ -223,7 +223,7 @@ struct HistoryFavoritesView: View {
                             Button { ratingTargetId = order.id } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: "star")
-                                    Text("Puan Ver")
+                                    Text("Puan Ver".localized)
                                 }
                                 .font(.caption2)
                                 .fontWeight(.semibold)
@@ -252,7 +252,7 @@ struct HistoryFavoritesView: View {
                                 ProgressView().scaleEffect(0.65).tint(appPrimary)
                             } else {
                                 Image(systemName: "arrow.clockwise.circle")
-                                Text("Hizmeti Yeniden Al")
+                                Text("Hizmeti Yeniden Al".localized)
                             }
                         }
                         .font(.caption2)
@@ -305,10 +305,10 @@ struct HistoryFavoritesView: View {
             VStack(alignment: .leading, spacing: 24) {
 
                 // ── Favorite Providers ──────────────────────────────────
-                sectionTitle("Favori Ustalarım", icon: "heart.fill", color: Color(red: 0.8, green: 0.2, blue: 0.2))
+                sectionTitle("Favori Ustalarım".localized, icon: "heart.fill", color: Color(red: 0.8, green: 0.2, blue: 0.2))
 
                 if viewModel.favoriteProviders.isEmpty {
-                    emptyRow("Henüz favori listenize kimseyi eklemediniz.")
+                    emptyRow("Henüz favori listenize kimseyi eklemediniz.".localized)
                 } else {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                         ForEach(viewModel.favoriteProviders) { providerCard($0) }
@@ -317,10 +317,10 @@ struct HistoryFavoritesView: View {
                 }
 
                 // ── Recently Viewed ─────────────────────────────────────
-                sectionTitle("Son Görüntülenenler", icon: "eye.fill", color: appPrimary)
+                sectionTitle("Son Görüntülenenler".localized, icon: "eye.fill", color: appPrimary)
 
                 if viewModel.recentlyViewed.isEmpty {
-                    emptyRow("Henüz bir usta profiline bakmadınız.")
+                    emptyRow("Henüz bir usta profiline bakmadınız.".localized)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
@@ -331,10 +331,10 @@ struct HistoryFavoritesView: View {
                 }
 
                 // ── Saved Searches ──────────────────────────────────────
-                sectionTitle("Kayıtlı Aramalar", icon: "magnifyingglass.circle.fill", color: appAccent.opacity(0.8))
+                sectionTitle("Kayıtlı Aramalar".localized, icon: "magnifyingglass.circle.fill", color: appAccent.opacity(0.8))
 
                 if viewModel.savedSearches.isEmpty {
-                    emptyRow("Kayıtlı arama bulunmuyor.")
+                    emptyRow("Kayıtlı arama bulunmuyor.".localized)
                 } else {
                     VStack(spacing: 0) {
                         ForEach(viewModel.savedSearches, id: \.self) { query in
@@ -424,7 +424,10 @@ struct HistoryFavoritesView: View {
 
             HStack(spacing: 3) {
                 Image(systemName: "star.fill").font(.caption2).foregroundColor(appAccent)
-                Text(String(format: "%.1f", p.rating))
+                
+                let displayRating = (p.reviewCount ?? 0) > 0 ? p.rating : 0.0
+                
+                Text(String(format: "%.1f", displayRating))
                     .font(.caption2).fontWeight(.bold).foregroundColor(appText)
             }
 
@@ -447,7 +450,7 @@ struct HistoryFavoritesView: View {
                     if contactProviderLoading == p.id {
                         ProgressView().scaleEffect(0.7).tint(.white)
                     } else {
-                        Text("İletişime Geç")
+                        Text("İletişime Geç".localized)
                     }
                 }
                 .font(.caption2).fontWeight(.bold)
@@ -502,10 +505,10 @@ struct HistoryFavoritesView: View {
             }
         } else {
             NavigationStack {
-                Text("Sipariş bulunamadı.")
+                Text("Sipariş bulunamadı.".localized)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Kapat") { ratingTargetId = nil }
+                            Button("Kapat".localized) { ratingTargetId = nil }
                         }
                     }
             }

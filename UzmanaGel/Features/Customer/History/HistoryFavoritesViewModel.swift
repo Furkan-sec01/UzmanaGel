@@ -77,7 +77,7 @@ class HistoryFavoritesViewModel: ObservableObject {
     // Group orders by month-year string
     var groupedOrders: [(key: String, value: [Order])] {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.locale = Locale(identifier: LanguageManager.shared.languageCode == "en" ? "en_US" : "tr_TR")
         formatter.dateFormat = "MMMM yyyy"
         
         let grouped = Dictionary(grouping: filteredOrders) { order -> String in
