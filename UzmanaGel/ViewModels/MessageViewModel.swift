@@ -98,6 +98,13 @@ final class MessageViewModel: ObservableObject {
         listener = nil
     }
     
+    func deleteConversation(conversationId: String) async {
+        do {
+            try await repository.deleteConversation(conversationId: conversationId)
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
     
 }
 

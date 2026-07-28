@@ -318,6 +318,15 @@ final class MessageRepository {
         try await batch.commit()
     }
     
+    // MARK: - Delete Conversation
+
+    func deleteConversation(conversationId: String) async throws {
+        let trimmedId = conversationId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedId.isEmpty else { return }
+        
+        try await db.collection("conversations").document(trimmedId).delete()
+    }
+    
     // MARK: - Map Conversation
 
     /// Convert FireStore Data to Swift Model

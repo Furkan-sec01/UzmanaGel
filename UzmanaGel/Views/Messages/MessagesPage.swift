@@ -36,28 +36,37 @@ struct MessagesPage: View {
     
     // MARK: - Conversation Scroll List
     private var conversationScrollView: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-                // Top Header Summary Bar
-                headerStatusBar
+        List {
+            // Top Header Summary Bar
+            headerStatusBar
+                .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
                 
-                // Cards
-                LazyVStack(spacing: 12) {
-                    ForEach(vm.conversations) { conversation in
-                        NavigationLink {
-                            ChatDetailPage(conversation: conversation)
-                        } label: {
-                            conversationCard(conversation)
-                        }
-                        .buttonStyle(ChatRowButtonStyle())
+            ForEach(vm.conversations) { conversation in
+                ZStack {
+                    NavigationLink(destination: ChatDetailPage(conversation: conversation)) {
+                        EmptyView()
                     }
+                    .opacity(0)
+                    
+                    conversationCard(conversation)
                 }
-                
-                Spacer(minLength: 32)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .onDelete { indexSet in
+                guard let index = indexSet.first else { return }
+                let conversationId = vm.conversations[index].id
+                Task {
+                    await vm.deleteConversation(conversationId: conversationId)
+                }
+            }
         }
+        .listStyle(PlainListStyle())
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
     }
     
     // MARK: - Header Status Bar
