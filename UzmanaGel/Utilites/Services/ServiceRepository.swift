@@ -292,7 +292,6 @@ final class ServiceRepository {
             "isActive": true,
             "description": profile.about ?? "",
             "image": profile.profileImageURL ?? "",
-            "phoneNumber": profile.phoneNumber,
             "rating": existingRating,
             "reviewCount": existingReviewCount,
             "experienceYears": profile.experienceYears,

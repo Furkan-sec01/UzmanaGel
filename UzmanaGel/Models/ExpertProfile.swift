@@ -239,6 +239,54 @@ struct ExpertProfile: Codable, Identifiable {
         self.reviewedBy = reviewedBy
     }
 
+    // Applies private data during migration.
+    mutating func applyPrivateData(
+        _ privateData: ProviderPrivateData
+    ) {
+        if !privateData.email.isEmpty {
+            email = privateData.email
+        }
+
+        if !privateData.phoneNumber.isEmpty {
+            phoneNumber = privateData.phoneNumber
+        }
+
+        if let value = privateData.taxNumber,
+           !value.isEmpty {
+            taxNumber = value
+        }
+
+        if let value = privateData.bankName,
+           !value.isEmpty {
+            bankName = value
+        }
+
+        if let value = privateData.iban,
+           !value.isEmpty {
+            iban = value
+        }
+
+        if let value = privateData.accountHolderName,
+           !value.isEmpty {
+            accountHolderName = value
+        }
+
+        if !privateData.certificateURLs.isEmpty {
+            certificateURLs = privateData.certificateURLs
+        }
+
+        if let value = privateData.idFrontURL,
+           !value.isEmpty {
+            idFrontURL = value
+        }
+
+        if let value = privateData.idBackURL,
+           !value.isEmpty {
+            idBackURL = value
+        }
+    }
+
+
     /// Admin tarafından onaylanmış mı
     var isApproved: Bool {
         let s = status.lowercased()
