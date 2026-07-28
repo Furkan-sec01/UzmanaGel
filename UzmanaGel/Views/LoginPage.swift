@@ -193,30 +193,36 @@ struct LoginPage: View {
                         .buttonStyle(.plain)
                         .disabled(vm.attemptTracker.isLocked)
                         .opacity(vm.attemptTracker.isLocked ? 0.4 : 1)
+
+                        ZStack {
+                            Circle()
+                                .fill(Color.black)
+                                .frame(width: 54, height: 54)
+                                .shadow(radius: 6, y: 3)
+                                .overlay(
+                                    Image(systemName: "applelogo")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.white)
+                                        .padding(.bottom, 2)
+                                )
+                            
+                            SignInWithAppleButton(
+                                .continue,
+                                onRequest: { request in
+                                    vm.prepareAppleRequest(request)
+                                },
+                                onCompletion: { result in
+                                    vm.handleAppleCompletion(result)
+                                }
+                            )
+                            .frame(width: 54, height: 54)
+                            .blendMode(.destinationOver)
+                            .opacity(0.015)
+                        }
+                        .disabled(vm.attemptTracker.isLocked || vm.isLoading)
+                        .opacity(vm.attemptTracker.isLocked ? 0.4 : 1)
                     }
                     .padding(.top, 10)
-                    SignInWithAppleButton(
-                        .continue,
-                        onRequest: { request in
-                            vm.prepareAppleRequest(request)
-                        },
-                        onCompletion: { result in
-                            vm.handleAppleCompletion(result)
-                        }
-                    )
-                    .signInWithAppleButtonStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 54)
-                    .cornerRadius(14)
-                    .disabled(
-                        vm.attemptTracker.isLocked ||
-                        vm.isLoading
-                    )
-                    .opacity(
-                        vm.attemptTracker.isLocked
-                            ? 0.4
-                            : 1
-                    )
                     // Sign up + Expert
                     VStack(spacing: 10) {
                         NavigationLink {
