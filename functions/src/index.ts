@@ -1498,3 +1498,421 @@ export const moderateProviderApplication = onCall(
     };
   }
 );
+// MARK: - Account Deletion
+
+/**
+ * Deletes documents owned by a user.
+ *
+ * @param {string} collectionName Firestore collection name.
+ * @param {string} ownerField Field containing the user ID.
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after deletion.
+ */
+async function deleteOwnedDocuments(
+  collectionName: string,
+  ownerField: string,
+  uid: string
+): Promise<void> {
+  let hasMoreDocuments = true;
+
+  while (hasMoreDocuments) {
+    const snapshot = await db
+      .collection(collectionName)
+      .where(ownerField, "==", uid)
+      .limit(200)
+      .get();
+
+    hasMoreDocuments = !snapshot.empty;
+
+    if (!hasMoreDocuments) {
+      return;
+    }
+
+    const batch = db.batch();
+
+    snapshot.docs.forEach((document) => {
+      batch.delete(document.ref);
+    });
+
+    await batch.commit();
+  }
+}
+
+/**
+ * Anonymizes reservations linked to a deleted user.
+ *
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after anonymization.
+ */
+async function anonymizeUserReservations(
+  uid: string
+): Promise<void> {
+  const customerReservations = await db
+    .collection("reservations")
+    .where("customerId", "==", uid)
+    .get();
+
+  if (!customerReservations.empty) {
+    const customerWriter = db.bulkWriter();
+
+    customerReservations.docs.forEach((document) => {
+      customerWriter.set(
+        document.ref,
+        {
+          customerName: "Silinmiş Kullanıcı",
+          customerPhone:
+            admin.firestore.FieldValue.delete(),
+          customerPhotoURL:
+            admin.firestore.FieldValue.delete(),
+          address:
+            admin.firestore.FieldValue.delete(),
+          specialRequests:
+            admin.firestore.FieldValue.delete(),
+          attachments:
+            admin.firestore.FieldValue.delete(),
+          customerAccountDeleted: true,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await customerWriter.close();
+  }
+
+  const providerReservations = await db
+    .collection("reservations")
+    .where("providerId", "==", uid)
+    .get();
+
+  if (!providerReservations.empty) {
+    const providerWriter = db.bulkWriter();
+
+    providerReservations.docs.forEach((document) => {
+      providerWriter.set(
+        document.ref,
+        {
+          providerName: "Silinmiş Uzman",
+          providerPhone:
+            admin.firestore.FieldValue.delete(),
+          providerPhotoURL:
+            admin.firestore.FieldValue.delete(),
+          providerAccountDeleted: true,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await providerWriter.close();
+  }
+}
+
+/**
+ * Anonymizes reviews linked to a deleted user.
+ *
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after anonymization.
+ */
+async function anonymizeUserReviews(
+  uid: string
+): Promise<void> {
+  const customerReviews = await db
+    .collection("reviews")
+    .where("customerId", "==", uid)
+    .get();
+
+  if (!customerReviews.empty) {
+    const customerWriter = db.bulkWriter();
+
+    customerReviews.docs.forEach((document) => {
+      customerWriter.set(
+        document.ref,
+        {
+          customerName: "Silinmiş Kullanıcı",
+          customerPhotoURL:
+            admin.firestore.FieldValue.delete(),
+          comment: "",
+          photos: [],
+          customerAccountDeleted: true,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await customerWriter.close();
+  }
+
+  const providerReviews = await db
+    .collection("reviews")
+    .where("providerId", "==", uid)
+    .get();
+
+  if (!providerReviews.empty) {
+    const providerWriter = db.bulkWriter();
+
+    providerReviews.docs.forEach((document) => {
+      providerWriter.set(
+        document.ref,
+        {
+          providerAccountDeleted: true,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await providerWriter.close();
+  }
+}
+
+/**
+ * Anonymizes conversations and messages.
+ *
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after anonymization.
+ */
+async function anonymizeUserConversations(
+  uid: string
+): Promise<void> {
+  const conversations = await db
+    .collection("conversations")
+    .where("participantIds", "array-contains", uid)
+    .get();
+
+  for (const conversation of conversations.docs) {
+    const namePath =
+      new admin.firestore.FieldPath(
+        "participantNames",
+        uid
+      );
+
+    const photoPath =
+      new admin.firestore.FieldPath(
+        "participantPhotoURLs",
+        uid
+      );
+
+    const unreadPath =
+      new admin.firestore.FieldPath(
+        "unreadCounts",
+        uid
+      );
+
+    await conversation.ref.update(
+      namePath,
+      "Silinmiş Kullanıcı",
+      photoPath,
+      admin.firestore.FieldValue.delete(),
+      unreadPath,
+      0,
+      "updatedAt",
+      admin.firestore.FieldValue.serverTimestamp()
+    );
+
+    const sentMessages = await conversation.ref
+      .collection("messages")
+      .where("senderId", "==", uid)
+      .get();
+
+    if (sentMessages.empty) {
+      continue;
+    }
+
+    const messageWriter = db.bulkWriter();
+
+    sentMessages.docs.forEach((message) => {
+      messageWriter.set(
+        message.ref,
+        {
+          text: "Bu mesaj silinmiş bir hesaba aittir.",
+          senderAccountDeleted: true,
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await messageWriter.close();
+  }
+}
+
+/**
+ * Deletes all Storage files belonging to the user.
+ *
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after deletion.
+ */
+async function deleteUserStorageFiles(
+  uid: string
+): Promise<void> {
+  const bucket = admin.storage().bucket();
+
+  const prefixes = [
+    `certificates/${uid}/`,
+    `verification_documents/${uid}/`,
+    `portfolio/${uid}/`,
+    `listing_images/${uid}/`,
+    `profile_photos/${uid}/`,
+    `review_photos/${uid}/`,
+  ];
+
+  await Promise.all(
+    prefixes.map(async (prefix) => {
+      await bucket.deleteFiles({
+        prefix: prefix,
+      });
+    })
+  );
+}
+
+export const deleteUserAccount = onCall(
+  {
+    region: "europe-west1",
+    timeoutSeconds: 540,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Hesabı silmek için giriş yapmalısınız."
+      );
+    }
+
+    if (request.auth.token.admin === true) {
+      throw new HttpsError(
+        "permission-denied",
+        "Admin hesabı uygulama içinden silinemez."
+      );
+    }
+
+    const confirmation =
+      typeof request.data?.confirmation === "string" ?
+        request.data.confirmation.trim() :
+        "";
+
+    if (confirmation !== "DELETE_MY_ACCOUNT") {
+      throw new HttpsError(
+        "invalid-argument",
+        "Hesap silme onayı geçersiz."
+      );
+    }
+
+    const uid = request.auth.uid;
+
+    const authTime = Number(
+      request.auth.token.auth_time ?? 0
+    );
+
+    const currentTime = Math.floor(
+      Date.now() / 1000
+    );
+
+    const secondsSinceLogin =
+      currentTime - authTime;
+
+    if (
+      !authTime ||
+      secondsSinceLogin > 600
+    ) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Hesabı silmeden önce yeniden giriş yapmalısınız."
+      );
+    }
+
+    try {
+      // Keep shared records but remove personal information.
+      await anonymizeUserConversations(uid);
+      await anonymizeUserReservations(uid);
+      await anonymizeUserReviews(uid);
+
+      // Delete content owned only by this user.
+      await deleteOwnedDocuments(
+        "services",
+        "providerId",
+        uid
+      );
+
+      await deleteOwnedDocuments(
+        "notifications",
+        "userId",
+        uid
+      );
+
+      // Delete booked slot subcollections.
+      await db.recursiveDelete(
+        db
+          .collection("provider_booked_slots")
+          .doc(uid)
+      );
+
+      // Delete private Storage files.
+      await deleteUserStorageFiles(uid);
+
+      const batch = db.batch();
+
+      batch.delete(
+        db.collection("favorites").doc(uid)
+      );
+
+      batch.delete(
+        db.collection("service_providers").doc(uid)
+      );
+
+      batch.delete(
+        db.collection("provider_private_data").doc(uid)
+      );
+
+      batch.delete(
+        db.collection("users").doc(uid)
+      );
+
+      await batch.commit();
+      // Delete Firebase Authentication account last.
+      await admin.auth().deleteUser(uid);
+
+      console.log(
+        "User account deleted:",
+        uid
+      );
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error(
+        "User account deletion failed:",
+        uid,
+        error
+      );
+
+      throw new HttpsError(
+        "internal",
+        "Hesap silinirken beklenmeyen bir hata oluştu."
+      );
+    }
+  }
+);
+
+
+/**
+ * Checks whether a Firestore field contains a usable value.
+ *
+ * @param {unknown} value Field value to check.
+ * @return {boolean} True when the value is not empty.
+ */

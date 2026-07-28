@@ -372,8 +372,140 @@ service cloud.firestore {
 
     match /service_providers/{providerId} {
       allow read: if signedIn();
-      allow create: if isOwner(providerId);
-      allow update: if isOwner(providerId);
+
+      // Provider can create only their own draft profile.
+      allow create: if isOwner(providerId)
+        && request.resource.data.providerId == providerId
+        && request.resource.data.status in [
+          "Draft",
+          "draft"
+        ]
+        && request.resource.data.isActive == false
+        && request.resource.data.rating == 0
+        && !request.resource.data.keys().hasAny([
+          "email",
+          "phoneNumber",
+          "taxNumber",
+          "bankName",
+          "iban",
+          "accountHolderName",
+          "certificateURLs",
+          "idFrontURL",
+          "idBackURL",
+          "verificationStatus",
+          "adminNote",
+          "applicationDecision",
+          "reviewedAt",
+          "reviewedBy"
+        ]);
+
+      allow update: if isOwner(providerId)
+        && resource.data.providerId == providerId
+        && request.resource.data.providerId == providerId
+
+        // Sensitive fields must never exist in this public document.
+        && !request.resource.data.keys().hasAny([
+          "email",
+          "phoneNumber",
+          "taxNumber",
+          "bankName",
+          "iban",
+          "accountHolderName",
+          "certificateURLs",
+          "idFrontURL",
+          "idBackURL"
+        ])
+
+        && (
+          // Normal public profile update.
+          (
+            !request.resource.data
+              .diff(resource.data)
+              .affectedKeys()
+              .hasAny([
+                "providerId",
+                "status",
+                "verificationStatus",
+                "adminNote",
+                "applicationDecision",
+                "reviewedAt",
+                "reviewedBy",
+                "createdAt",
+                "isActive",
+                "rating",
+                "reviewCount",
+                "completedJobsCount"
+              ])
+          )
+
+          ||
+
+          // Provider can submit only an allowed application.
+          (
+            request.resource.data
+              .diff(resource.data)
+              .affectedKeys()
+              .hasOnly([
+                "status"
+              ])
+            && request.resource.data.status == "Pending"
+            && resource.data.status in [
+              "Draft",
+              "draft",
+              "rejected",
+              "Rejected",
+              "documentsRequired",
+              "DocumentsRequired",
+              "documentsrequired"
+            ]
+          )
+        );
+
+      allow delete: if false;
+    }
+
+    // MARK: - Provider Private Data
+
+    match /provider_private_data/{providerId} {
+      allow get: if isOwner(providerId) || isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isOwner(providerId)
+        && request.resource.data.providerId == providerId
+        && request.resource.data.keys().hasOnly([
+          "providerId",
+          "email",
+          "phoneNumber",
+          "taxNumber",
+          "bankName",
+          "iban",
+          "accountHolderName",
+          "certificateURLs",
+          "idFrontURL",
+          "idBackURL",
+          "createdAt",
+          "updatedAt"
+        ]);
+
+      allow update: if isOwner(providerId)
+        && resource.data.providerId == providerId
+        && request.resource.data.providerId == providerId
+        && request.resource.data
+          .diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            "email",
+            "phoneNumber",
+            "taxNumber",
+            "bankName",
+            "iban",
+            "accountHolderName",
+            "certificateURLs",
+            "idFrontURL",
+            "idBackURL",
+            "updatedAt"
+          ]);
+
       allow delete: if false;
     }
 
