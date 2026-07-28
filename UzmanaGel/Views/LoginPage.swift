@@ -13,46 +13,46 @@ struct LoginPage: View {
     @EnvironmentObject private var session: SessionViewModel
     @StateObject private var vm = LoginViewModel()
     @ObservedObject private var langManager = LanguageManager.shared
-
+    
     @State private var rememberMe = false
     @State private var isPasswordVisible = false
-
+    
     // Alert göstermek için (vm.errorMessage gelince true yapacağız)
     @State private var showError = false
-
+    
     // Navigation stack control (geri dönüş olmaması için)
     @State private var path = NavigationPath()
-
+    
     private enum ExpertSignupDestination: Hashable { case flow }
-
+    
     var body: some View {
         NavigationStack(path: $path) {
-
+            
             ZStack {
                 Color("BackgroundColor")
                     .ignoresSafeArea()
-
+                
                 VStack(spacing: 18) {
-
+                    
                     Spacer().frame(height: 28)
-
+                    
                     Image("Logo")
                         .resizable()
                         .scaledToFill()
                         .frame(width: 110, height: 110)
                         .clipShape(Circle())
                         .shadow(radius: 10)
-
+                    
                     Text("Hoşgeldiniz".localized)
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.primary)
                         .padding(.top, 6)
-
+                    
                     // Email
                     HStack(spacing: 10) {
                         Image(systemName: "envelope")
                             .foregroundColor(.secondary)
-
+                        
                         TextField("E-posta".localized, text: $vm.email)
                             .keyboardType(.emailAddress)
                             .textInputAutocapitalization(.never)
@@ -66,12 +66,12 @@ struct LoginPage: View {
                             .stroke(Color.black.opacity(0.08), lineWidth: 1)
                     )
                     .cornerRadius(14)
-
+                    
                     // Password
                     HStack(spacing: 10) {
                         Image(systemName: "lock")
                             .foregroundColor(.secondary)
-
+                        
                         Group {
                             if isPasswordVisible {
                                 TextField("Şifre".localized, text: $vm.password)
@@ -81,7 +81,7 @@ struct LoginPage: View {
                         }
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-
+                        
                         Button {
                             isPasswordVisible.toggle()
                         } label: {
@@ -98,7 +98,7 @@ struct LoginPage: View {
                             .stroke(Color.black.opacity(0.08), lineWidth: 1)
                     )
                     .cornerRadius(14)
-
+                    
                     // Remember + Forgot
                     HStack {
                         Button {
@@ -108,16 +108,16 @@ struct LoginPage: View {
                                 Image(systemName: rememberMe ? "checkmark.square.fill" : "square")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(rememberMe ? Color("PrimaryColor") : .secondary)
-
+                                
                                 Text("Beni Hatırla".localized)
                                     .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(Color("PrimaryColor"))
                             }
                         }
                         .buttonStyle(.plain)
-
+                        
                         Spacer()
-
+                        
                         NavigationLink {
                             ForgotPasswordPage(initialEmail: vm.email)
                         } label: {
@@ -128,7 +128,7 @@ struct LoginPage: View {
                         .buttonStyle(.plain)
                     }
                     .padding(.top, 2)
-
+                    
                     // Login Button
                     Button {
                         vm.login()
@@ -145,7 +145,7 @@ struct LoginPage: View {
                     .buttonStyle(.plain)
                     .disabled(vm.attemptTracker.isLocked)
                     .padding(.top, 15)
-
+                    
                     // Divider
                     HStack(spacing: 12) {
                         Rectangle().frame(height: 1).foregroundColor(Color.black.opacity(0.08))
@@ -155,13 +155,13 @@ struct LoginPage: View {
                         Rectangle().frame(height: 1).foregroundColor(Color.black.opacity(0.08))
                     }
                     .padding(.top, 10)
-
+                    
                     // Social Buttons
                     HStack(spacing: 25) {
                         Button {
                             let vc = getRootViewController()
                             vm.signInWithGoogle(presenting: vc)
-                        }  label: {
+                        } label: {
                             Circle()
                                 .fill(Color(.secondarySystemBackground))
                                 .frame(width: 54, height: 54)
@@ -199,13 +199,13 @@ struct LoginPage: View {
                                 .fill(Color.black)
                                 .frame(width: 54, height: 54)
                                 .shadow(radius: 6, y: 3)
-                                .overlay(
-                                    Image(systemName: "applelogo")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.white)
-                                        .padding(.bottom, 2)
-                                )
-                            
+                                .allowsHitTesting(false)
+
+                            Image(systemName: "applelogo")
+                                .font(.system(size: 25, weight: .medium))
+                                .foregroundColor(.white)
+                                .allowsHitTesting(false)
+
                             SignInWithAppleButton(
                                 .continue,
                                 onRequest: { request in
@@ -216,15 +216,19 @@ struct LoginPage: View {
                                 }
                             )
                             .frame(width: 54, height: 54)
-                            .blendMode(.destinationOver)
-                            .opacity(0.015)
+                            .clipShape(Circle())
+                            .opacity(0.001)
+                            .zIndex(1)
                         }
-                        .disabled(vm.attemptTracker.isLocked || vm.isLoading)
-                        .opacity(vm.attemptTracker.isLocked ? 0.4 : 1)
+                        .frame(width: 54, height: 54)
+                        .contentShape(Circle())
+                        .disabled(vm.isLoading)
+                        .opacity(vm.isLoading ? 0.5 : 1)
                     }
                     .padding(.top, 10)
+
                     // Sign up + Expert
-                    VStack(spacing: 10) {
+                    VStack(spacing: 12) {
                         NavigationLink {
                             SignUp()
                         } label: {
@@ -237,11 +241,10 @@ struct LoginPage: View {
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(Color("PrimaryColor"))
                             }
+                            .frame(maxWidth: .infinity)
                             .contentShape(Rectangle())
-                            .background(Color.black.opacity(0.0001))
                         }
                         .buttonStyle(.plain)
-                        .padding(.top, 20)
 
                         HStack(spacing: 6) {
                             Text("Uzman mısın?".localized)
@@ -253,73 +256,71 @@ struct LoginPage: View {
                                 .foregroundColor(.orange)
                                 .underline()
                         }
+                        .frame(maxWidth: .infinity)
                         .contentShape(Rectangle())
-                        .background(Color.black.opacity(0.0001))
                         .onTapGesture {
                             session.startExpertSignup()
                             path.append(ExpertSignupDestination.flow)
                         }
-                        .padding(.top, 10)
                     }
+                    .padding(.top, 8)
 
                     Spacer()
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 24)
 
-                // Loading overlay
-                if vm.isLoading {
-                    ZStack {
-                        Color.black.opacity(0.2).ignoresSafeArea()
-                        ProgressView()
-                            .padding()
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(12)
+                    // Loading overlay
+                    if vm.isLoading {
+                        ZStack {
+                            Color.black.opacity(0.2).ignoresSafeArea()
+                            ProgressView()
+                                .padding()
+                                .background(.ultraThinMaterial)
+                                .cornerRadius(12)
+                        }
                     }
                 }
-            }
-
-            // Giriş başarılı olunca RootView otomatik olarak ExpertHomepage veya Homepage gösterir (rol kontrolü orada).
-
-            // ViewModel errorMessage değişince alert aç
-            .onChange(of: vm.errorMessage) { _, msg in
-                showError = (msg != nil)
-            }
-
-            .alert("Hata", isPresented: $showError) {
-                Button("Tamam", role: .cancel) {
-                    vm.clearError()
+                
+                // Giriş başarılı olunca RootView otomatik olarak ExpertHomepage veya Homepage gösterir (rol kontrolü orada).
+                
+                // ViewModel errorMessage değişince alert aç
+                .onChange(of: vm.errorMessage) { _, msg in
+                    showError = (msg != nil)
                 }
-            } message: {
-                Text(vm.errorMessage ?? "Bilinmeyen hata")
-            }
-
-            // route tanımı
-            .navigationDestination(for: String.self) { value in
-                if value == "home" {
-                    Homepage()
-                        .navigationBarBackButtonHidden(true)
+                
+                .alert("Hata", isPresented: $showError) {
+                    Button("Tamam", role: .cancel) {
+                        vm.clearError()
+                    }
+                } message: {
+                    Text(vm.errorMessage ?? "Bilinmeyen hata")
                 }
-            }
-            .navigationDestination(for: ExpertSignupDestination.self) { _ in
-                if let vm = session.expertSignUpViewModel {
-                    ExpertSignUpView(vm: vm)
-                        .environmentObject(session)
+                
+                // route tanımı
+                .navigationDestination(for: String.self) { value in
+                    if value == "home" {
+                        Homepage()
+                            .navigationBarBackButtonHidden(true)
+                    }
+                }
+                .navigationDestination(for: ExpertSignupDestination.self) { _ in
+                    if let vm = session.expertSignUpViewModel {
+                        ExpertSignUpView(vm: vm)
+                            .environmentObject(session)
+                    }
                 }
             }
         }
     }
-}
-private func getRootViewController() -> UIViewController {
-    guard
-        let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-        let root = scene.windows.first?.rootViewController
-    else {
-        return UIViewController()
+    private func getRootViewController() -> UIViewController {
+        guard
+            let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+            let root = scene.windows.first?.rootViewController
+        else {
+            return UIViewController()
+        }
+        return root
     }
-    return root
-}
+    
 
-#Preview {
-    LoginPage()
-}
