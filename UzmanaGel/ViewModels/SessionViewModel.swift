@@ -21,6 +21,8 @@ final class SessionViewModel: ObservableObject {
     @Published var isCheckingProfile: Bool = false
     @Published var userRole: String = "user"
     @Published var isAdmin: Bool = false
+    @Published var isInCustomerSignupFlow: Bool = false
+
 
     // Account deletion state
     @Published var isDeletingAccount: Bool = false
@@ -31,12 +33,15 @@ final class SessionViewModel: ObservableObject {
 
     // Uses the same ViewModel during expert signup
     var expertSignUpViewModel: ExpertSignUpViewModel?
+    var customerSignUpViewModel: SignUpViewModel?
 
     var isExpert: Bool {
         userRole == "expert"
     }
 
     private var handle: AuthStateDidChangeListenerHandle?
+    private var shouldPreserveExpertSignupOnNextAuthReset = false
+    private var shouldPreserveCustomerSignupOnNextAuthReset = false
 
     private let userRepo = UserRepository()
     private let functions = Functions.functions(
@@ -68,7 +73,19 @@ final class SessionViewModel: ObservableObject {
                     await self.loadAdminClaim(user: user)
                     await self.checkProfileCompletion(uid: user.uid)
                 } else {
-                    self.resetSessionState()
+                    let preserveExpertSignup =
+                        self.shouldPreserveExpertSignupOnNextAuthReset
+
+                    let preserveCustomerSignup =
+                        self.shouldPreserveCustomerSignupOnNextAuthReset
+
+                    self.shouldPreserveExpertSignupOnNextAuthReset = false
+                    self.shouldPreserveCustomerSignupOnNextAuthReset = false
+
+                    self.resetSessionState(
+                        preservingExpertSignup: preserveExpertSignup,
+                        preservingCustomerSignup: preserveCustomerSignup
+                    )
                 }
             }
         }
@@ -92,7 +109,7 @@ final class SessionViewModel: ObservableObject {
             )
 
             isAdmin =
-                tokenResult.claims["admin"] as? Bool == true
+            tokenResult.claims["admin"] as? Bool == true
         } catch {
             isAdmin = false
 
@@ -115,7 +132,7 @@ final class SessionViewModel: ObservableObject {
         }
 
         let isPhoneSignIn =
-            isCurrentUserPhoneSignIn()
+        isCurrentUserPhoneSignIn()
 
         if isInExpertSignupFlow {
             needsProfileSetup = false
@@ -139,8 +156,8 @@ final class SessionViewModel: ObservableObject {
                 needsProfileSetup = false
             } else if isPhoneSignIn {
                 needsProfileSetup =
-                    name.isEmpty ||
-                    name == "Telefon Kullanıcısı"
+                name.isEmpty ||
+                name == "Telefon Kullanıcısı"
             } else {
                 needsProfileSetup = false
             }
@@ -169,11 +186,37 @@ final class SessionViewModel: ObservableObject {
         needsProfileSetup = false
     }
 
+    // MARK: - Customer Signup
+
+    func startCustomerSignup() {
+        customerSignUpViewModel = SignUpViewModel()
+        isInCustomerSignupFlow = true
+    }
+
+    func completeCustomerSignup() {
+        isInCustomerSignupFlow = false
+        customerSignUpViewModel = nil
+    }
+
+    func prepareForCustomerSignupAuthReset() {
+        guard isInCustomerSignupFlow,
+              customerSignUpViewModel != nil else {
+            return
+        }
+
+        shouldPreserveCustomerSignupOnNextAuthReset = true
+    }
+
+    func cancelCustomerSignupAuthResetPreparation() {
+        shouldPreserveCustomerSignupOnNextAuthReset = false
+    }
+
+
     // MARK: - Expert Signup
 
     func startExpertSignup() {
         expertSignUpViewModel =
-            ExpertSignUpViewModel()
+        ExpertSignUpViewModel()
 
         isInExpertSignupFlow = true
     }
@@ -189,6 +232,18 @@ final class SessionViewModel: ObservableObject {
         }
     }
 
+    func prepareForExpertSignupAuthReset() {
+        guard isInExpertSignupFlow,
+              expertSignUpViewModel != nil else {
+            return
+        }
+
+        shouldPreserveExpertSignupOnNextAuthReset = true
+    }
+
+    func cancelExpertSignupAuthResetPreparation() {
+        shouldPreserveExpertSignupOnNextAuthReset = false
+    }
     // MARK: - Account Deletion
 
     func deleteAccount() async -> Bool {
@@ -196,7 +251,7 @@ final class SessionViewModel: ObservableObject {
                 Auth.auth().currentUser
         else {
             accountDeletionError =
-                "Silinecek kullanıcı oturumu bulunamadı."
+            "Silinecek kullanıcı oturumu bulunamadı."
 
             return false
         }
@@ -233,9 +288,9 @@ final class SessionViewModel: ObservableObject {
             return true
         } catch {
             accountDeletionError =
-                accountDeletionMessage(
-                    for: error
-                )
+            accountDeletionMessage(
+                for: error
+            )
 
             print(
                 "Account deletion error:",
@@ -294,8 +349,10 @@ final class SessionViewModel: ObservableObject {
     }
 
     // MARK: - Session Reset
-
-    private func resetSessionState() {
+    private func resetSessionState(
+        preservingExpertSignup: Bool = false,
+        preservingCustomerSignup: Bool = false
+    ) {
         isAuthenticated = false
         userId = nil
         needsProfileSetup = false
@@ -303,8 +360,15 @@ final class SessionViewModel: ObservableObject {
         userRole = "user"
         isAdmin = false
 
-        isInExpertSignupFlow = false
-        expertSignUpViewModel = nil
+        if !preservingExpertSignup {
+            isInExpertSignupFlow = false
+            expertSignUpViewModel = nil
+        }
+
+        if !preservingCustomerSignup {
+            isInCustomerSignupFlow = false
+            customerSignUpViewModel = nil
+        }
 
         isDeletingAccount = false
         accountDeletionError = nil

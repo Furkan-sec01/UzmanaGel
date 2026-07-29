@@ -7,22 +7,29 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseFunctions
 
 enum UserRepositoryError: LocalizedError {
     case invalidPrivateFields([String])
+    case invalidPhoneAvailabilityResponse
 
     var errorDescription: String? {
         switch self {
         case .invalidPrivateFields(let fields):
             return "Geçersiz özel veri alanları: \(fields.joined(separator: ", "))"
+
+        case .invalidPhoneAvailabilityResponse:
+            return "Telefon kontrolü sonucu okunamadı."
         }
     }
 }
-
 /// Reads and writes user and provider data.
 final class UserRepository {
 
     private let db = Firestore.firestore()
+    private let functions = Functions.functions(
+        region: "europe-west1"
+    )
 
     private let usersCollection = "users"
     private let providersCollection = "service_providers"
@@ -42,20 +49,6 @@ final class UserRepository {
 
     // MARK: - Duplicate Check
 
-    func isEmailTaken(
-        _ email: String
-    ) async throws -> Bool {
-        let snapshot = try await db
-            .collection(usersCollection)
-            .whereField(
-                "email",
-                isEqualTo: email.lowercased()
-            )
-            .limit(to: 1)
-            .getDocuments()
-
-        return !snapshot.documents.isEmpty
-    }
 
     func isPhoneTaken(
         _ phone: String
@@ -66,18 +59,21 @@ final class UserRepository {
             return false
         }
 
-        let snapshot = try await db
-            .collection(usersCollection)
-            .whereField(
-                "phoneNumber",
-                isEqualTo: normalized
-            )
-            .limit(to: 1)
-            .getDocuments()
+        let callable = functions.httpsCallable(
+            "checkPhoneAvailability"
+        )
 
-        return !snapshot.documents.isEmpty
+        let result = try await callable.call([
+            "phone": normalized
+        ])
+
+        guard let data = result.data as? [String: Any],
+              let isTaken = data["taken"] as? Bool else {
+            throw UserRepositoryError.invalidPhoneAvailabilityResponse
+        }
+
+        return isTaken
     }
-
     // MARK: - Create User
 
     func createUserDocument(

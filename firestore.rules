@@ -34,9 +34,12 @@ service cloud.firestore {
     // MARK: - Users
 
     match /users/{userId} {
-      // Temporary:
-      // Keep authenticated reads for phone duplicate check.
-      allow read: if signedIn();
+      // Users can read only their own document.
+      // Admins can read any user document.
+      allow get: if isOwner(userId) || isAdmin();
+
+      // Only admins can list or query users.
+      allow list: if isAdmin();
 
       allow create: if isOwner(userId)
         && (
@@ -45,18 +48,11 @@ service cloud.firestore {
         );
 
       allow update: if isOwner(userId)
-        && request.resource.data.role == resource.data.role
-        && (
-          // Standard profile update (role preserved)
-          true
-          // Note: favoriteProviderIds, recentlyViewedProviderIds, savedSearches
-          // are all allowed as long as role doesn't change (enforced above)
-        );
+        && request.resource.data.role == resource.data.role;
 
       allow delete: if false;
 
-      // Owner-only user subcollections:
-      // addresses, preferences, profile, favorites, paymentMethods, etc.
+      // User subcollections are owner-only.
       match /{document=**} {
         allow read, write: if isOwner(userId);
       }

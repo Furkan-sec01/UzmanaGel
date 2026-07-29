@@ -13,46 +13,47 @@ struct LoginPage: View {
     @EnvironmentObject private var session: SessionViewModel
     @StateObject private var vm = LoginViewModel()
     @ObservedObject private var langManager = LanguageManager.shared
-    
+
     @State private var rememberMe = false
     @State private var isPasswordVisible = false
-    
+
     // Alert göstermek için (vm.errorMessage gelince true yapacağız)
     @State private var showError = false
-    
+
     // Navigation stack control (geri dönüş olmaması için)
     @State private var path = NavigationPath()
-    
+
     private enum ExpertSignupDestination: Hashable { case flow }
-    
+    private enum CustomerSignupDestination: Hashable {case flow }
+
     var body: some View {
         NavigationStack(path: $path) {
-            
+
             ZStack {
                 Color("BackgroundColor")
                     .ignoresSafeArea()
-                
+
                 VStack(spacing: 18) {
-                    
+
                     Spacer().frame(height: 28)
-                    
+
                     Image("Logo")
                         .resizable()
                         .scaledToFill()
                         .frame(width: 110, height: 110)
                         .clipShape(Circle())
                         .shadow(radius: 10)
-                    
+
                     Text("Hoşgeldiniz".localized)
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.primary)
                         .padding(.top, 6)
-                    
+
                     // Email
                     HStack(spacing: 10) {
                         Image(systemName: "envelope")
                             .foregroundColor(.secondary)
-                        
+
                         TextField("E-posta".localized, text: $vm.email)
                             .keyboardType(.emailAddress)
                             .textInputAutocapitalization(.never)
@@ -66,12 +67,12 @@ struct LoginPage: View {
                             .stroke(Color.black.opacity(0.08), lineWidth: 1)
                     )
                     .cornerRadius(14)
-                    
+
                     // Password
                     HStack(spacing: 10) {
                         Image(systemName: "lock")
                             .foregroundColor(.secondary)
-                        
+
                         Group {
                             if isPasswordVisible {
                                 TextField("Şifre".localized, text: $vm.password)
@@ -81,7 +82,7 @@ struct LoginPage: View {
                         }
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        
+
                         Button {
                             isPasswordVisible.toggle()
                         } label: {
@@ -98,7 +99,7 @@ struct LoginPage: View {
                             .stroke(Color.black.opacity(0.08), lineWidth: 1)
                     )
                     .cornerRadius(14)
-                    
+
                     // Remember + Forgot
                     HStack {
                         Button {
@@ -108,16 +109,16 @@ struct LoginPage: View {
                                 Image(systemName: rememberMe ? "checkmark.square.fill" : "square")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(rememberMe ? Color("PrimaryColor") : .secondary)
-                                
+
                                 Text("Beni Hatırla".localized)
                                     .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(Color("PrimaryColor"))
                             }
                         }
                         .buttonStyle(.plain)
-                        
+
                         Spacer()
-                        
+
                         NavigationLink {
                             ForgotPasswordPage(initialEmail: vm.email)
                         } label: {
@@ -128,7 +129,7 @@ struct LoginPage: View {
                         .buttonStyle(.plain)
                     }
                     .padding(.top, 2)
-                    
+
                     // Login Button
                     Button {
                         vm.login()
@@ -145,7 +146,7 @@ struct LoginPage: View {
                     .buttonStyle(.plain)
                     .disabled(vm.attemptTracker.isLocked)
                     .padding(.top, 15)
-                    
+
                     // Divider
                     HStack(spacing: 12) {
                         Rectangle().frame(height: 1).foregroundColor(Color.black.opacity(0.08))
@@ -155,7 +156,7 @@ struct LoginPage: View {
                         Rectangle().frame(height: 1).foregroundColor(Color.black.opacity(0.08))
                     }
                     .padding(.top, 10)
-                    
+
                     // Social Buttons
                     HStack(spacing: 25) {
                         Button {
@@ -229,8 +230,9 @@ struct LoginPage: View {
 
                     // Sign up + Expert
                     VStack(spacing: 12) {
-                        NavigationLink {
-                            SignUp()
+                        Button {
+                            session.startCustomerSignup()
+                            path.append(CustomerSignupDestination.flow)
                         } label: {
                             HStack(spacing: 6) {
                                 Text("Hesabın yok mu?".localized)
@@ -281,14 +283,14 @@ struct LoginPage: View {
                         }
                     }
                 }
-                
+
                 // Giriş başarılı olunca RootView otomatik olarak ExpertHomepage veya Homepage gösterir (rol kontrolü orada).
-                
+
                 // ViewModel errorMessage değişince alert aç
                 .onChange(of: vm.errorMessage) { _, msg in
                     showError = (msg != nil)
                 }
-                
+
                 .alert("Hata", isPresented: $showError) {
                     Button("Tamam", role: .cancel) {
                         vm.clearError()
@@ -296,7 +298,7 @@ struct LoginPage: View {
                 } message: {
                     Text(vm.errorMessage ?? "Bilinmeyen hata")
                 }
-                
+
                 // route tanımı
                 .navigationDestination(for: String.self) { value in
                     if value == "home" {
@@ -307,6 +309,14 @@ struct LoginPage: View {
                 .navigationDestination(for: ExpertSignupDestination.self) { _ in
                     if let vm = session.expertSignUpViewModel {
                         ExpertSignUpView(vm: vm)
+                            .environmentObject(session)
+                    }
+                }
+                .navigationDestination(
+                    for: CustomerSignupDestination.self
+                ) { _ in
+                    if let vm = session.customerSignUpViewModel {
+                        SignUp(vm: vm)
                             .environmentObject(session)
                     }
                 }
@@ -322,5 +332,5 @@ struct LoginPage: View {
         }
         return root
     }
-    
+
 

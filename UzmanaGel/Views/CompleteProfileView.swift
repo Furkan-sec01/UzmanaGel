@@ -355,21 +355,9 @@ struct CompleteProfileView: View {
         isLoading = true
         defer { isLoading = false }
 
-        // 1) E-posta mükerrer kontrolü
-        do {
-            let emailTaken = try await userRepo.isEmailTaken(trimmedEmail)
-            if emailTaken {
-                errorMessage = "Bu e-posta adresi zaten başka bir hesapta kullanılıyor. Lütfen farklı bir e-posta deneyin."
-                showError = true
-                return
-            }
-        } catch {
-            errorMessage = "E-posta kontrolü yapılırken bir hata oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
-            showError = true
-            return
-        }
 
-        // 2) E-posta/şifre provider'ını hesaba bağla
+
+        // E-posta/şifre provider'ını hesaba bağla
         let credential = EmailAuthProvider.credential(withEmail: trimmedEmail, password: password)
         do {
             try await user.link(with: credential)
@@ -395,7 +383,7 @@ struct CompleteProfileView: View {
             return
         }
 
-        // 3) Firestore kullanıcı belgesi
+        // Firestore kullanıcı belgesi
         do {
             try await userRepo.createUserDocument(
                 uid: user.uid,
@@ -409,7 +397,7 @@ struct CompleteProfileView: View {
             return
         }
 
-        // 4) Firebase Auth displayName
+        //  Firebase Auth displayName
         do {
             let changeRequest = user.createProfileChangeRequest()
             changeRequest.displayName = trimmedName

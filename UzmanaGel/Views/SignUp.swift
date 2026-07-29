@@ -3,16 +3,28 @@ import SwiftUI
 @MainActor
 struct SignUp: View {
 
-    @StateObject private var vm = SignUpViewModel()
+    @StateObject private var vm: SignUpViewModel
+
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var session: SessionViewModel
 
     @State private var isPasswordVisible = false
     @State private var isPasswordVisible2 = false
     @State private var showKvkkSheet = false
     @State private var hasReadKvkk = false
-
     @State private var showError = false
 
-    @Environment(\.dismiss) private var dismiss
+    init() {
+        _vm = StateObject(
+            wrappedValue: SignUpViewModel()
+        )
+    }
+
+    init(vm: SignUpViewModel) {
+        _vm = StateObject(
+            wrappedValue: vm
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -22,6 +34,7 @@ struct SignUp: View {
 }
 
 // MARK: - UI Parts
+
 private extension SignUp {
 
     var mainContent: some View {
@@ -51,18 +64,35 @@ private extension SignUp {
                 loadingOverlay
             }
         }
-        .onChange(of: vm.errorMessage) { _, msg in
-            showError = (msg != nil)
+        .onAppear {
+            vm.setSession(session)
         }
-        .alert("Hata", isPresented: $showError) {
-            Button("Tamam", role: .cancel) { vm.clearError() }
-        } message: {
-            Text(vm.errorMessage ?? "Bilinmeyen hata")
+        .onChange(of: vm.errorMessage) { _, message in
+            showError = message != nil
         }
-        .onChange(of: vm.didSignUp) { _, newValue in
-            if newValue {
-                dismiss()
+        .alert(
+            "Hata",
+            isPresented: $showError
+        ) {
+            Button(
+                "Tamam",
+                role: .cancel
+            ) {
+                vm.clearError()
             }
+        } message: {
+            Text(
+                vm.errorMessage ??
+                    "Bilinmeyen hata"
+            )
+        }
+        .onChange(of: vm.didSignUp) { _, didSignUp in
+            guard didSignUp else {
+                return
+            }
+
+            session.completeCustomerSignup()
+            dismiss()
         }
     }
 
@@ -73,7 +103,12 @@ private extension SignUp {
 
     var titleSection: some View {
         Text("Hesap Oluştur")
-            .font(.system(size: 22, weight: .bold))
+            .font(
+                .system(
+                    size: 22,
+                    weight: .bold
+                )
+            )
             .foregroundColor(.primary)
             .padding(.top, 6)
     }
@@ -83,18 +118,28 @@ private extension SignUp {
             Image(systemName: "person")
                 .foregroundColor(.secondary)
 
-            TextField("Ad Soyad", text: $vm.name)
-                .keyboardType(.namePhonePad)
-                .textInputAutocapitalization(.words)
-                .autocorrectionDisabled()
-                .shadow(radius: 5)
+            TextField(
+                "Ad Soyad",
+                text: $vm.name
+            )
+            .keyboardType(.namePhonePad)
+            .textInputAutocapitalization(.words)
+            .autocorrectionDisabled()
+            .shadow(radius: 5)
         }
         .padding(.horizontal, 14)
         .frame(height: 52)
-        .background(Color(.secondarySystemBackground))
+        .background(
+            Color(.secondarySystemBackground)
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(
+                cornerRadius: 14
+            )
+            .stroke(
+                Color.black.opacity(0.08),
+                lineWidth: 1
+            )
         )
         .cornerRadius(14)
     }
@@ -104,18 +149,28 @@ private extension SignUp {
             Image(systemName: "envelope")
                 .foregroundColor(.secondary)
 
-            TextField("E-posta", text: $vm.email)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .shadow(radius: 5)
+            TextField(
+                "E-posta",
+                text: $vm.email
+            )
+            .keyboardType(.emailAddress)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .shadow(radius: 5)
         }
         .padding(.horizontal, 14)
         .frame(height: 52)
-        .background(Color(.secondarySystemBackground))
+        .background(
+            Color(.secondarySystemBackground)
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(
+                cornerRadius: 14
+            )
+            .stroke(
+                Color.black.opacity(0.08),
+                lineWidth: 1
+            )
         )
         .cornerRadius(14)
     }
@@ -125,18 +180,28 @@ private extension SignUp {
             Image(systemName: "phone")
                 .foregroundColor(.secondary)
 
-            TextField("Telefon Numarası (5xxx)", text: $vm.phone)
-                .keyboardType(.phonePad)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .shadow(radius: 5)
+            TextField(
+                "Telefon Numarası (5xxx)",
+                text: $vm.phone
+            )
+            .keyboardType(.phonePad)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .shadow(radius: 5)
         }
         .padding(.horizontal, 14)
         .frame(height: 52)
-        .background(Color(.secondarySystemBackground))
+        .background(
+            Color(.secondarySystemBackground)
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(
+                cornerRadius: 14
+            )
+            .stroke(
+                Color.black.opacity(0.08),
+                lineWidth: 1
+            )
         )
         .cornerRadius(14)
     }
@@ -148,9 +213,15 @@ private extension SignUp {
 
             Group {
                 if isPasswordVisible {
-                    TextField("Şifre", text: $vm.password)
+                    TextField(
+                        "Şifre",
+                        text: $vm.password
+                    )
                 } else {
-                    SecureField("Şifre", text: $vm.password)
+                    SecureField(
+                        "Şifre",
+                        text: $vm.password
+                    )
                 }
             }
             .textInputAutocapitalization(.never)
@@ -159,17 +230,29 @@ private extension SignUp {
             Button {
                 isPasswordVisible.toggle()
             } label: {
-                Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
-                    .foregroundColor(.secondary)
+                Image(
+                    systemName:
+                        isPasswordVisible
+                        ? "eye.slash"
+                        : "eye"
+                )
+                .foregroundColor(.secondary)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 14)
         .frame(height: 52)
-        .background(Color(.secondarySystemBackground))
+        .background(
+            Color(.secondarySystemBackground)
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(
+                cornerRadius: 14
+            )
+            .stroke(
+                Color.black.opacity(0.08),
+                lineWidth: 1
+            )
         )
         .cornerRadius(14)
     }
@@ -181,9 +264,15 @@ private extension SignUp {
 
             Group {
                 if isPasswordVisible2 {
-                    TextField("Şifre Tekrar", text: $vm.confirmPassword)
+                    TextField(
+                        "Şifre Tekrar",
+                        text: $vm.confirmPassword
+                    )
                 } else {
-                    SecureField("Şifre Tekrar", text: $vm.confirmPassword)
+                    SecureField(
+                        "Şifre Tekrar",
+                        text: $vm.confirmPassword
+                    )
                 }
             }
             .textInputAutocapitalization(.never)
@@ -192,25 +281,35 @@ private extension SignUp {
             Button {
                 isPasswordVisible2.toggle()
             } label: {
-                Image(systemName: isPasswordVisible2 ? "eye.slash" : "eye")
-                    .foregroundColor(.secondary)
+                Image(
+                    systemName:
+                        isPasswordVisible2
+                        ? "eye.slash"
+                        : "eye"
+                )
+                .foregroundColor(.secondary)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 14)
         .frame(height: 52)
-        .background(Color(.secondarySystemBackground))
+        .background(
+            Color(.secondarySystemBackground)
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(
+                cornerRadius: 14
+            )
+            .stroke(
+                Color.black.opacity(0.08),
+                lineWidth: 1
+            )
         )
         .cornerRadius(14)
     }
 
     var kvkkSection: some View {
         HStack(spacing: 8) {
-
-            // Checkbox: okumadıysa tiklenmesin, PDF açsın
             Button {
                 if hasReadKvkk {
                     vm.kvkkAccepted.toggle()
@@ -218,42 +317,73 @@ private extension SignUp {
                     showKvkkSheet = true
                 }
             } label: {
-                Image(systemName: vm.kvkkAccepted ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(hasReadKvkk ? Color("PrimaryColor") : .secondary)
+                Image(
+                    systemName:
+                        vm.kvkkAccepted
+                        ? "checkmark.square.fill"
+                        : "square"
+                )
+                .font(
+                    .system(
+                        size: 24,
+                        weight: .semibold
+                    )
+                )
+                .foregroundColor(
+                    hasReadKvkk
+                    ? Color("PrimaryColor")
+                    : .secondary
+                )
             }
             .buttonStyle(.plain)
             .padding(.top, 10)
 
-            VStack(alignment: .leading, spacing: 4) {
-
-                //Metine basınca pdf aç
+            VStack(
+                alignment: .leading,
+                spacing: 4
+            ) {
                 Button {
                     showKvkkSheet = true
                 } label: {
-                    Text("Kullanım şartları ve gizlilik politikasını")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.blue)
-                        .italic()
+                    Text(
+                        "Kullanım şartları ve gizlilik politikasını"
+                    )
+                    .font(
+                        .system(
+                            size: 16,
+                            weight: .bold
+                        )
+                    )
+                    .foregroundColor(.blue)
+                    .italic()
                 }
                 .buttonStyle(.plain)
 
                 Text("okudum, onaylıyorum.")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color("SecondaryColor"))
+                    .font(
+                        .system(
+                            size: 16,
+                            weight: .semibold
+                        )
+                    )
+                    .foregroundColor(
+                        Color("SecondaryColor")
+                    )
             }
         }
-        .sheet(isPresented: $showKvkkSheet) {
-
-            //pdf ekranı kapanınca: okunduysa otomatik tikle
-            Kvkk(hasRead: $hasReadKvkk)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .onDisappear {
-                    if hasReadKvkk {
-                        vm.kvkkAccepted = true
-                    }
+        .sheet(
+            isPresented: $showKvkkSheet
+        ) {
+            Kvkk(
+                hasRead: $hasReadKvkk
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .onDisappear {
+                if hasReadKvkk {
+                    vm.kvkkAccepted = true
                 }
+            }
         }
     }
 
@@ -262,15 +392,26 @@ private extension SignUp {
             vm.signUp()
         } label: {
             Text("KAYIT OL")
-                .font(.system(size: 15, weight: .bold))
+                .font(
+                    .system(
+                        size: 15,
+                        weight: .bold
+                    )
+                )
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
-                .background(Color(.systemYellow))
+                .background(
+                    Color(.systemYellow)
+                )
                 .cornerRadius(14)
-                .shadow(radius: 6, y: 3)
+                .shadow(
+                    radius: 6,
+                    y: 3
+                )
         }
         .buttonStyle(.plain)
+        .disabled(vm.isLoading)
         .padding(.top, 15)
     }
 
@@ -282,11 +423,19 @@ private extension SignUp {
                     .foregroundColor(.secondary)
 
                 Button {
+                    session.completeCustomerSignup()
                     dismiss()
                 } label: {
                     Text("Giriş yap")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Color("PrimaryColor"))
+                        .font(
+                            .system(
+                                size: 13,
+                                weight: .bold
+                            )
+                        )
+                        .foregroundColor(
+                            Color("PrimaryColor")
+                        )
                 }
                 .buttonStyle(.plain)
             }
@@ -296,10 +445,15 @@ private extension SignUp {
 
     var loadingOverlay: some View {
         ZStack {
-            Color.black.opacity(0.2).ignoresSafeArea()
+            Color.black
+                .opacity(0.2)
+                .ignoresSafeArea()
+
             ProgressView()
                 .padding()
-                .background(.ultraThinMaterial)
+                .background(
+                    .ultraThinMaterial
+                )
                 .cornerRadius(12)
         }
     }
@@ -307,4 +461,7 @@ private extension SignUp {
 
 #Preview {
     SignUp()
+        .environmentObject(
+            SessionViewModel()
+        )
 }

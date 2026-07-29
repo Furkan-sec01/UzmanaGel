@@ -25,6 +25,13 @@ final class SignUpViewModel: ObservableObject {
     @Published var didSignUp: Bool = false
 
     private let userRepo = UserRepository()
+    private weak var session: SessionViewModel?
+
+    func setSession(
+        _ session: SessionViewModel?
+    ) {
+        self.session = session
+    }
 
     func signUp() {
         let trimmedName  = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -74,33 +81,6 @@ final class SignUpViewModel: ObservableObject {
         errorMessage = nil
 
         Task {
-            // 1) E-posta mükerrer kontrolü
-//            do {
-//                let emailTaken = try await userRepo.isEmailTaken(trimmedEmail)
-//                if emailTaken {
-//                    isLoading = false
-//                    errorMessage = "Bu e-posta adresi (\(trimmedEmail)) zaten başka bir hesapta kullanılıyor. Lütfen farklı bir e-posta adresi deneyin veya mevcut hesabınızla giriş yapın."
-//                    return
-//                }
-//            } catch {
-//                isLoading = false
-//                errorMessage = "E-posta kontrolü yapılırken bağlantı hatası oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
-//                return
-//            }
-//
-//            // 2) Telefon mükerrer kontrolü
-//            do {
-//                let phoneTaken = try await userRepo.isPhoneTaken(trimmedPhone)
-//                if phoneTaken {
-//                    isLoading = false
-//                    errorMessage = "Bu telefon numarası (\(formatPhone(trimmedPhone))) zaten başka bir hesapta kayıtlı. Her telefon numarası yalnızca bir hesapta kullanılabilir. Eğer bu numara size aitse mevcut hesabınızla giriş yapın."
-//                    return
-//                }
-//            } catch {
-//                isLoading = false
-//                errorMessage = "Telefon numarası kontrolü yapılırken bağlantı hatası oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
-//                return
-//            }
 
             // 1) Create Firebase Auth account
                 let user: FirebaseAuth.User
@@ -125,11 +105,17 @@ final class SignUpViewModel: ObservableObject {
 
                     if phoneTaken {
                         // Remove the newly created Auth account
+                        session?
+                            .prepareForCustomerSignupAuthReset()
+
                         do {
                             try await user.delete()
                         } catch {
+                            session?
+                                .cancelCustomerSignupAuthResetPreparation()
+
                             print(
-                                "⚠️ New Auth user could not be deleted after duplicate phone check:",
+                                "New Auth user could not be deleted after duplicate phone check:",
                                 error.localizedDescription
                             )
                         }
@@ -142,16 +128,20 @@ final class SignUpViewModel: ObservableObject {
                     }
 
                 } catch {
-                    // Clean up the newly created Auth account
+                    session?
+                        .prepareForCustomerSignupAuthReset()
+
                     do {
                         try await user.delete()
                     } catch {
+                        session?
+                            .cancelCustomerSignupAuthResetPreparation()
+
                         print(
-                            "⚠️ New Auth user could not be deleted after phone check error:",
+                            "New Auth user could not be deleted after phone check error:",
                             error.localizedDescription
                         )
                     }
-
                     isLoading = false
                     errorMessage =
                         "Telefon numarası kontrol edilirken bir hata oluştu. Lütfen tekrar deneyin."
