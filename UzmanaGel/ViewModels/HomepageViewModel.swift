@@ -196,8 +196,11 @@ final class HomepageViewModel: ObservableObject {
 
                 // Use image URL from service data
                 for service in uniqueServices {
-                    guard !service.image.isEmpty,
-                          let url = URL(string: service.image) else {
+                    let profileImageURL = service.providerImageURL
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+
+                    guard !profileImageURL.isEmpty,
+                          let url = URL(string: profileImageURL) else {
                         continue
                     }
 
@@ -305,7 +308,14 @@ final class HomepageViewModel: ObservableObject {
             print("Yüklenen servis sayısı: \(allServices.count)")
             // İlan fotoğrafı: servis dokümanındaki image URL varsa hemen kullan (anasayfada tıklanmadan görünsün)
             for service in allServices {
-                guard !service.image.isEmpty, let url = URL(string: service.image) else { continue }
+                let profileImageURL = service.providerImageURL
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+
+                guard !profileImageURL.isEmpty,
+                      let url = URL(string: profileImageURL) else {
+                    continue
+                }
+
                 imageURLs[service.serviceId] = url
             }
             loadAllImages()
