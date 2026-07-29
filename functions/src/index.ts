@@ -1916,3 +1916,44 @@ export const deleteUserAccount = onCall(
  * @param {unknown} value Field value to check.
  * @return {boolean} True when the value is not empty.
  */
+
+
+// MARK: - Phone Availability
+
+export const checkPhoneAvailability = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Telefon kontrolü için giriş yapmalısınız."
+      );
+    }
+
+    const rawPhone = request.data?.phone;
+
+    const phone =
+      typeof rawPhone === "string" ?
+        rawPhone.replace(/\D/g, "") :
+        "";
+
+    if (phone.length < 10 || phone.length > 15) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Geçerli bir telefon numarası gönderilmelidir."
+      );
+    }
+
+    const snapshot = await db
+      .collection("users")
+      .where("phoneNumber", "==", phone)
+      .limit(1)
+      .get();
+
+    return {
+      taken: !snapshot.empty,
+    };
+  }
+);

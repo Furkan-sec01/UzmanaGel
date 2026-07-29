@@ -8,7 +8,6 @@
 import SwiftUI
 import Combine
 
-
 @MainActor
 final class NotificationRouter: ObservableObject {
 
@@ -67,32 +66,55 @@ struct RootView: View {
         Group {
             if !hasSeenOnboarding {
                 OnboardingView()
-            } else if session.isAuthenticated && session.isCheckingProfile {
-                ProgressView("Profil kontrol ediliyor...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color("BackgroundColor").ignoresSafeArea())
-            } else if session.isAuthenticated && session.isAdmin {
-                AdminDashboardView()
-                    .environmentObject(session)
-            } else if session.isAuthenticated && session.isInExpertSignupFlow,
-                      let vm = session.expertSignUpViewModel {// optional binding
+
+            } else if session.isInExpertSignupFlow,
+                      let vm = session.expertSignUpViewModel {
                 ExpertSignUpView(vm: vm)
                     .environmentObject(session)
-            } else if session.isAuthenticated && session.isExpert {
+
+            } else if session.isInCustomerSignupFlow,
+                      let vm = session.customerSignUpViewModel {
+                SignUp(vm: vm)
+                    .environmentObject(session)
+
+            } else if session.isAuthenticated &&
+                        session.isCheckingProfile {
+                ProgressView("Profil kontrol ediliyor...")
+                    .frame(
+                        maxWidth: .infinity,
+                        maxHeight: .infinity
+                    )
+                    .background(
+                        Color("BackgroundColor")
+                            .ignoresSafeArea()
+                    )
+
+            } else if session.isAuthenticated &&
+                        session.isAdmin {
+                AdminDashboardView()
+                    .environmentObject(session)
+
+            } else if session.isAuthenticated &&
+                        session.isExpert {
                 ExpertHomepage()
                     .environmentObject(session)
-            } else if session.isAuthenticated && session.needsProfileSetup {
+
+            } else if session.isAuthenticated &&
+                        session.needsProfileSetup {
                 CompleteProfileView()
                     .environmentObject(session)
+
             } else if session.isAuthenticated {
                 Homepage()
+
             } else {
                 LoginPage()
             }
         }
-        .task(id: notificationRouter.pendingReservationId) {
-            await openPendingReservationIfPossible()
-        }
+
+                .task(id: notificationRouter.pendingReservationId) {
+                    await openPendingReservationIfPossible()
+                }
         .task(id: notificationRouter.pendingConversationId) {
             await openPendingConversationIfPossible()
         }

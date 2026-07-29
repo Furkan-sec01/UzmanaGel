@@ -269,6 +269,7 @@ final class ExpertSignUpViewModel: ObservableObject {
 
     func verifyPhoneCode() {
         let codeDigits = smsCode.filter(\.isNumber)
+
         guard codeDigits.count == 6 else {
             errorMessage = "Doğrulama kodu 6 haneli olmalıdır."
             return
@@ -279,55 +280,143 @@ final class ExpertSignUpViewModel: ObservableObject {
             return
         }
 
-        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !trimmedEmail.isEmpty, trimmedEmail.contains("@"), password.count >= 6 else {
-            errorMessage = "Doğrulama için e-posta ve şifre alanları doldurulmuş olmalıdır."
+        let trimmedEmail = email
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            .lowercased()
+
+        guard !trimmedEmail.isEmpty,
+              trimmedEmail.contains("@"),
+              password.count >= 6 else {
+            errorMessage =
+                "Doğrulama için e-posta ve şifre alanları doldurulmuş olmalıdır."
             return
         }
 
         isLoading = true
         errorMessage = nil
 
-        let credential = PhoneAuthProvider.provider().credential(
-            withVerificationID: verificationID,
-            verificationCode: codeDigits
-        )
+        let credential = PhoneAuthProvider
+            .provider()
+            .credential(
+                withVerificationID: verificationID,
+                verificationCode: codeDigits
+            )
 
-        Auth.auth().signIn(with: credential) { [weak self] result, error in
-            guard let self else { return }
+        Auth.auth().signIn(
+            with: credential
+        ) { [weak self] result, error in
+            guard let self else {
+                return
+            }
 
             Task { @MainActor in
                 if let error {
                     self.isLoading = false
-                    self.errorMessage = self.mapPhoneVerifyError(error)
+                    self.errorMessage =
+                        self.mapPhoneVerifyError(error)
                     return
                 }
 
                 guard let firebaseUser = result?.user else {
                     self.isLoading = false
-                    self.errorMessage = "Doğrulama tamamlanamadı."
+                    self.errorMessage =
+                        "Doğrulama tamamlanamadı."
                     return
                 }
 
-                let emailCredential = EmailAuthProvider.credential(
-                    withEmail: trimmedEmail,
-                    password: self.password
-                )
+                let signOutAndShowError: (String) -> Void = {
+                    message in
 
-                firebaseUser.link(with: emailCredential) { [weak self] _, linkError in
-                    guard let self else { return }
+                    self.isLoading = false
+                    self.errorMessage = message
+
+                    self.session?
+                        .prepareForExpertSignupAuthReset()
+
+                    do {
+                        try Auth.auth().signOut()
+                    } catch {
+                        self.session?
+                            .cancelExpertSignupAuthResetPreparation()
+
+                        self.errorMessage =
+                            "Geçici oturum kapatılamadı. Lütfen tekrar deneyin."
+                    }
+                }
+
+                do {
+                    let phoneTaken =
+                        try await self.userRepo.isPhoneTaken(
+                            self.phone
+                        )
+
+                    if phoneTaken {
+                        signOutAndShowError(
+                            "Bu telefon numarası zaten başka bir hesapta kayıtlı."
+                        )
+                        return
+                    }
+                } catch {
+                    signOutAndShowError(
+                        "Telefon kontrolü yapılırken bağlantı hatası oluştu."
+                    )
+                    return
+                }
+
+                let emailCredential =
+                    EmailAuthProvider.credential(
+                        withEmail: trimmedEmail,
+                        password: self.password
+                    )
+
+                firebaseUser.link(
+                    with: emailCredential
+                ) { [weak self] _, linkError in
+                    guard let self else {
+                        return
+                    }
 
                     Task { @MainActor in
                         self.isLoading = false
 
                         if let linkError {
-                            do { try Auth.auth().signOut() } catch { }
-                            self.errorMessage = self.mapLinkError(linkError)
+                            self.session?
+                                .prepareForExpertSignupAuthReset()
+
+                            do {
+                                // Delete the temporary phone user
+                                try await firebaseUser.delete()
+                            } catch {
+                                print(
+                                    "Temporary phone Auth user cleanup failed:",
+                                    error.localizedDescription
+                                )
+
+                                    do {
+                                    // Close the temporary session
+                                    try Auth.auth().signOut()
+                                } catch {
+                                    self.session?
+                                        .cancelExpertSignupAuthResetPreparation()
+
+                                    self.errorMessage =
+                                        "E-posta bağlantısı başarısız oldu ve geçici hesap temizlenemedi. Lütfen tekrar deneyin."
+                                    return
+                                }
+                            }
+
+                            self.errorMessage =
+                                self.mapLinkError(linkError)
                             return
                         }
 
                         self.phoneVerified = true
-                        withAnimation(.easeInOut(duration: 0.3)) {
+
+                        withAnimation(
+                            .easeInOut(duration: 0.3)
+                        ) {
                             self.currentStep = 2
                         }
                     }
@@ -335,7 +424,6 @@ final class ExpertSignUpViewModel: ObservableObject {
             }
         }
     }
-
     func resendVerificationCode() {
         guard resendCountdown == 0, let _ = phoneE164() else { return }
         sendVerificationCode()
@@ -556,39 +644,23 @@ final class ExpertSignUpViewModel: ObservableObject {
 
         Task {
             let user: FirebaseAuth.User
+            let createdNewAuthUser: Bool
 
-            if let existingUser = Auth.auth().currentUser, phoneVerified {
+            if let existingUser = Auth.auth().currentUser,
+               phoneVerified {
                 user = existingUser
+                createdNewAuthUser = false
             } else {
-                do {
-                    let emailTaken = try await userRepo.isEmailTaken(trimmedEmail)
-                    if emailTaken {
-                        isLoading = false
-                        errorMessage = "Bu e-posta adresi zaten kullanılıyor. Lütfen farklı bir e-posta deneyin veya mevcut hesabınızla giriş yapın."
-                        return
-                    }
-                } catch {
-                    isLoading = false
-                    errorMessage = "E-posta kontrolü yapılırken bağlantı hatası oluştu."
-                    return
-                }
+
 
                 do {
-                    let phoneTaken = try await userRepo.isPhoneTaken(trimmedPhone)
-                    if phoneTaken {
-                        isLoading = false
-                        errorMessage = "Bu telefon numarası zaten başka bir hesapta kayıtlı."
-                        return
-                    }
-                } catch {
-                    isLoading = false
-                    errorMessage = "Telefon kontrolü yapılırken bağlantı hatası oluştu."
-                    return
-                }
+                    let result = try await Auth.auth().createUser(
+                        withEmail: trimmedEmail,
+                        password: password
+                    )
 
-                do {
-                    let result = try await Auth.auth().createUser(withEmail: trimmedEmail, password: password)
                     user = result.user
+                    createdNewAuthUser = true
                 } catch {
                     isLoading = false
                     errorMessage = mapAuthError(error)
@@ -596,7 +668,49 @@ final class ExpertSignUpViewModel: ObservableObject {
                 }
             }
 
+            do {
+                let phoneTaken = try await userRepo.isPhoneTaken(
+                    trimmedPhone
+                )
+
+                if phoneTaken {
+                    if createdNewAuthUser {
+                        do {
+                            try await user.delete()
+                        } catch {
+                            print(
+                                "New Auth user cleanup failed:",
+                                error.localizedDescription
+                            )
+                        }
+                    }
+
+                    isLoading = false
+                    errorMessage =
+                        "Bu telefon numarası zaten başka bir hesapta kayıtlı."
+                    return
+                }
+            } catch {
+                if createdNewAuthUser {
+                    do {
+                        try await user.delete()
+                    } catch {
+                        print(
+                            "New Auth user cleanup failed:",
+                            error.localizedDescription
+                        )
+                    }
+                }
+
+                isLoading = false
+                errorMessage =
+                    "Telefon kontrolü yapılırken bağlantı hatası oluştu."
+                return
+            }
+
             session?.setUserRoleAsExpert()
+
+            // The remaining code stays unchanged.
 
             do {
                 let changeRequest = user.createProfileChangeRequest()
