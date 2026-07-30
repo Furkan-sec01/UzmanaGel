@@ -1768,6 +1768,7 @@ async function deleteUserStorageFiles(
     `portfolio/${uid}/`,
     `listing_images/${uid}/`,
     `profile_photos/${uid}/`,
+    `profile_images/${uid}/`,
     `review_photos/${uid}/`,
   ];
 
@@ -1778,6 +1779,13 @@ async function deleteUserStorageFiles(
       });
     })
   );
+
+  // Delete the flat profile image.
+  await bucket
+    .file(`profile_images/${uid}.jpg`)
+    .delete({
+      ignoreNotFound: true,
+    });
 }
 
 export const deleteUserAccount = onCall(
