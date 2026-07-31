@@ -20,6 +20,8 @@ struct NotificationPreferencesPage: View {
     @AppStorage("messageNotificationsEnabled")
     private var messageNotificationsEnabled = true
 
+    @State private var smsNotificationsEnabled = false
+
     @AppStorage("systemNotificationsEnabled")
     private var systemNotificationsEnabled = true
 
@@ -326,7 +328,8 @@ struct NotificationPreferencesPage: View {
             await MainActor.run {
                 notificationEnabled = settings.pushNotificationsEnabled
                 systemNotificationsEnabled = settings.emailNotificationsEnabled
-                messageNotificationsEnabled = settings.smsNotificationsEnabled
+                smsNotificationsEnabled = settings.smsNotificationsEnabled
+                messageNotificationsEnabled = settings.messageNotificationsEnabled
                 reservationNotificationsEnabled = settings.bookingNotificationsEnabled
                 marketingNotificationsEnabled = settings.promoNotificationsEnabled
             }
@@ -337,7 +340,8 @@ struct NotificationPreferencesPage: View {
         let settings = NotificationSettings(
             pushNotificationsEnabled: notificationEnabled,
             emailNotificationsEnabled: systemNotificationsEnabled,
-            smsNotificationsEnabled: messageNotificationsEnabled,
+            smsNotificationsEnabled: smsNotificationsEnabled,
+            messageNotificationsEnabled: messageNotificationsEnabled,
             bookingNotificationsEnabled: reservationNotificationsEnabled,
             promoNotificationsEnabled: marketingNotificationsEnabled
         )

@@ -221,6 +221,7 @@ class MockPreferencesService: PreferencesService {
         pushNotificationsEnabled: true,
         emailNotificationsEnabled: true,
         smsNotificationsEnabled: false,
+        messageNotificationsEnabled: true,
         bookingNotificationsEnabled: true,
         promoNotificationsEnabled: false
     )

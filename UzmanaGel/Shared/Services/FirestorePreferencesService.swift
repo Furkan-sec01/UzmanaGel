@@ -26,6 +26,16 @@ class FirestorePreferencesService: PreferencesService {
         var promo = UserDefaults.standard.bool(forKey: "marketingNotificationsEnabled")
         var email = UserDefaults.standard.bool(forKey: "pref_emailNotifications")
         var sms = UserDefaults.standard.bool(forKey: "pref_smsNotifications")
+
+        let hasLocalMessagePreference =
+            UserDefaults.standard.object(
+                forKey: "messageNotificationsEnabled"
+            ) != nil
+
+        var message =
+            UserDefaults.standard.object(
+                forKey: "messageNotificationsEnabled"
+            ) as? Bool ?? true
         
         // If user is logged in, try fetching from Firestore
         if let uid = currentUserId {
@@ -35,6 +45,17 @@ class FirestorePreferencesService: PreferencesService {
                 push = notifMap["pushNotificationsEnabled"] as? Bool ?? push
                 email = notifMap["emailNotificationsEnabled"] as? Bool ?? email
                 sms = notifMap["smsNotificationsEnabled"] as? Bool ?? sms
+
+                if let storedMessage =
+                    notifMap["messageNotificationsEnabled"] as? Bool {
+                    message = storedMessage
+                } else if !hasLocalMessagePreference {
+                    // Use the old field only during migration
+                    message =
+                        notifMap["smsNotificationsEnabled"] as? Bool
+                        ?? message
+                }
+
                 booking = notifMap["bookingNotificationsEnabled"] as? Bool ?? booking
                 promo = notifMap["promoNotificationsEnabled"] as? Bool ?? promo
                 
@@ -44,6 +65,10 @@ class FirestorePreferencesService: PreferencesService {
                 UserDefaults.standard.set(promo, forKey: "marketingNotificationsEnabled")
                 UserDefaults.standard.set(email, forKey: "pref_emailNotifications")
                 UserDefaults.standard.set(sms, forKey: "pref_smsNotifications")
+                UserDefaults.standard.set(
+                    message,
+                    forKey: "messageNotificationsEnabled"
+                )
             }
         }
         
@@ -51,6 +76,7 @@ class FirestorePreferencesService: PreferencesService {
             pushNotificationsEnabled: push,
             emailNotificationsEnabled: email,
             smsNotificationsEnabled: sms,
+            messageNotificationsEnabled: message,
             bookingNotificationsEnabled: booking,
             promoNotificationsEnabled: promo
         )
@@ -63,6 +89,10 @@ class FirestorePreferencesService: PreferencesService {
         UserDefaults.standard.set(settings.promoNotificationsEnabled, forKey: "marketingNotificationsEnabled")
         UserDefaults.standard.set(settings.emailNotificationsEnabled, forKey: "pref_emailNotifications")
         UserDefaults.standard.set(settings.smsNotificationsEnabled, forKey: "pref_smsNotifications")
+        UserDefaults.standard.set(
+            settings.messageNotificationsEnabled,
+            forKey: "messageNotificationsEnabled"
+        )
         
         // Save to Firestore if logged in
         if let uid = currentUserId {
@@ -70,6 +100,7 @@ class FirestorePreferencesService: PreferencesService {
                 "pushNotificationsEnabled": settings.pushNotificationsEnabled,
                 "emailNotificationsEnabled": settings.emailNotificationsEnabled,
                 "smsNotificationsEnabled": settings.smsNotificationsEnabled,
+                "messageNotificationsEnabled": settings.messageNotificationsEnabled,
                 "bookingNotificationsEnabled": settings.bookingNotificationsEnabled,
                 "promoNotificationsEnabled": settings.promoNotificationsEnabled,
                 "updatedAt": FieldValue.serverTimestamp()

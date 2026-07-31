@@ -137,18 +137,87 @@ export const rejectHelpRequest = onCall(async (request) => {
  * @param {Record<string, string>} data Notification data.
  * @return {Promise<void>} Completes after sending or skipping.
  */
+/**
+ * Supported push notification categories.
+ */
+/**
+ * Supported push notification categories.
+ */
+/**
+ * Supported push notification categories.
+ */
+type PushNotificationCategory =
+  "general" | "message" | "reservation";
+
+/**
+ * Sends a push notification to a user.
+ *
+ * @param {string} userId Target user ID.
+ * @param {string} title Notification title.
+ * @param {string} body Notification body.
+ * @param {Record<string, string>} data Notification data.
+ * @param {PushNotificationCategory} category Notification category.
+ * @return {Promise<void>} Completes after sending or skipping.
+ */
 async function sendUserPushNotification(
   userId: string,
   title: string,
   body: string,
-  data: Record<string, string>
+  data: Record<string, string>,
+  category: PushNotificationCategory = "general"
 ): Promise<void> {
   const userSnapshot = await db
     .collection("users")
     .doc(userId)
     .get();
 
-  const fcmToken = userSnapshot.data()?.fcmToken;
+  const userData = userSnapshot.data();
+  const notificationSettings =
+    userData?.preferences?.notificationSettings;
+
+  if (
+    notificationSettings?.pushNotificationsEnabled === false
+  ) {
+    console.log(
+      "Kullanıcı tüm push bildirimlerini kapatmış:",
+      userId
+    );
+    return;
+  }
+
+  if (category === "message") {
+    const messageEnabled =
+      notificationSettings?.messageNotificationsEnabled;
+
+    const legacyMessageEnabled =
+      notificationSettings?.smsNotificationsEnabled;
+
+    const categoryEnabled =
+      typeof messageEnabled === "boolean" ?
+        messageEnabled :
+        legacyMessageEnabled !== false;
+
+    if (!categoryEnabled) {
+      console.log(
+        "Kullanıcı mesaj bildirimlerini kapatmış:",
+        userId
+      );
+      return;
+    }
+  }
+
+  if (
+    category === "reservation" &&
+    notificationSettings?.bookingNotificationsEnabled === false
+  ) {
+    console.log(
+      "Kullanıcı rezervasyon bildirimlerini kapatmış:",
+      userId
+    );
+    return;
+  }
+
+  const fcmToken = userData?.fcmToken;
 
   if (typeof fcmToken !== "string" || !fcmToken.trim()) {
     console.log("Kullanıcının FCM tokenı bulunamadı:", userId);
@@ -203,38 +272,16 @@ export const sendMessageNotification = onDocumentCreated(
       return;
     }
 
-    const receiverSnapshot = await db
-      .collection("users")
-      .doc(receiverId)
-      .get();
-
-    const fcmToken = receiverSnapshot.data()?.fcmToken;
-
-    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
-      console.log("Alıcı kullanıcının FCM tokenı bulunamadı.");
-      return;
-    }
-
-    const messageId = await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: "Yeni mesaj",
-        body: "Yeni bir mesajınız var.",
-      },
-      data: {
+    await sendUserPushNotification(
+      receiverId,
+      "Yeni mesaj",
+      "Yeni bir mesajınız var.",
+      {
         type: "message",
         conversationId: conversationId,
       },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    });
-
-    console.log("Mesaj bildirimi gönderildi:", messageId);
+      "message"
+    );
   }
 );
 
@@ -277,42 +324,16 @@ export const sendReservationCreatedNotification = onDocumentCreated(
     const displayCustomerName = customerName || "Bir müşteri";
     const displayServiceTitle = serviceTitle || "bir hizmet";
 
-    const providerSnapshot = await db
-      .collection("users")
-      .doc(providerId)
-      .get();
-
-    const fcmToken = providerSnapshot.data()?.fcmToken;
-
-    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
-      console.log("Uzmanın FCM tokenı bulunamadı.");
-      return;
-    }
-
-    const notificationId = await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: "Yeni rezervasyon talebi",
-        body:
-          `${displayCustomerName}, ${displayServiceTitle} için ` +
-          "rezervasyon oluşturdu.",
-      },
-      data: {
+    await sendUserPushNotification(
+      providerId,
+      "Yeni rezervasyon talebi",
+      `${displayCustomerName}, ${displayServiceTitle} için ` +
+        "rezervasyon oluşturdu.",
+      {
         type: "reservation",
         reservationId: reservationId,
       },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    });
-
-    console.log(
-      "Rezervasyon bildirimi gönderildi:",
-      notificationId
+      "reservation"
     );
   }
 );
@@ -446,41 +467,15 @@ export const sendReservationStatusNotification = onDocumentUpdated(
       return;
     }
 
-    const receiverSnapshot = await db
-      .collection("users")
-      .doc(receiverId)
-      .get();
-
-    const fcmToken = receiverSnapshot.data()?.fcmToken;
-
-    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
-      console.log("Bildirim alıcısının FCM tokenı bulunamadı.");
-      return;
-    }
-
-    const notificationId = await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: title,
-        body: body,
-      },
-      data: {
+    await sendUserPushNotification(
+      receiverId,
+      title,
+      body,
+      {
         type: "reservation",
         reservationId: reservationId,
       },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    });
-
-    console.log(
-      "Rezervasyon durum bildirimi gönderildi:",
-      newStatus,
-      notificationId
+      "reservation"
     );
   }
 );
