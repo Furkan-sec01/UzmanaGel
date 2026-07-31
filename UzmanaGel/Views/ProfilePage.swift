@@ -16,6 +16,7 @@ import FirebaseFirestore
 struct ProfilePage: View {
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var session: SessionViewModel
     @ObservedObject private var langManager = LanguageManager.shared
 
     @State private var fullName: String = "Abdullah Başpınar"
@@ -476,9 +477,14 @@ struct ProfilePage: View {
         .buttonStyle(.plain)
         .alert("Çıkış Yap".localized, isPresented: $showLogoutAlert) {
             Button("Çıkış Yap".localized, role: .destructive) {
-                try? Auth.auth().signOut()
-                UserDefaults.standard.removeObject(forKey: "user_isPhoneVerified")
-                UserDefaults.standard.removeObject(forKey: "user_isEmailVerified")
+                UserDefaults.standard.removeObject(
+                    forKey: "user_isPhoneVerified"
+                )
+                UserDefaults.standard.removeObject(
+                    forKey: "user_isEmailVerified"
+                )
+
+                session.signOut()
             }
             Button("İptal".localized, role: .cancel) {}
         } message: {

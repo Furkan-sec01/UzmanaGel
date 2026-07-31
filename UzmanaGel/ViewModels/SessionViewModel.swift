@@ -10,6 +10,7 @@ import Combine
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseFunctions
+import FirebaseMessaging
 
 // Controls the current user session
 @MainActor
@@ -337,15 +338,76 @@ final class SessionViewModel: ObservableObject {
     // MARK: - Sign Out
 
     func signOut() {
+        Task {
+            await performSecureSignOut()
+        }
+    }
+
+    private func performSecureSignOut() async {
+        guard let currentUser = Auth.auth().currentUser else {
+            resetSessionState()
+            return
+        }
+
         do {
+            let currentToken = try await currentFCMToken()
+
+            let userRef = Firestore.firestore()
+                .collection("users")
+                .document(currentUser.uid)
+
+            _ = try await Firestore.firestore().runTransaction {
+                transaction,
+                errorPointer in
+
+                do {
+                    let snapshot = try transaction.getDocument(
+                        userRef
+                    )
+
+                    let storedToken =
+                        snapshot.data()?["fcmToken"] as? String
+
+                    // Delete only this device token
+                    if storedToken == currentToken {
+                        transaction.updateData([
+                            "fcmToken": FieldValue.delete(),
+                            "fcmTokenUpdatedAt": FieldValue.delete()
+                        ], forDocument: userRef)
+                    }
+
+                    return nil
+                } catch {
+                    errorPointer?.pointee = error as NSError
+                    return nil
+                }
+            }
+
             try Auth.auth().signOut()
             resetSessionState()
         } catch {
             print(
-                "SignOut error:",
+                "Secure sign out error:",
                 error.localizedDescription
             )
         }
+    }
+
+    private func currentFCMToken() async throws -> String {
+        if let cachedToken = UserDefaults.standard.string(
+            forKey: "currentFCMToken"
+        ), !cachedToken.isEmpty {
+            return cachedToken
+        }
+
+        let token = try await Messaging.messaging().token()
+
+        UserDefaults.standard.set(
+            token,
+            forKey: "currentFCMToken"
+        )
+
+        return token
     }
 
     // MARK: - Session Reset

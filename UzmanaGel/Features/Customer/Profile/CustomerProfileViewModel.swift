@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import FirebaseAuth
 
 @MainActor
 class CustomerProfileViewModel: ObservableObject {
@@ -23,11 +22,6 @@ class CustomerProfileViewModel: ObservableObject {
             self.errorMessage = error.localizedDescription
         }
         isLoading = false
-    }
-    
-    func logout() {
-        self.userProfile = nil
-        try? Auth.auth().signOut()
     }
     
     var membershipDurationText: String {
