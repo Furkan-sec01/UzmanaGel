@@ -222,7 +222,9 @@ class MockPreferencesService: PreferencesService {
         emailNotificationsEnabled: true,
         smsNotificationsEnabled: false,
         messageNotificationsEnabled: true,
+        systemNotificationsEnabled: true,
         bookingNotificationsEnabled: true,
+        marketingNotificationsEnabled: false,
         promoNotificationsEnabled: false
     )
     

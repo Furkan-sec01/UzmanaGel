@@ -126,28 +126,15 @@ export const rejectHelpRequest = onCall(async (request) => {
     success: true,
     message: "Talep reddedildi.",
   };
-});
-
-/**
- * Sends a push notification to a user.
- *
- * @param {string} userId Target user ID.
- * @param {string} title Notification title.
- * @param {string} body Notification body.
- * @param {Record<string, string>} data Notification data.
- * @return {Promise<void>} Completes after sending or skipping.
- */
-/**
- * Supported push notification categories.
- */
-/**
- * Supported push notification categories.
- */
-/**
+});/**
  * Supported push notification categories.
  */
 type PushNotificationCategory =
-  "general" | "message" | "reservation";
+  "general" |
+  "message" |
+  "reservation" |
+  "system" |
+  "marketing";
 
 /**
  * Sends a push notification to a user.
@@ -215,6 +202,48 @@ async function sendUserPushNotification(
       userId
     );
     return;
+  }
+
+  if (category === "system") {
+    const systemEnabled =
+      notificationSettings?.systemNotificationsEnabled;
+
+    const legacySystemEnabled =
+      notificationSettings?.emailNotificationsEnabled;
+
+    const categoryEnabled =
+      typeof systemEnabled === "boolean" ?
+        systemEnabled :
+        legacySystemEnabled !== false;
+
+    if (!categoryEnabled) {
+      console.log(
+        "Kullanıcı sistem bildirimlerini kapatmış:",
+        userId
+      );
+      return;
+    }
+  }
+
+  if (category === "marketing") {
+    const marketingEnabled =
+      notificationSettings?.marketingNotificationsEnabled;
+
+    const legacyMarketingEnabled =
+      notificationSettings?.promoNotificationsEnabled;
+
+    const categoryEnabled =
+      typeof marketingEnabled === "boolean" ?
+        marketingEnabled :
+        legacyMarketingEnabled === true;
+
+    if (!categoryEnabled) {
+      console.log(
+        "Kullanıcı kampanya bildirimlerini kapatmış:",
+        userId
+      );
+      return;
+    }
   }
 
   const fcmToken = userData?.fcmToken;
@@ -1178,7 +1207,8 @@ export const sendDismissedReviewReportNotification =
           type: "reviewModeration",
           action: "dismissed",
           reviewId: reviewId,
-        }
+        },
+        "system"
       );
     }
   );
@@ -1238,7 +1268,8 @@ export const sendRemovedReviewNotification =
               type: "reviewModeration",
               action: "removed",
               reviewId: reviewId,
-            }
+            },
+            "system"
           );
         }
       );
@@ -1256,7 +1287,8 @@ export const sendRemovedReviewNotification =
               type: "reviewModeration",
               action: "removed",
               reviewId: reviewId,
-            }
+            },
+            "system"
           )
         );
       }
@@ -1476,7 +1508,8 @@ export const moderateProviderApplication = onCall(
         providerId,
         notificationTitle,
         notificationBody,
-        notificationData
+        notificationData,
+        "system"
       );
     } catch (error) {
       console.error(

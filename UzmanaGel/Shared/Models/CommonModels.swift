@@ -69,7 +69,9 @@ struct NotificationSettings: Codable, Equatable {
     var emailNotificationsEnabled: Bool
     var smsNotificationsEnabled: Bool
     var messageNotificationsEnabled: Bool
+    var systemNotificationsEnabled: Bool
     var bookingNotificationsEnabled: Bool
+    var marketingNotificationsEnabled: Bool
     var promoNotificationsEnabled: Bool
 }
 
