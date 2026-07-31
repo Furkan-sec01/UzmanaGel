@@ -9,6 +9,7 @@ class PreferencesViewModel: ObservableObject {
     @Published var emailNotificationsEnabled = false
     @Published var smsNotificationsEnabled = false
     @Published var messageNotificationsEnabled = true
+    @Published var systemNotificationsEnabled = true
     @Published var bookingNotificationsEnabled = false
     @Published var promoNotificationsEnabled = false
     
@@ -39,8 +40,9 @@ class PreferencesViewModel: ObservableObject {
             self.emailNotificationsEnabled = settings.emailNotificationsEnabled
             self.smsNotificationsEnabled = settings.smsNotificationsEnabled
             self.messageNotificationsEnabled = settings.messageNotificationsEnabled
+            self.systemNotificationsEnabled = settings.systemNotificationsEnabled
             self.bookingNotificationsEnabled = settings.bookingNotificationsEnabled
-            self.promoNotificationsEnabled = settings.promoNotificationsEnabled
+            self.promoNotificationsEnabled = settings.marketingNotificationsEnabled
             
             self.themeSelection = try await preferencesService.fetchTheme()
             self.selectedLanguage = try await preferencesService.fetchLanguage()
@@ -64,7 +66,9 @@ class PreferencesViewModel: ObservableObject {
                 emailNotificationsEnabled: emailNotificationsEnabled,
                 smsNotificationsEnabled: smsNotificationsEnabled,
                 messageNotificationsEnabled: messageNotificationsEnabled,
+                systemNotificationsEnabled: systemNotificationsEnabled,
                 bookingNotificationsEnabled: bookingNotificationsEnabled,
+                marketingNotificationsEnabled: promoNotificationsEnabled,
                 promoNotificationsEnabled: promoNotificationsEnabled
             )
             try await preferencesService.saveNotificationSettings(settings)
