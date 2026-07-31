@@ -516,7 +516,69 @@ service cloud.firestore {
 
       allow create: if signedIn()
         && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.reservationId == reservationId
         && request.resource.data.status == "pending"
+
+        && request.resource.data.serviceId is string
+        && request.resource.data.providerId is string
+        && request.resource.data.reservationDate is timestamp
+        && request.resource.data.dateKey is string
+        && request.resource.data.timeString is string
+        && request.resource.data.timeKey is string
+
+        && request.resource.data.dateKey.matches("^[0-9]{8}$")
+        && request.resource.data.timeString.matches(
+          "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        )
+        && request.resource.data.timeKey.matches("^[0-9]{4}$")
+        && request.resource.data.timeKey
+          == request.resource.data.timeString.replace(":", "")
+
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+
+        && request.resource.data.keys().hasAll([
+          "reservationId",
+          "serviceId",
+          "serviceTitle",
+          "servicePrice",
+          "serviceDuration",
+          "providerId",
+          "providerName",
+          "customerId",
+          "customerName",
+          "reservationDate",
+          "dateKey",
+          "timeString",
+          "timeKey",
+          "addressText",
+          "note",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ])
+
+        && request.resource.data.keys().hasOnly([
+          "reservationId",
+          "serviceId",
+          "serviceTitle",
+          "servicePrice",
+          "serviceDuration",
+          "providerId",
+          "providerName",
+          "customerId",
+          "customerName",
+          "reservationDate",
+          "dateKey",
+          "timeString",
+          "timeKey",
+          "addressText",
+          "note",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ])
+
         && exists(
           /databases/$(database)/documents/services/$(request.resource.data.serviceId)
         )
@@ -535,6 +597,7 @@ service cloud.firestore {
             /databases/$(database)/documents/services/$(request.resource.data.serviceId)
           ).data.isAvailable == true
         )
+
         && exists(
           /databases/$(database)/documents/service_providers/$(request.resource.data.providerId)
         )
@@ -547,23 +610,25 @@ service cloud.firestore {
             /databases/$(database)/documents/service_providers/$(request.resource.data.providerId)
           ).data.isAvailable == true
         )
-        && request.resource.data.keys().hasAll([
-          "reservationId",
-          "serviceId",
-          "serviceTitle",
-          "servicePrice",
-          "serviceDuration",
-          "providerId",
-          "providerName",
-          "customerId",
-          "customerName",
-          "reservationDate",
-          "addressText",
-          "note",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ]);
+
+        && existsAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(request.resource.data.providerId)/dates/$(request.resource.data.dateKey)/times/$(request.resource.data.timeKey)
+        )
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(request.resource.data.providerId)/dates/$(request.resource.data.dateKey)/times/$(request.resource.data.timeKey)
+        ).data.providerId == request.resource.data.providerId
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(request.resource.data.providerId)/dates/$(request.resource.data.dateKey)/times/$(request.resource.data.timeKey)
+        ).data.dateKey == request.resource.data.dateKey
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(request.resource.data.providerId)/dates/$(request.resource.data.dateKey)/times/$(request.resource.data.timeKey)
+        ).data.timeString == request.resource.data.timeString
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(request.resource.data.providerId)/dates/$(request.resource.data.dateKey)/times/$(request.resource.data.timeKey)
+        ).data.reservationId == reservationId
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(request.resource.data.providerId)/dates/$(request.resource.data.dateKey)/times/$(request.resource.data.timeKey)
+        ).data.status == "pending";
 
       allow update: if signedIn()
         && request.resource.data.updatedAt is timestamp
@@ -656,9 +721,17 @@ service cloud.firestore {
           allow create: if signedIn()
             && request.resource.data.providerId == providerId
             && request.resource.data.dateKey == dateKey
+            && request.resource.data.timeString is string
+            && request.resource.data.timeString.matches(
+              "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+            )
+            && timeKey
+              == request.resource.data.timeString.replace(":", "")
             && request.resource.data.status == "pending"
             && request.resource.data.reservationId is string
-            && request.resource.data.timeString is string
+            && request.resource.data.reservationId.size() > 0
+            && request.resource.data.createdAt == request.time
+            && request.resource.data.updatedAt == request.time
             && request.resource.data.keys().hasAll([
               "providerId",
               "dateKey",
@@ -677,16 +750,28 @@ service cloud.firestore {
               "createdAt",
               "updatedAt"
             ])
-            && exists(
+            && existsAfter(
               /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
             )
-            && get(
+            && getAfter(
+              /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
+            ).data.reservationId == request.resource.data.reservationId
+            && getAfter(
               /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
             ).data.customerId == request.auth.uid
-            && get(
+            && getAfter(
               /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
             ).data.providerId == providerId
-            && get(
+            && getAfter(
+              /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
+            ).data.dateKey == dateKey
+            && getAfter(
+              /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
+            ).data.timeString == request.resource.data.timeString
+            && getAfter(
+              /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
+            ).data.timeKey == timeKey
+            && getAfter(
               /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
             ).data.status == "pending";
 
@@ -694,13 +779,32 @@ service cloud.firestore {
             && (
               (
                 resource.data.status in ["cancelled", "rejected"]
+                && request.resource.data.diff(resource.data)
+                  .affectedKeys().hasOnly([
+                    "status",
+                    "reservationId",
+                    "createdAt",
+                    "updatedAt"
+                  ])
                 && request.resource.data.providerId == providerId
-                && request.resource.data.providerId == resource.data.providerId
+                && request.resource.data.providerId
+                  == resource.data.providerId
                 && request.resource.data.dateKey == dateKey
-                && request.resource.data.dateKey == resource.data.dateKey
-                && request.resource.data.timeString == resource.data.timeString
+                && request.resource.data.dateKey
+                  == resource.data.dateKey
+                && request.resource.data.timeString
+                  == resource.data.timeString
+                && request.resource.data.timeString is string
+                && request.resource.data.timeString.matches(
+                  "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                )
+                && timeKey
+                  == request.resource.data.timeString.replace(":", "")
                 && request.resource.data.status == "pending"
                 && request.resource.data.reservationId is string
+                && request.resource.data.reservationId.size() > 0
+                && request.resource.data.createdAt == request.time
+                && request.resource.data.updatedAt == request.time
                 && request.resource.data.keys().hasAll([
                   "providerId",
                   "dateKey",
@@ -719,29 +823,53 @@ service cloud.firestore {
                   "createdAt",
                   "updatedAt"
                 ])
-                && exists(
+                && existsAfter(
                   /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
                 )
-                && get(
+                && getAfter(
+                  /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
+                ).data.reservationId
+                  == request.resource.data.reservationId
+                && getAfter(
                   /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
                 ).data.customerId == request.auth.uid
-                && get(
+                && getAfter(
                   /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
                 ).data.providerId == providerId
-                && get(
+                && getAfter(
+                  /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
+                ).data.dateKey == dateKey
+                && getAfter(
+                  /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
+                ).data.timeString
+                  == request.resource.data.timeString
+                && getAfter(
+                  /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
+                ).data.timeKey == timeKey
+                && getAfter(
                   /databases/$(database)/documents/reservations/$(request.resource.data.reservationId)
                 ).data.status == "pending"
               )
               ||
               (
-                request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                  "status",
-                  "updatedAt"
-                ])
-                && request.resource.data.providerId == resource.data.providerId
-                && request.resource.data.dateKey == resource.data.dateKey
-                && request.resource.data.timeString == resource.data.timeString
-                && request.resource.data.reservationId == resource.data.reservationId
+                request.resource.data.diff(resource.data)
+                  .affectedKeys().hasOnly([
+                    "status",
+                    "updatedAt"
+                  ])
+                && request.resource.data.providerId
+                  == resource.data.providerId
+                && request.resource.data.providerId == providerId
+                && request.resource.data.dateKey
+                  == resource.data.dateKey
+                && request.resource.data.dateKey == dateKey
+                && request.resource.data.timeString
+                  == resource.data.timeString
+                && timeKey
+                  == request.resource.data.timeString.replace(":", "")
+                && request.resource.data.reservationId
+                  == resource.data.reservationId
+                && request.resource.data.updatedAt is timestamp
                 && request.resource.data.status in [
                   "accepted",
                   "rejected",
@@ -750,9 +878,47 @@ service cloud.firestore {
                   "completed",
                   "noShow"
                 ]
+                && existsAfter(
+                  /databases/$(database)/documents/reservations/$(resource.data.reservationId)
+                )
+                && getAfter(
+                  /databases/$(database)/documents/reservations/$(resource.data.reservationId)
+                ).data.reservationId == resource.data.reservationId
                 && getAfter(
                   /databases/$(database)/documents/reservations/$(resource.data.reservationId)
                 ).data.providerId == providerId
+                // Support old reservations until data migration
+                && (
+                  (
+                    getAfter(
+                      /databases/$(database)/documents/reservations/$(resource.data.reservationId)
+                    ).data.keys().hasAll([
+                      "dateKey",
+                      "timeString",
+                      "timeKey"
+                    ])
+                    && getAfter(
+                      /databases/$(database)/documents/reservations/$(resource.data.reservationId)
+                    ).data.dateKey == dateKey
+                    && getAfter(
+                      /databases/$(database)/documents/reservations/$(resource.data.reservationId)
+                    ).data.timeString
+                      == request.resource.data.timeString
+                    && getAfter(
+                      /databases/$(database)/documents/reservations/$(resource.data.reservationId)
+                    ).data.timeKey == timeKey
+                  )
+                  ||
+                  (
+                    !getAfter(
+                      /databases/$(database)/documents/reservations/$(resource.data.reservationId)
+                    ).data.keys().hasAny([
+                      "dateKey",
+                      "timeString",
+                      "timeKey"
+                    ])
+                  )
+                )
                 && getAfter(
                   /databases/$(database)/documents/reservations/$(resource.data.reservationId)
                 ).data.status == request.resource.data.status
