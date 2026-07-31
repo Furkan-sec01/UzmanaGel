@@ -8,6 +8,7 @@ class PreferencesViewModel: ObservableObject {
     @Published var pushNotificationsEnabled = false
     @Published var emailNotificationsEnabled = false
     @Published var smsNotificationsEnabled = false
+    @Published var messageNotificationsEnabled = true
     @Published var bookingNotificationsEnabled = false
     @Published var promoNotificationsEnabled = false
     
@@ -37,6 +38,7 @@ class PreferencesViewModel: ObservableObject {
             self.pushNotificationsEnabled = settings.pushNotificationsEnabled
             self.emailNotificationsEnabled = settings.emailNotificationsEnabled
             self.smsNotificationsEnabled = settings.smsNotificationsEnabled
+            self.messageNotificationsEnabled = settings.messageNotificationsEnabled
             self.bookingNotificationsEnabled = settings.bookingNotificationsEnabled
             self.promoNotificationsEnabled = settings.promoNotificationsEnabled
             
@@ -61,6 +63,7 @@ class PreferencesViewModel: ObservableObject {
                 pushNotificationsEnabled: pushNotificationsEnabled,
                 emailNotificationsEnabled: emailNotificationsEnabled,
                 smsNotificationsEnabled: smsNotificationsEnabled,
+                messageNotificationsEnabled: messageNotificationsEnabled,
                 bookingNotificationsEnabled: bookingNotificationsEnabled,
                 promoNotificationsEnabled: promoNotificationsEnabled
             )
