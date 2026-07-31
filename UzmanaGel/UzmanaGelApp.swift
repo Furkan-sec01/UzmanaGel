@@ -35,17 +35,17 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
             }
         }
 
-        // Save a pending token after the user signs in
+        // Save the device token after the user signs in
         _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             guard let user else { return }
 
-            guard let pendingToken = UserDefaults.standard.string(
-                forKey: "pendingFCMToken"
+            guard let currentToken = UserDefaults.standard.string(
+                forKey: "currentFCMToken"
             ) else {
                 return
             }
 
-            self?.saveFCMToken(pendingToken, for: user.uid)
+            self?.saveFCMToken(currentToken, for: user.uid)
         }
         
         // ScoringAndFilterVerificationSuite.runAllTests() // İhtiyaç duyulduğunda testleri çalıştırmak için açılabilir
@@ -75,6 +75,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         }
 
         print("FCM registration token alındı.")
+
+        UserDefaults.standard.set(
+            fcmToken,
+            forKey: "currentFCMToken"
+        )
+
         saveFCMToken(fcmToken)
     }
 
