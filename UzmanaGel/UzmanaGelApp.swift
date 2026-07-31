@@ -35,26 +35,17 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
             }
         }
 
-        // Save the current token for every signed-in user
+        // Save a pending token after the user signs in
         _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             guard let user else { return }
 
-            Messaging.messaging().token { token, error in
-                if let error {
-                    print(
-                        "FCM token yenilenemedi:",
-                        error.localizedDescription
-                    )
-                    return
-                }
-
-                guard let token else {
-                    print("FCM token bulunamadı.")
-                    return
-                }
-
-                self?.saveFCMToken(token, for: user.uid)
+            guard let pendingToken = UserDefaults.standard.string(
+                forKey: "pendingFCMToken"
+            ) else {
+                return
             }
+
+            self?.saveFCMToken(pendingToken, for: user.uid)
         }
         
         // ScoringAndFilterVerificationSuite.runAllTests() // İhtiyaç duyulduğunda testleri çalıştırmak için açılabilir
@@ -65,8 +56,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        // Set APNs token for Firebase Phone Auth
-        Auth.auth().setAPNSToken(deviceToken, type: .sandbox)
+        print("APNs device token alındı.")
+
+        // Let Firebase detect Sandbox or Production
+        Auth.auth().setAPNSToken(deviceToken, type: .unknown)
 
         // Connect APNs token to Firebase Messaging
         Messaging.messaging().apnsToken = deviceToken
@@ -81,6 +74,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
             return
         }
 
+        print("FCM registration token alındı.")
         saveFCMToken(fcmToken)
     }
 
