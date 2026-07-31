@@ -324,42 +324,16 @@ export const sendReservationCreatedNotification = onDocumentCreated(
     const displayCustomerName = customerName || "Bir müşteri";
     const displayServiceTitle = serviceTitle || "bir hizmet";
 
-    const providerSnapshot = await db
-      .collection("users")
-      .doc(providerId)
-      .get();
-
-    const fcmToken = providerSnapshot.data()?.fcmToken;
-
-    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
-      console.log("Uzmanın FCM tokenı bulunamadı.");
-      return;
-    }
-
-    const notificationId = await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: "Yeni rezervasyon talebi",
-        body:
-          `${displayCustomerName}, ${displayServiceTitle} için ` +
-          "rezervasyon oluşturdu.",
-      },
-      data: {
+    await sendUserPushNotification(
+      providerId,
+      "Yeni rezervasyon talebi",
+      `${displayCustomerName}, ${displayServiceTitle} için ` +
+        "rezervasyon oluşturdu.",
+      {
         type: "reservation",
         reservationId: reservationId,
       },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    });
-
-    console.log(
-      "Rezervasyon bildirimi gönderildi:",
-      notificationId
+      "reservation"
     );
   }
 );
@@ -493,41 +467,15 @@ export const sendReservationStatusNotification = onDocumentUpdated(
       return;
     }
 
-    const receiverSnapshot = await db
-      .collection("users")
-      .doc(receiverId)
-      .get();
-
-    const fcmToken = receiverSnapshot.data()?.fcmToken;
-
-    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
-      console.log("Bildirim alıcısının FCM tokenı bulunamadı.");
-      return;
-    }
-
-    const notificationId = await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: title,
-        body: body,
-      },
-      data: {
+    await sendUserPushNotification(
+      receiverId,
+      title,
+      body,
+      {
         type: "reservation",
         reservationId: reservationId,
       },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    });
-
-    console.log(
-      "Rezervasyon durum bildirimi gönderildi:",
-      newStatus,
-      notificationId
+      "reservation"
     );
   }
 );
