@@ -95,18 +95,9 @@ struct AdminDashboardView: View {
                             langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
                         }
                     } label: {
-                        HStack(spacing: 4) {
-                            Text("TR")
-                                .fontWeight(langManager.languageCode == "tr" ? .bold : .regular)
-                                .opacity(langManager.languageCode == "tr" ? 1.0 : 0.5)
-                            Text("/")
-                                .opacity(0.5)
-                            Text("EN")
-                                .fontWeight(langManager.languageCode == "en" ? .bold : .regular)
-                                .opacity(langManager.languageCode == "en" ? 1.0 : 0.5)
-                        }
-                        .font(.system(size: 15))
-                        .foregroundColor(.white)
+                        Text(langManager.languageCode == "tr" ? "TR" : "EN")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
                     }
                     .buttonStyle(.plain)
                 }
