@@ -89,31 +89,21 @@ struct AdminDashboardView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
-                // Mirror of trailing button — invisible, holds identical width so principal is truly centred
                 ToolbarItem(placement: .navigationBarLeading) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .font(.system(size: 13, weight: .bold))
-                        Text(langManager.translate("Çıkış Yap"))
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.clear)
-                    .clipShape(Capsule())
-                    .opacity(0)
-                    .overlay(alignment: .leading) {
-                        Button {
-                            withAnimation(.none) {
-                                langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
-                            }
-                        } label: {
+                    Button {
+                        langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
+                    } label: {
+                        // Fixed width matches trailing capsule so .principal stays dead-centre
+                        HStack {
                             Text(langManager.languageCode == "tr" ? "TR" : "EN")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
+                            Spacer()
                         }
-                        .buttonStyle(.plain)
+                        .frame(width: 90)
                     }
+                    .buttonStyle(.plain)
+                    .transaction { $0.animation = nil }
                 }
 
                 ToolbarItem(placement: .principal) {
@@ -140,6 +130,7 @@ struct AdminDashboardView: View {
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .transaction { $0.animation = nil }
                 }
             }
         }
