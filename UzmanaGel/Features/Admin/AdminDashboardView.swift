@@ -90,33 +90,33 @@ struct AdminDashboardView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         withAnimation {
                             langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
                         }
                     } label: {
                         Text(langManager.languageCode == "tr" ? "TR" : "EN")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(Color("PrimaryColor"))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.white)
-                            .clipShape(Capsule())
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
                     }
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         session.signOut()
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 13, weight: .bold))
                             Text(langManager.translate("Çıkış Yap"))
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 13, weight: .bold))
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(Color("PrimaryColor"))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.white)
+                        .clipShape(Capsule())
                     }
                 }
             }
