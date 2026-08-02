@@ -3,6 +3,7 @@ import SwiftUI
 struct AdminDashboardView: View {
 
     @EnvironmentObject private var session: SessionViewModel
+    @ObservedObject private var langManager = LanguageManager.shared
 
     private let backgroundColor = Color("BackgroundColor")
 
@@ -88,6 +89,21 @@ struct AdminDashboardView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
+                    } label: {
+                        Text(langManager.languageCode == "tr" ? "TR" : "EN")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(Color("PrimaryColor"))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.white)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 ToolbarItem(placement: .principal) {
                     Text(langManager.translate("Yönetim Paneli"))
                         .font(.system(size: 17, weight: .bold))
