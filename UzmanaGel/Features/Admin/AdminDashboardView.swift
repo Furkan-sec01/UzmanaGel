@@ -103,9 +103,16 @@ struct AdminDashboardView: View {
                 }
 
                 ToolbarItem(placement: .principal) {
-                    Text(langManager.translate("Yönetim Paneli"))
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(.white)
+                    ZStack {
+                        // Longest string holds the space so layout never shifts
+                        Text("Yönetim Paneli")
+                            .font(.system(size: 17, weight: .bold))
+                            .opacity(0)
+                        Text(langManager.translate("Yönetim Paneli"))
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                            .animation(nil, value: langManager.languageCode)
+                    }
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
