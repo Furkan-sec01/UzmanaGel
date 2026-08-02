@@ -8,7 +8,6 @@
 import SwiftUI
 import Combine
 
-
 @MainActor
 final class NotificationRouter: ObservableObject {
 
@@ -45,6 +44,26 @@ final class NotificationRouter: ObservableObject {
     }
 }
 
+private enum NotificationDestination: Identifiable {
+
+    case reservation(Reservation)
+    case conversation(Conversation)
+    case reviews(providerId: String)
+
+    var id: String {
+        switch self {
+        case .reservation(let reservation):
+            return "reservation-\(reservation.reservationId)"
+
+        case .conversation(let conversation):
+            return "conversation-\(conversation.id)"
+
+        case .reviews(let providerId):
+            return "reviews-\(providerId)"
+        }
+    }
+}
+
 struct RootView: View {
 
     @EnvironmentObject var session: SessionViewModel
@@ -53,10 +72,8 @@ struct RootView: View {
 
     @ObservedObject private var notificationRouter = NotificationRouter.shared
 
-    @State private var notificationReservation: Reservation?
-    @State private var notificationConversation: Conversation?
-    @State private var notificationReviewProviderId = ""
-    @State private var showNotificationReviews = false
+    @State private var notificationDestination:
+        NotificationDestination?
     @State private var notificationErrorMessage = ""
     @State private var showNotificationError = false
 
@@ -67,32 +84,55 @@ struct RootView: View {
         Group {
             if !hasSeenOnboarding {
                 OnboardingView()
-            } else if session.isAuthenticated && session.isCheckingProfile {
-                ProgressView("Profil kontrol ediliyor...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color("BackgroundColor").ignoresSafeArea())
-            } else if session.isAuthenticated && session.isAdmin {
-                AdminDashboardView()
-                    .environmentObject(session)
-            } else if session.isAuthenticated && session.isInExpertSignupFlow,
-                      let vm = session.expertSignUpViewModel {// optional binding
+
+            } else if session.isInExpertSignupFlow,
+                      let vm = session.expertSignUpViewModel {
                 ExpertSignUpView(vm: vm)
                     .environmentObject(session)
-            } else if session.isAuthenticated && session.isExpert {
+
+            } else if session.isInCustomerSignupFlow,
+                      let vm = session.customerSignUpViewModel {
+                SignUp(vm: vm)
+                    .environmentObject(session)
+
+            } else if session.isAuthenticated &&
+                        session.isCheckingProfile {
+                ProgressView("Profil kontrol ediliyor...")
+                    .frame(
+                        maxWidth: .infinity,
+                        maxHeight: .infinity
+                    )
+                    .background(
+                        Color("BackgroundColor")
+                            .ignoresSafeArea()
+                    )
+
+            } else if session.isAuthenticated &&
+                        session.isAdmin {
+                AdminDashboardView()
+                    .environmentObject(session)
+
+            } else if session.isAuthenticated &&
+                        session.isExpert {
                 ExpertHomepage()
                     .environmentObject(session)
-            } else if session.isAuthenticated && session.needsProfileSetup {
+
+            } else if session.isAuthenticated &&
+                        session.needsProfileSetup {
                 CompleteProfileView()
                     .environmentObject(session)
+
             } else if session.isAuthenticated {
                 Homepage()
+
             } else {
                 LoginPage()
             }
         }
-        .task(id: notificationRouter.pendingReservationId) {
-            await openPendingReservationIfPossible()
-        }
+
+                .task(id: notificationRouter.pendingReservationId) {
+                    await openPendingReservationIfPossible()
+                }
         .task(id: notificationRouter.pendingConversationId) {
             await openPendingConversationIfPossible()
         }
@@ -117,19 +157,26 @@ struct RootView: View {
                 await openPendingReviewsIfPossible()
             }
         }
-        .sheet(item: $notificationReservation) { reservation in
-            ReservationDetailPage(reservation: reservation)
-        }
-        .sheet(item: $notificationConversation) { conversation in
-            NavigationStack {
-                ChatDetailPage(conversation: conversation)
-            }
-        }
-        .sheet(isPresented: $showNotificationReviews) {
-            NavigationStack {
-                ProviderReviewsPage(
-                    providerId: notificationReviewProviderId
+        .sheet(item: $notificationDestination) { destination in
+            switch destination {
+            case .reservation(let reservation):
+                ReservationDetailPage(
+                    reservation: reservation
                 )
+
+            case .conversation(let conversation):
+                NavigationStack {
+                    ChatDetailPage(
+                        conversation: conversation
+                    )
+                }
+
+            case .reviews(let providerId):
+                NavigationStack {
+                    ProviderReviewsPage(
+                        providerId: providerId
+                    )
+                }
             }
         }
         .alert("Bildirim Açılamadı".localized, isPresented: $showNotificationError) {
@@ -153,7 +200,8 @@ struct RootView: View {
             )
 
             notificationRouter.clearReservation()
-            notificationReservation = reservation
+            notificationDestination =
+                .reservation(reservation)
         } catch {
             notificationRouter.clearReservation()
             notificationErrorMessage = error.localizedDescription
@@ -177,7 +225,8 @@ struct RootView: View {
             )
 
             notificationRouter.clearConversation()
-            notificationConversation = conversation
+            notificationDestination =
+                .conversation(conversation)
 
         } catch {
             notificationRouter.clearConversation()
@@ -207,8 +256,8 @@ struct RootView: View {
             return
         }
 
-        notificationReviewProviderId = trimmedProviderId
-        showNotificationReviews = true
+        notificationDestination =
+            .reviews(providerId: trimmedProviderId)
     }
 
 

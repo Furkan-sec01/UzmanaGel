@@ -24,6 +24,7 @@ struct LoginPage: View {
     @State private var path = NavigationPath()
 
     private enum ExpertSignupDestination: Hashable { case flow }
+    private enum CustomerSignupDestination: Hashable {case flow }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -161,7 +162,7 @@ struct LoginPage: View {
                         Button {
                             let vc = getRootViewController()
                             vm.signInWithGoogle(presenting: vc)
-                        }  label: {
+                        } label: {
                             Circle()
                                 .fill(Color(.secondarySystemBackground))
                                 .frame(width: 54, height: 54)
@@ -199,13 +200,13 @@ struct LoginPage: View {
                                 .fill(Color.black)
                                 .frame(width: 54, height: 54)
                                 .shadow(radius: 6, y: 3)
-                                .overlay(
-                                    Image(systemName: "applelogo")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.white)
-                                        .padding(.bottom, 2)
-                                )
-                            
+                                .allowsHitTesting(false)
+
+                            Image(systemName: "applelogo")
+                                .font(.system(size: 25, weight: .medium))
+                                .foregroundColor(.white)
+                                .allowsHitTesting(false)
+
                             SignInWithAppleButton(
                                 .continue,
                                 onRequest: { request in
@@ -216,17 +217,22 @@ struct LoginPage: View {
                                 }
                             )
                             .frame(width: 54, height: 54)
-                            .blendMode(.destinationOver)
-                            .opacity(0.015)
+                            .clipShape(Circle())
+                            .opacity(0.001)
+                            .zIndex(1)
                         }
-                        .disabled(vm.attemptTracker.isLocked || vm.isLoading)
-                        .opacity(vm.attemptTracker.isLocked ? 0.4 : 1)
+                        .frame(width: 54, height: 54)
+                        .contentShape(Circle())
+                        .disabled(vm.isLoading)
+                        .opacity(vm.isLoading ? 0.5 : 1)
                     }
                     .padding(.top, 10)
+
                     // Sign up + Expert
-                    VStack(spacing: 10) {
-                        NavigationLink {
-                            SignUp()
+                    VStack(spacing: 12) {
+                        Button {
+                            session.startCustomerSignup()
+                            path.append(CustomerSignupDestination.flow)
                         } label: {
                             HStack(spacing: 6) {
                                 Text("Hesabın yok mu?".localized)
@@ -237,11 +243,10 @@ struct LoginPage: View {
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(Color("PrimaryColor"))
                             }
+                            .frame(maxWidth: .infinity)
                             .contentShape(Rectangle())
-                            .background(Color.black.opacity(0.0001))
                         }
                         .buttonStyle(.plain)
-                        .padding(.top, 20)
 
                         HStack(spacing: 6) {
                             Text("Uzman mısın?".localized)
@@ -253,73 +258,79 @@ struct LoginPage: View {
                                 .foregroundColor(.orange)
                                 .underline()
                         }
+                        .frame(maxWidth: .infinity)
                         .contentShape(Rectangle())
-                        .background(Color.black.opacity(0.0001))
                         .onTapGesture {
                             session.startExpertSignup()
                             path.append(ExpertSignupDestination.flow)
                         }
-                        .padding(.top, 10)
                     }
+                    .padding(.top, 8)
 
                     Spacer()
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 24)
 
-                // Loading overlay
-                if vm.isLoading {
-                    ZStack {
-                        Color.black.opacity(0.2).ignoresSafeArea()
-                        ProgressView()
-                            .padding()
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(12)
+                    // Loading overlay
+                    if vm.isLoading {
+                        ZStack {
+                            Color.black.opacity(0.2).ignoresSafeArea()
+                            ProgressView()
+                                .padding()
+                                .background(.ultraThinMaterial)
+                                .cornerRadius(12)
+                        }
                     }
                 }
-            }
 
-            // Giriş başarılı olunca RootView otomatik olarak ExpertHomepage veya Homepage gösterir (rol kontrolü orada).
+                // Giriş başarılı olunca RootView otomatik olarak ExpertHomepage veya Homepage gösterir (rol kontrolü orada).
 
-            // ViewModel errorMessage değişince alert aç
-            .onChange(of: vm.errorMessage) { _, msg in
-                showError = (msg != nil)
-            }
-
-            .alert("Hata", isPresented: $showError) {
-                Button("Tamam", role: .cancel) {
-                    vm.clearError()
+                // ViewModel errorMessage değişince alert aç
+                .onChange(of: vm.errorMessage) { _, msg in
+                    showError = (msg != nil)
                 }
-            } message: {
-                Text(vm.errorMessage ?? "Bilinmeyen hata")
-            }
 
-            // route tanımı
-            .navigationDestination(for: String.self) { value in
-                if value == "home" {
-                    Homepage()
-                        .navigationBarBackButtonHidden(true)
+                .alert("Hata", isPresented: $showError) {
+                    Button("Tamam", role: .cancel) {
+                        vm.clearError()
+                    }
+                } message: {
+                    Text(vm.errorMessage ?? "Bilinmeyen hata")
                 }
-            }
-            .navigationDestination(for: ExpertSignupDestination.self) { _ in
-                if let vm = session.expertSignUpViewModel {
-                    ExpertSignUpView(vm: vm)
-                        .environmentObject(session)
+
+                // route tanımı
+                .navigationDestination(for: String.self) { value in
+                    if value == "home" {
+                        Homepage()
+                            .navigationBarBackButtonHidden(true)
+                    }
+                }
+                .navigationDestination(for: ExpertSignupDestination.self) { _ in
+                    if let vm = session.expertSignUpViewModel {
+                        ExpertSignUpView(vm: vm)
+                            .environmentObject(session)
+                    }
+                }
+                .navigationDestination(
+                    for: CustomerSignupDestination.self
+                ) { _ in
+                    if let vm = session.customerSignUpViewModel {
+                        SignUp(vm: vm)
+                            .environmentObject(session)
+                    }
                 }
             }
         }
     }
-}
-private func getRootViewController() -> UIViewController {
-    guard
-        let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-        let root = scene.windows.first?.rootViewController
-    else {
-        return UIViewController()
+    private func getRootViewController() -> UIViewController {
+        guard
+            let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+            let root = scene.windows.first?.rootViewController
+        else {
+            return UIViewController()
+        }
+        return root
     }
-    return root
-}
 
-#Preview {
-    LoginPage()
-}
+

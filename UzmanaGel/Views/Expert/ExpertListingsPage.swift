@@ -539,7 +539,9 @@ struct ExpertEditListingView: View {
             return
         }
         do {
-            var finalImageURL = listingImageURL ?? service.image
+            var finalImageURL = listingImageURL
+                ?? profile.profileImageURL
+                ?? ""
 
             if let selectedListingImageData {
                 guard let image = UIImage(data: selectedListingImageData) else {

@@ -2,6 +2,7 @@ import SwiftUI
 
 @MainActor
 struct CustomerProfileView: View {
+    @EnvironmentObject private var session: SessionViewModel
     @StateObject private var viewModel = CustomerProfileViewModel()
     @State private var showingEditProfile = false
     @ObservedObject private var langManager = LanguageManager.shared
@@ -73,9 +74,7 @@ struct CustomerProfileView: View {
                                 
                                 // Logout Button
                                 Button {
-                                    withAnimation {
-                                        viewModel.logout()
-                                    }
+                                    session.signOut()
                                 } label: {
                                     HStack {
                                         Image(systemName: "rectangle.portrait.and.arrow.right")

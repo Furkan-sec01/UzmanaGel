@@ -20,69 +20,227 @@ class FirestorePreferencesService: PreferencesService {
     
     // MARK: - Notification Settings
     func fetchNotificationSettings() async throws -> NotificationSettings {
-        // Fallback or cached values from UserDefaults
-        var push = UserDefaults.standard.bool(forKey: "notificationEnabled")
-        var booking = UserDefaults.standard.bool(forKey: "reservationNotificationsEnabled")
-        var promo = UserDefaults.standard.bool(forKey: "marketingNotificationsEnabled")
-        var email = UserDefaults.standard.bool(forKey: "pref_emailNotifications")
-        var sms = UserDefaults.standard.bool(forKey: "pref_smsNotifications")
-        
-        // If user is logged in, try fetching from Firestore
+        let defaults = UserDefaults.standard
+
+        var push =
+            defaults.object(forKey: "notificationEnabled")
+            as? Bool ?? true
+
+        var email =
+            defaults.object(forKey: "pref_emailNotifications")
+            as? Bool ?? true
+
+        var sms =
+            defaults.object(forKey: "pref_smsNotifications")
+            as? Bool ?? false
+
+        let hasLocalMessage =
+            defaults.object(
+                forKey: "messageNotificationsEnabled"
+            ) != nil
+
+        var message =
+            defaults.object(
+                forKey: "messageNotificationsEnabled"
+            ) as? Bool ?? true
+
+        let hasLocalSystem =
+            defaults.object(
+                forKey: "systemNotificationsEnabled"
+            ) != nil
+
+        var system =
+            defaults.object(
+                forKey: "systemNotificationsEnabled"
+            ) as? Bool ?? true
+
+        var booking =
+            defaults.object(
+                forKey: "reservationNotificationsEnabled"
+            ) as? Bool ?? true
+
+        let hasLocalMarketing =
+            defaults.object(
+                forKey: "marketingNotificationsEnabled"
+            ) != nil
+
+        var marketing =
+            defaults.object(
+                forKey: "marketingNotificationsEnabled"
+            ) as? Bool ?? false
+
         if let uid = currentUserId {
-            let doc = try await db.collection("users").document(uid).getDocument()
-            if let prefs = doc.data()?["preferences"] as? [String: Any],
-               let notifMap = prefs["notificationSettings"] as? [String: Any] {
-                push = notifMap["pushNotificationsEnabled"] as? Bool ?? push
-                email = notifMap["emailNotificationsEnabled"] as? Bool ?? email
-                sms = notifMap["smsNotificationsEnabled"] as? Bool ?? sms
-                booking = notifMap["bookingNotificationsEnabled"] as? Bool ?? booking
-                promo = notifMap["promoNotificationsEnabled"] as? Bool ?? promo
-                
-                // Keep local defaults in sync
-                UserDefaults.standard.set(push, forKey: "notificationEnabled")
-                UserDefaults.standard.set(booking, forKey: "reservationNotificationsEnabled")
-                UserDefaults.standard.set(promo, forKey: "marketingNotificationsEnabled")
-                UserDefaults.standard.set(email, forKey: "pref_emailNotifications")
-                UserDefaults.standard.set(sms, forKey: "pref_smsNotifications")
+            let document = try await db
+                .collection("users")
+                .document(uid)
+                .getDocument()
+
+            if let preferences =
+                document.data()?["preferences"] as? [String: Any],
+               let notificationMap =
+                preferences["notificationSettings"]
+                    as? [String: Any] {
+
+                push =
+                    notificationMap["pushNotificationsEnabled"]
+                    as? Bool ?? push
+
+                email =
+                    notificationMap["emailNotificationsEnabled"]
+                    as? Bool ?? email
+
+                sms =
+                    notificationMap["smsNotificationsEnabled"]
+                    as? Bool ?? sms
+
+                if let storedMessage =
+                    notificationMap["messageNotificationsEnabled"]
+                        as? Bool {
+                    message = storedMessage
+                } else if !hasLocalMessage {
+                    message =
+                        notificationMap["smsNotificationsEnabled"]
+                        as? Bool ?? message
+                }
+
+                if let storedSystem =
+                    notificationMap["systemNotificationsEnabled"]
+                        as? Bool {
+                    system = storedSystem
+                } else if !hasLocalSystem {
+                    system =
+                        notificationMap["emailNotificationsEnabled"]
+                        as? Bool ?? system
+                }
+
+                booking =
+                    notificationMap["bookingNotificationsEnabled"]
+                    as? Bool ?? booking
+
+                if let storedMarketing =
+                    notificationMap["marketingNotificationsEnabled"]
+                        as? Bool {
+                    marketing = storedMarketing
+                } else if !hasLocalMarketing {
+                    marketing =
+                        notificationMap["promoNotificationsEnabled"]
+                        as? Bool ?? marketing
+                }
             }
         }
-        
+
+        defaults.set(push, forKey: "notificationEnabled")
+        defaults.set(
+            email,
+            forKey: "pref_emailNotifications"
+        )
+        defaults.set(
+            sms,
+            forKey: "pref_smsNotifications"
+        )
+        defaults.set(
+            message,
+            forKey: "messageNotificationsEnabled"
+        )
+        defaults.set(
+            system,
+            forKey: "systemNotificationsEnabled"
+        )
+        defaults.set(
+            booking,
+            forKey: "reservationNotificationsEnabled"
+        )
+        defaults.set(
+            marketing,
+            forKey: "marketingNotificationsEnabled"
+        )
+
         return NotificationSettings(
             pushNotificationsEnabled: push,
             emailNotificationsEnabled: email,
             smsNotificationsEnabled: sms,
+            messageNotificationsEnabled: message,
+            systemNotificationsEnabled: system,
             bookingNotificationsEnabled: booking,
-            promoNotificationsEnabled: promo
+            marketingNotificationsEnabled: marketing,
+            promoNotificationsEnabled: marketing
         )
     }
-    
-    func saveNotificationSettings(_ settings: NotificationSettings) async throws {
-        // Update local UserDefaults
-        UserDefaults.standard.set(settings.pushNotificationsEnabled, forKey: "notificationEnabled")
-        UserDefaults.standard.set(settings.bookingNotificationsEnabled, forKey: "reservationNotificationsEnabled")
-        UserDefaults.standard.set(settings.promoNotificationsEnabled, forKey: "marketingNotificationsEnabled")
-        UserDefaults.standard.set(settings.emailNotificationsEnabled, forKey: "pref_emailNotifications")
-        UserDefaults.standard.set(settings.smsNotificationsEnabled, forKey: "pref_smsNotifications")
-        
-        // Save to Firestore if logged in
-        if let uid = currentUserId {
-            let notifMap: [String: Any] = [
-                "pushNotificationsEnabled": settings.pushNotificationsEnabled,
-                "emailNotificationsEnabled": settings.emailNotificationsEnabled,
-                "smsNotificationsEnabled": settings.smsNotificationsEnabled,
-                "bookingNotificationsEnabled": settings.bookingNotificationsEnabled,
-                "promoNotificationsEnabled": settings.promoNotificationsEnabled,
-                "updatedAt": FieldValue.serverTimestamp()
-            ]
-            
-            try await db.collection("users").document(uid).setData([
-                "preferences": [
-                    "notificationSettings": notifMap
-                ]
-            ], merge: true)
+
+    func saveNotificationSettings(
+        _ settings: NotificationSettings
+    ) async throws {
+        let defaults = UserDefaults.standard
+
+        defaults.set(
+            settings.pushNotificationsEnabled,
+            forKey: "notificationEnabled"
+        )
+        defaults.set(
+            settings.emailNotificationsEnabled,
+            forKey: "pref_emailNotifications"
+        )
+        defaults.set(
+            settings.smsNotificationsEnabled,
+            forKey: "pref_smsNotifications"
+        )
+        defaults.set(
+            settings.messageNotificationsEnabled,
+            forKey: "messageNotificationsEnabled"
+        )
+        defaults.set(
+            settings.systemNotificationsEnabled,
+            forKey: "systemNotificationsEnabled"
+        )
+        defaults.set(
+            settings.bookingNotificationsEnabled,
+            forKey: "reservationNotificationsEnabled"
+        )
+        defaults.set(
+            settings.marketingNotificationsEnabled,
+            forKey: "marketingNotificationsEnabled"
+        )
+
+        guard let uid = currentUserId else {
+            return
         }
+
+        let notificationMap: [String: Any] = [
+            "pushNotificationsEnabled":
+                settings.pushNotificationsEnabled,
+            "emailNotificationsEnabled":
+                settings.emailNotificationsEnabled,
+            "smsNotificationsEnabled":
+                settings.smsNotificationsEnabled,
+            "messageNotificationsEnabled":
+                settings.messageNotificationsEnabled,
+            "systemNotificationsEnabled":
+                settings.systemNotificationsEnabled,
+            "bookingNotificationsEnabled":
+                settings.bookingNotificationsEnabled,
+            "marketingNotificationsEnabled":
+                settings.marketingNotificationsEnabled,
+
+            // Keep the old field during migration
+            "promoNotificationsEnabled":
+                settings.marketingNotificationsEnabled,
+            "updatedAt": FieldValue.serverTimestamp()
+        ]
+
+        try await db
+            .collection("users")
+            .document(uid)
+            .setData(
+                [
+                    "preferences": [
+                        "notificationSettings":
+                            notificationMap
+                    ]
+                ],
+                merge: true
+            )
     }
-    
+
     // MARK: - Theme
     func fetchTheme() async throws -> AppTheme {
         let savedThemeRaw = UserDefaults.standard.string(forKey: "app_theme") ?? AppTheme.system.rawValue

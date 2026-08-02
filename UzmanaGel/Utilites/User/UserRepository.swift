@@ -7,49 +7,81 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseFunctions
 
-/// UserRepository, normal kullanıcı ve expert verilerini Firestore’da okuyan, yazan ve güncelleyen veri erişim katmanıdır.
-/// Firestore bağlantısı: GoogleService-Info.plist içindeki Firebase projesi kullanılır.
-/// Database location (eur3 vb.) proje oluşturulurken Console'da seçilir; istemci aynı projeye bağlanır.
+enum UserRepositoryError: LocalizedError {
+    case invalidPrivateFields([String])
+    case invalidPhoneAvailabilityResponse
 
+    var errorDescription: String? {
+        switch self {
+        case .invalidPrivateFields(let fields):
+            return "Geçersiz özel veri alanları: \(fields.joined(separator: ", "))"
+
+        case .invalidPhoneAvailabilityResponse:
+            return "Telefon kontrolü sonucu okunamadı."
+        }
+    }
+}
+/// Reads and writes user and provider data.
 final class UserRepository {
 
     private let db = Firestore.firestore()
+    private let functions = Functions.functions(
+        region: "europe-west1"
+    )
 
-    // MARK: - Mükerrer Kontrol
+    private let usersCollection = "users"
+    private let providersCollection = "service_providers"
+    private let privateProvidersCollection = "provider_private_data"
 
-    func isEmailTaken(_ email: String) async throws -> Bool {
-        let snapshot = try await db.collection("users")
-            .whereField("email", isEqualTo: email.lowercased())
-            .limit(to: 1)
-            .getDocuments()
-        return !snapshot.documents.isEmpty
-    }
+    private let allowedPrivateUpdateFields: Set<String> = [
+        "email",
+        "phoneNumber",
+        "taxNumber",
+        "bankName",
+        "iban",
+        "accountHolderName",
+        "certificateURLs",
+        "idFrontURL",
+        "idBackURL"
+    ]
 
-    func isPhoneTaken(_ phone: String) async throws -> Bool {
+    // MARK: - Duplicate Check
+
+
+    func isPhoneTaken(
+        _ phone: String
+    ) async throws -> Bool {
         let normalized = phone.filter(\.isNumber)
-        guard !normalized.isEmpty else { return false }
 
-        let snapshot = try await db.collection("users")
-            .whereField("phoneNumber", isEqualTo: normalized)
-            .limit(to: 1)
-            .getDocuments()
-        return !snapshot.documents.isEmpty
+        guard !normalized.isEmpty else {
+            return false
+        }
+
+        let callable = functions.httpsCallable(
+            "checkPhoneAvailability"
+        )
+
+        let result = try await callable.call([
+            "phone": normalized
+        ])
+
+        guard let data = result.data as? [String: Any],
+              let isTaken = data["taken"] as? Bool else {
+            throw UserRepositoryError.invalidPhoneAvailabilityResponse
+        }
+
+        return isTaken
     }
-    
-    
-    
+    // MARK: - Create User
 
-    // MARK: - Kullanıcı Oluştur
-
-    /// Müşteri (normal kullanıcı) dokümanı. Uzman ve müşteri aynı users koleksiyonunda; role ile ayrılır.
     func createUserDocument(
         uid: String,
         displayName: String,
         email: String,
         phoneNumber: String?
     ) async throws {
-
         let data: [String: Any] = [
             "displayName": displayName,
             "email": email.lowercased(),
@@ -58,26 +90,53 @@ final class UserRepository {
             "createdAt": Timestamp(date: Date())
         ]
 
-        try await db.collection("users").document(uid).setData(data, merge: true)
+        try await db
+            .collection(usersCollection)
+            .document(uid)
+            .setData(
+                data,
+                merge: true
+            )
     }
 
-    // MARK: - Kullanıcı Getir
+    // MARK: - Fetch User
 
-    func fetchUser(uid: String) async throws -> AppUser {
-        let snap = try await db.collection("users").document(uid).getDocument()
-        return try snap.data(as: AppUser.self)
-    }
-    
-    func userDocumentExists(uid: String) async throws -> Bool {
+    func fetchUser(
+        uid: String
+    ) async throws -> AppUser {
         let snapshot = try await db
-            .collection("users")
+            .collection(usersCollection)
+            .document(uid)
+            .getDocument()
+
+        return try snapshot.data(
+            as: AppUser.self
+        )
+    }
+
+    func userDocumentExists(
+        uid: String
+    ) async throws -> Bool {
+        let snapshot = try await db
+            .collection(usersCollection)
             .document(uid)
             .getDocument()
 
         return snapshot.exists
     }
 
-    // MARK: - Uzman İşlemleri
+    func fetchUserRole(
+        uid: String
+    ) async throws -> String? {
+        let snapshot = try await db
+            .collection(usersCollection)
+            .document(uid)
+            .getDocument()
+
+        return snapshot.data()?["role"] as? String
+    }
+
+    // MARK: - Expert User
 
     func createExpertUserDocument(
         uid: String,
@@ -85,7 +144,6 @@ final class UserRepository {
         email: String,
         phoneNumber: String
     ) async throws {
-
         let data: [String: Any] = [
             "displayName": displayName,
             "email": email.lowercased(),
@@ -94,18 +152,46 @@ final class UserRepository {
             "createdAt": Timestamp(date: Date())
         ]
 
-        try await db.collection("users").document(uid).setData(data, merge: true)
+        try await db
+            .collection(usersCollection)
+            .document(uid)
+            .setData(
+                data,
+                merge: true
+            )
     }
 
-    /// Uzman kayıt (1. adım) sonrası: service_providers'da minimal doküman. Tüm uzman bilgileri service_providers'da tutulur.
-    func createMinimalServiceProvider(uid: String, displayName: String, email: String, phoneNumber: String) async throws {
-        let data: [String: Any] = [
+    // MARK: - Public Provider Profile
+
+    /// Creates the current public provider document.
+    ///
+    /// Email and phone are temporarily kept here until all screens
+    /// are moved to provider_private_data.
+    /// Creates the public and private provider documents together.
+    func createMinimalServiceProvider(
+        uid: String,
+        displayName: String,
+        email: String,
+        phoneNumber: String
+    ) async throws {
+        let now = Timestamp(date: Date())
+
+        let publicReference = db
+            .collection(providersCollection)
+            .document(uid)
+
+        let privateReference = db
+            .collection(privateProvidersCollection)
+            .document(uid)
+
+        let privateSnapshot = try await privateReference.getDocument()
+
+        // Public profile data
+        let publicData: [String: Any] = [
             "providerId": uid,
             "displayName": displayName,
-            "email": email.lowercased(),
-            "phoneNumber": phoneNumber.filter(\.isNumber),
             "status": "Draft",
-            "createdAt": Timestamp(date: Date()),
+            "createdAt": now,
             "businessName": "",
             "city": "",
             "isActive": false,
@@ -121,29 +207,145 @@ final class UserRepository {
             "workingDays": [],
             "portfolioImageURLs": []
         ]
-        try await db.collection("service_providers").document(uid).setData(data, merge: true)
+
+        // Private provider data
+        var privateData: [String: Any] = [
+            "providerId": uid,
+            "email": email.lowercased(),
+            "phoneNumber": phoneNumber.filter(\.isNumber),
+            "taxNumber": "",
+            "bankName": "",
+            "iban": "",
+            "accountHolderName": "",
+            "certificateURLs": [],
+            "idFrontURL": "",
+            "idBackURL": "",
+            "updatedAt": now
+        ]
+
+        if !privateSnapshot.exists {
+            privateData["createdAt"] = now
+        }
+
+        let batch = db.batch()
+
+        batch.setData(
+            publicData,
+            forDocument: publicReference,
+            merge: true
+        )
+
+        batch.setData(
+            privateData,
+            forDocument: privateReference,
+            merge: true
+        )
+
+        try await batch.commit()
+    }
+    func fetchExpertProfile(
+        uid: String
+    ) async throws -> ExpertProfile? {
+        let publicSnapshot = try await db
+            .collection(providersCollection)
+            .document(uid)
+            .getDocument()
+
+        guard publicSnapshot.exists else {
+            return nil
+        }
+
+        var profile = try publicSnapshot.data(
+            as: ExpertProfile.self
+        )
+
+        do {
+            if let privateData = try await fetchProviderPrivateData(
+                uid: uid
+            ) {
+                profile.applyPrivateData(privateData)
+            }
+        } catch let error as NSError {
+            let isPermissionDenied =
+                error.domain == FirestoreErrorDomain
+                && error.code
+                    == FirestoreErrorCode.Code.permissionDenied.rawValue
+
+            // Other users cannot read private provider data.
+            if !isPermissionDenied {
+                throw error
+            }
+        }
+
+        return profile
+    }
+    func updateExpertProfile(
+        uid: String,
+        fields: [String: Any]
+    ) async throws {
+        guard !fields.isEmpty else {
+            return
+        }
+
+        var publicFields: [String: Any] = [:]
+        var privateFields: [String: Any] = [:]
+
+        for (key, value) in fields {
+            if allowedPrivateUpdateFields.contains(key) {
+                privateFields[key] = value
+            } else {
+                publicFields[key] = value
+            }
+        }
+
+        let batch = db.batch()
+
+        if !publicFields.isEmpty {
+            batch.setData(
+                publicFields,
+                forDocument: db
+                    .collection(providersCollection)
+                    .document(uid),
+                merge: true
+            )
+        }
+
+        if !privateFields.isEmpty {
+            // providerId allows creating the private document
+            // for existing providers during migration.
+            privateFields["providerId"] = uid
+            privateFields["updatedAt"] = Timestamp(date: Date())
+
+            batch.setData(
+                privateFields,
+                forDocument: db
+                    .collection(privateProvidersCollection)
+                    .document(uid),
+                merge: true
+            )
+        }
+
+        try await batch.commit()
+    }
+    func submitExpertForApproval(
+        uid: String
+    ) async throws {
+        try await db
+            .collection(providersCollection)
+            .document(uid)
+            .setData(
+                [
+                    "status": "Pending"
+                ],
+                merge: true
+            )
     }
 
-    /// Kayıtlı uzman profilini Firestore service_providers koleksiyonundan getirir (uzman + müşteri users'da, uzman detayı service_providers'da).
-    func fetchExpertProfile(uid: String) async throws -> ExpertProfile? {
-        let snap = try await db.collection("service_providers").document(uid).getDocument()
-        guard snap.exists else { return nil }
-        return try? snap.data(as: ExpertProfile.self)
-    }
-
-    /// Uzman profilinde belirtilen alanları günceller (merge). service_providers dokümanına yazar.
-    func updateExpertProfile(uid: String, fields: [String: Any]) async throws {
-        try await db.collection("service_providers").document(uid).setData(fields, merge: true)
-    }
-
-    /// Profil %100 dolu olduğunda uzman "Onay için gönder" yapar; status "Pending" olur.
-    func submitExpertForApproval(uid: String) async throws {
-        try await db.collection("service_providers").document(uid).setData(["status": "Pending"], merge: true)
-    }
-
-    func fetchExpertAvailability(uid: String) async throws -> Bool {
+    func fetchExpertAvailability(
+        uid: String
+    ) async throws -> Bool {
         let snapshot = try await db
-            .collection("service_providers")
+            .collection(providersCollection)
             .document(uid)
             .getDocument()
 
@@ -155,21 +357,128 @@ final class UserRepository {
         isAvailable: Bool
     ) async throws {
         try await db
-            .collection("service_providers")
+            .collection(providersCollection)
             .document(uid)
-            .setData([
-                "isAvailable": isAvailable,
-                "updatedAt": Timestamp(date: Date())
-            ], merge: true)
+            .setData(
+                [
+                    "isAvailable": isAvailable,
+                    "updatedAt": Timestamp(date: Date())
+                ],
+                merge: true
+            )
     }
 
-    func fetchUserRole(uid: String) async throws -> String? {
-        let snap = try await db.collection("users").document(uid).getDocument()
-        return snap.data()?["role"] as? String
+    // MARK: - Provider Private Data
+
+    /// Creates the private provider document.
+    ///
+    /// This function is not connected to signup yet.
+    func createProviderPrivateData(
+        uid: String,
+        email: String,
+        phoneNumber: String
+    ) async throws {
+        let reference = db
+            .collection(privateProvidersCollection)
+            .document(uid)
+
+        let snapshot = try await reference.getDocument()
+        let now = Timestamp(date: Date())
+
+        var data: [String: Any] = [
+            "providerId": uid,
+            "email": email.lowercased(),
+            "phoneNumber": phoneNumber.filter(\.isNumber),
+            "taxNumber": "",
+            "bankName": "",
+            "iban": "",
+            "accountHolderName": "",
+            "certificateURLs": [],
+            "idFrontURL": "",
+            "idBackURL": "",
+            "updatedAt": now
+        ]
+
+        if !snapshot.exists {
+            data["createdAt"] = now
+        }
+
+        try await reference.setData(
+            data,
+            merge: true
+        )
+    }
+
+    func fetchProviderPrivateData(
+        uid: String
+    ) async throws -> ProviderPrivateData? {
+        let snapshot = try await db
+            .collection(privateProvidersCollection)
+            .document(uid)
+            .getDocument()
+
+        guard snapshot.exists else {
+            return nil
+        }
+
+        return try snapshot.data(
+            as: ProviderPrivateData.self
+        )
+    }
+
+    func providerPrivateDataExists(
+        uid: String
+    ) async throws -> Bool {
+        let snapshot = try await db
+            .collection(privateProvidersCollection)
+            .document(uid)
+            .getDocument()
+
+        return snapshot.exists
+    }
+
+    func updateProviderPrivateData(
+        uid: String,
+        fields: [String: Any]
+    ) async throws {
+        guard !fields.isEmpty else {
+            return
+        }
+
+        let requestedFields = Set<String>(
+            fields.keys
+        )
+
+        let invalidFields = requestedFields
+            .subtracting(
+                allowedPrivateUpdateFields
+            )
+            .sorted()
+
+        guard invalidFields.isEmpty else {
+            throw UserRepositoryError
+                .invalidPrivateFields(
+                    invalidFields
+                )
+        }
+
+        var safeFields = fields
+
+        safeFields["updatedAt"] = Timestamp(
+            date: Date()
+        )
+
+        try await db
+            .collection(privateProvidersCollection)
+            .document(uid)
+            .setData(
+                safeFields,
+                merge: true
+            )
     }
 }
 
 extension Notification.Name {
-    static let userDataUpdated = Notification.Name("userDataUpdated")
+    static let userDataUpdated =
+        Notification.Name("userDataUpdated")
 }
-

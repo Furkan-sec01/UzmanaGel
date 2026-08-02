@@ -39,7 +39,8 @@ struct ExpertHomepage: View {
     @State private var showFinance = false
     @State private var showProviderStats = false
     @State private var showProviderServices = false
-   
+    @State private var showSettingsPage = false
+
     private let userRepo = UserRepository()
     private let serviceRepo = ServiceRepository()
 
@@ -67,12 +68,13 @@ struct ExpertHomepage: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button { showMenu = true } label: {
+                    Button {
+                        showMenu = true
+                    } label: {
                         Image(systemName: "line.3.horizontal")
                             .font(.system(size: 18, weight: .semibold))
                     }
                 }
-
                 ToolbarItem(placement: .principal) {
                     Text("UzmanaGel")
                         .font(.system(size: 20, weight: .bold))
@@ -117,7 +119,7 @@ struct ExpertHomepage: View {
                     }
                 }
             }
-            
+
             .fullScreenCover(isPresented: $showProfilePage) {
                 if let uid = session.userId {
                     NavigationStack {
@@ -169,6 +171,19 @@ struct ExpertHomepage: View {
                                     Image(systemName: "xmark")
                                         .font(.system(size: 16, weight: .bold))
                                         .foregroundColor(.white)
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showSettingsPage) {
+                NavigationStack {
+                    SettingsPage()
+                        .environmentObject(session)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Kapat") {
+                                    showSettingsPage = false
                                 }
                             }
                         }
@@ -1011,6 +1026,15 @@ private extension ExpertHomepage {
                         showEditBusinessProfile = true
                     }
 
+                    menuRow(
+                        icon: "gearshape.fill",
+                        title: "Ayarlar",
+                        subtitle: "Bildirim, gizlilik ve hesap ayarları"
+                    ) {
+                        showMenu = false
+                        showSettingsPage = true
+                    }
+
                     Divider().padding(.horizontal, 20)
 
                     menuRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış Yap".localized, subtitle: "Hesabınızdan çıkış yapın".localized, isDestructive: true) {
@@ -1455,7 +1479,7 @@ struct ExpertCreateListingView: View {
         }
     }
 
-   
+
 
     private var canPublish: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

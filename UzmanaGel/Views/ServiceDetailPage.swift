@@ -177,19 +177,16 @@ private extension ServiceDetailPage {
 
     var profileAvatar: some View {
         Group {
-            if let url = providerProfileURL {
+            if let urlString = vm.expertProfile?
+                .profileImageURL?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+               !urlString.isEmpty,
+               let url = URL(string: urlString) {
+
                 AsyncImage(url: url) { phase in
                     switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-
-                    case .empty:
-                        ZStack {
-                            Color(.secondarySystemBackground)
-                            ProgressView()
-                        }
+                    case .success(let img):
+                        img.resizable().scaledToFill()
 
                     default:
                         avatarPlaceholder

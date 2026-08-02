@@ -146,8 +146,9 @@ final class ReservationRepository {
             throw ReservationRepositoryError.providerUnavailable
         }
 
-        let documentRef = db.collection(collectionName).document()
-        let now = Date()
+        let documentRef = db
+            .collection(collectionName)
+            .document()
 
         let dateKey = bookedSlotDateKey(from: reservationDate)
         let timeString = bookedSlotTimeString(from: reservationDate)
@@ -161,15 +162,6 @@ final class ReservationRepository {
             .collection("times")
             .document(timeKey)
 
-        let existingSlot = try await bookedSlotRef.getDocument()
-
-        if let existingData = existingSlot.data(),
-           let statusRawValue = existingData["status"] as? String,
-           let existingStatus = ReservationStatus(rawValue: statusRawValue),
-           existingStatus.isBlockingSlot {
-            throw ReservationRepositoryError.slotUnavailable
-        }
-
         let data: [String: Any] = [
             "reservationId": documentRef.documentID,
             "serviceId": trimmedServiceId,
@@ -181,11 +173,14 @@ final class ReservationRepository {
             "customerId": currentUser.uid,
             "customerName": trimmedCustomerName,
             "reservationDate": Timestamp(date: reservationDate),
+            "dateKey": dateKey,
+            "timeString": timeString,
+            "timeKey": timeKey,
             "addressText": trimmedAddressText,
             "note": trimmedNote,
             "status": ReservationStatus.pending.rawValue,
-            "createdAt": Timestamp(date: now),
-            "updatedAt": Timestamp(date: now)
+            "createdAt": FieldValue.serverTimestamp(),
+            "updatedAt": FieldValue.serverTimestamp()
         ]
 
         let bookedSlotData: [String: Any] = [
@@ -194,14 +189,67 @@ final class ReservationRepository {
             "timeString": timeString,
             "status": ReservationStatus.pending.rawValue,
             "reservationId": documentRef.documentID,
-            "createdAt": Timestamp(date: now),
-            "updatedAt": Timestamp(date: now)
+            "createdAt": FieldValue.serverTimestamp(),
+            "updatedAt": FieldValue.serverTimestamp()
         ]
 
-        try await documentRef.setData(data)
-        try await bookedSlotRef.setData(bookedSlotData)
+        let result = try await db.runTransaction {
+            transaction,
+            errorPointer in
 
-        return documentRef.documentID
+            do {
+                // Read the slot before writing
+                let slotSnapshot = try transaction.getDocument(
+                    bookedSlotRef
+                )
+
+                if slotSnapshot.exists {
+                    guard
+                        let statusRawValue =
+                            slotSnapshot.data()?["status"] as? String,
+                        let existingStatus = ReservationStatus(
+                            rawValue: statusRawValue
+                        )
+                    else {
+                        errorPointer?.pointee =
+                            ReservationRepositoryError
+                            .invalidReservation as NSError
+
+                        return nil
+                    }
+
+                    if existingStatus.isBlockingSlot {
+                        errorPointer?.pointee =
+                            ReservationRepositoryError
+                            .slotUnavailable as NSError
+
+                        return nil
+                    }
+                }
+
+                // Save both documents together
+                transaction.setData(
+                    data,
+                    forDocument: documentRef
+                )
+
+                transaction.setData(
+                    bookedSlotData,
+                    forDocument: bookedSlotRef
+                )
+
+                return documentRef.documentID
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+        }
+
+        guard let reservationId = result as? String else {
+            throw ReservationRepositoryError.invalidReservation
+        }
+
+        return reservationId
     }
     
     // Fetch one reservation by ID

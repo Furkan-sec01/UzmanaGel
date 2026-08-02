@@ -10,6 +10,7 @@ final class AdminProviderApplicationsViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let db = Firestore.firestore()
+    private let userRepository = UserRepository()
 
     func loadApplications() async {
         guard !isLoading else {
@@ -32,23 +33,31 @@ final class AdminProviderApplicationsViewModel: ObservableObject {
                 )
                 .getDocuments()
 
-            applications = snapshot.documents
-                .compactMap { document -> ExpertProfile? in
-                    guard var application = try? document.data(
-                        as: ExpertProfile.self
-                    ) else {
-                        return nil
-                    }
+            var loadedApplications: [ExpertProfile] = []
 
-                    // Set Firestore document ID explicitly.
-                    application.id = document.documentID
+            for document in snapshot.documents {
+                guard var application = try? document.data(
+                    as: ExpertProfile.self
+                ) else {
+                    continue
+                }
 
-                    return application
+                let providerId = document.documentID
+                application.id = providerId
+
+                // Load private provider data for admin.
+                if let privateData = try await userRepository
+                    .fetchProviderPrivateData(uid: providerId) {
+                    application.applyPrivateData(privateData)
                 }
-                .sorted {
-                    ($0.createdAt?.dateValue() ?? .distantPast)
-                        > ($1.createdAt?.dateValue() ?? .distantPast)
-                }
+
+                loadedApplications.append(application)
+            }
+
+            applications = loadedApplications.sorted {
+                ($0.createdAt?.dateValue() ?? .distantPast)
+                    > ($1.createdAt?.dateValue() ?? .distantPast)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

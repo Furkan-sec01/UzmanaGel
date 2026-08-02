@@ -20,6 +20,9 @@ struct NotificationPreferencesPage: View {
     @AppStorage("messageNotificationsEnabled")
     private var messageNotificationsEnabled = true
 
+    @State private var emailNotificationsEnabled = true
+    @State private var smsNotificationsEnabled = false
+
     @AppStorage("systemNotificationsEnabled")
     private var systemNotificationsEnabled = true
 
@@ -325,10 +328,12 @@ struct NotificationPreferencesPage: View {
         if let settings = try? await preferencesService.fetchNotificationSettings() {
             await MainActor.run {
                 notificationEnabled = settings.pushNotificationsEnabled
-                systemNotificationsEnabled = settings.emailNotificationsEnabled
-                messageNotificationsEnabled = settings.smsNotificationsEnabled
+                emailNotificationsEnabled = settings.emailNotificationsEnabled
+                smsNotificationsEnabled = settings.smsNotificationsEnabled
+                messageNotificationsEnabled = settings.messageNotificationsEnabled
+                systemNotificationsEnabled = settings.systemNotificationsEnabled
                 reservationNotificationsEnabled = settings.bookingNotificationsEnabled
-                marketingNotificationsEnabled = settings.promoNotificationsEnabled
+                marketingNotificationsEnabled = settings.marketingNotificationsEnabled
             }
         }
     }
@@ -336,9 +341,12 @@ struct NotificationPreferencesPage: View {
     private func saveNotificationPreferences() async {
         let settings = NotificationSettings(
             pushNotificationsEnabled: notificationEnabled,
-            emailNotificationsEnabled: systemNotificationsEnabled,
-            smsNotificationsEnabled: messageNotificationsEnabled,
+            emailNotificationsEnabled: emailNotificationsEnabled,
+            smsNotificationsEnabled: smsNotificationsEnabled,
+            messageNotificationsEnabled: messageNotificationsEnabled,
+            systemNotificationsEnabled: systemNotificationsEnabled,
             bookingNotificationsEnabled: reservationNotificationsEnabled,
+            marketingNotificationsEnabled: marketingNotificationsEnabled,
             promoNotificationsEnabled: marketingNotificationsEnabled
         )
         try? await preferencesService.saveNotificationSettings(settings)

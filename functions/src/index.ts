@@ -126,7 +126,15 @@ export const rejectHelpRequest = onCall(async (request) => {
     success: true,
     message: "Talep reddedildi.",
   };
-});
+});/**
+ * Supported push notification categories.
+ */
+type PushNotificationCategory =
+  "general" |
+  "message" |
+  "reservation" |
+  "system" |
+  "marketing";
 
 /**
  * Sends a push notification to a user.
@@ -135,20 +143,110 @@ export const rejectHelpRequest = onCall(async (request) => {
  * @param {string} title Notification title.
  * @param {string} body Notification body.
  * @param {Record<string, string>} data Notification data.
+ * @param {PushNotificationCategory} category Notification category.
  * @return {Promise<void>} Completes after sending or skipping.
  */
 async function sendUserPushNotification(
   userId: string,
   title: string,
   body: string,
-  data: Record<string, string>
+  data: Record<string, string>,
+  category: PushNotificationCategory = "general"
 ): Promise<void> {
   const userSnapshot = await db
     .collection("users")
     .doc(userId)
     .get();
 
-  const fcmToken = userSnapshot.data()?.fcmToken;
+  const userData = userSnapshot.data();
+  const notificationSettings =
+    userData?.preferences?.notificationSettings;
+
+  if (
+    notificationSettings?.pushNotificationsEnabled === false
+  ) {
+    console.log(
+      "Kullanıcı tüm push bildirimlerini kapatmış:",
+      userId
+    );
+    return;
+  }
+
+  if (category === "message") {
+    const messageEnabled =
+      notificationSettings?.messageNotificationsEnabled;
+
+    const legacyMessageEnabled =
+      notificationSettings?.smsNotificationsEnabled;
+
+    const categoryEnabled =
+      typeof messageEnabled === "boolean" ?
+        messageEnabled :
+        legacyMessageEnabled !== false;
+
+    if (!categoryEnabled) {
+      console.log(
+        "Kullanıcı mesaj bildirimlerini kapatmış:",
+        userId
+      );
+      return;
+    }
+  }
+
+  if (
+    category === "reservation" &&
+    notificationSettings?.bookingNotificationsEnabled === false
+  ) {
+    console.log(
+      "Kullanıcı rezervasyon bildirimlerini kapatmış:",
+      userId
+    );
+    return;
+  }
+
+  if (category === "system") {
+    const systemEnabled =
+      notificationSettings?.systemNotificationsEnabled;
+
+    const legacySystemEnabled =
+      notificationSettings?.emailNotificationsEnabled;
+
+    const categoryEnabled =
+      typeof systemEnabled === "boolean" ?
+        systemEnabled :
+        legacySystemEnabled !== false;
+
+    if (!categoryEnabled) {
+      console.log(
+        "Kullanıcı sistem bildirimlerini kapatmış:",
+        userId
+      );
+      return;
+    }
+  }
+
+  if (category === "marketing") {
+    const marketingEnabled =
+      notificationSettings?.marketingNotificationsEnabled;
+
+    const legacyMarketingEnabled =
+      notificationSettings?.promoNotificationsEnabled;
+
+    const categoryEnabled =
+      typeof marketingEnabled === "boolean" ?
+        marketingEnabled :
+        legacyMarketingEnabled === true;
+
+    if (!categoryEnabled) {
+      console.log(
+        "Kullanıcı kampanya bildirimlerini kapatmış:",
+        userId
+      );
+      return;
+    }
+  }
+
+  const fcmToken = userData?.fcmToken;
 
   if (typeof fcmToken !== "string" || !fcmToken.trim()) {
     console.log("Kullanıcının FCM tokenı bulunamadı:", userId);
@@ -203,38 +301,16 @@ export const sendMessageNotification = onDocumentCreated(
       return;
     }
 
-    const receiverSnapshot = await db
-      .collection("users")
-      .doc(receiverId)
-      .get();
-
-    const fcmToken = receiverSnapshot.data()?.fcmToken;
-
-    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
-      console.log("Alıcı kullanıcının FCM tokenı bulunamadı.");
-      return;
-    }
-
-    const messageId = await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: "Yeni mesaj",
-        body: "Yeni bir mesajınız var.",
-      },
-      data: {
+    await sendUserPushNotification(
+      receiverId,
+      "Yeni mesaj",
+      "Yeni bir mesajınız var.",
+      {
         type: "message",
         conversationId: conversationId,
       },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    });
-
-    console.log("Mesaj bildirimi gönderildi:", messageId);
+      "message"
+    );
   }
 );
 
@@ -277,42 +353,16 @@ export const sendReservationCreatedNotification = onDocumentCreated(
     const displayCustomerName = customerName || "Bir müşteri";
     const displayServiceTitle = serviceTitle || "bir hizmet";
 
-    const providerSnapshot = await db
-      .collection("users")
-      .doc(providerId)
-      .get();
-
-    const fcmToken = providerSnapshot.data()?.fcmToken;
-
-    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
-      console.log("Uzmanın FCM tokenı bulunamadı.");
-      return;
-    }
-
-    const notificationId = await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: "Yeni rezervasyon talebi",
-        body:
-          `${displayCustomerName}, ${displayServiceTitle} için ` +
-          "rezervasyon oluşturdu.",
-      },
-      data: {
+    await sendUserPushNotification(
+      providerId,
+      "Yeni rezervasyon talebi",
+      `${displayCustomerName}, ${displayServiceTitle} için ` +
+        "rezervasyon oluşturdu.",
+      {
         type: "reservation",
         reservationId: reservationId,
       },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    });
-
-    console.log(
-      "Rezervasyon bildirimi gönderildi:",
-      notificationId
+      "reservation"
     );
   }
 );
@@ -446,41 +496,15 @@ export const sendReservationStatusNotification = onDocumentUpdated(
       return;
     }
 
-    const receiverSnapshot = await db
-      .collection("users")
-      .doc(receiverId)
-      .get();
-
-    const fcmToken = receiverSnapshot.data()?.fcmToken;
-
-    if (typeof fcmToken !== "string" || !fcmToken.trim()) {
-      console.log("Bildirim alıcısının FCM tokenı bulunamadı.");
-      return;
-    }
-
-    const notificationId = await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: title,
-        body: body,
-      },
-      data: {
+    await sendUserPushNotification(
+      receiverId,
+      title,
+      body,
+      {
         type: "reservation",
         reservationId: reservationId,
       },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    });
-
-    console.log(
-      "Rezervasyon durum bildirimi gönderildi:",
-      newStatus,
-      notificationId
+      "reservation"
     );
   }
 );
@@ -1183,7 +1207,8 @@ export const sendDismissedReviewReportNotification =
           type: "reviewModeration",
           action: "dismissed",
           reviewId: reviewId,
-        }
+        },
+        "system"
       );
     }
   );
@@ -1243,7 +1268,8 @@ export const sendRemovedReviewNotification =
               type: "reviewModeration",
               action: "removed",
               reviewId: reviewId,
-            }
+            },
+            "system"
           );
         }
       );
@@ -1261,7 +1287,8 @@ export const sendRemovedReviewNotification =
               type: "reviewModeration",
               action: "removed",
               reviewId: reviewId,
-            }
+            },
+            "system"
           )
         );
       }
@@ -1481,7 +1508,8 @@ export const moderateProviderApplication = onCall(
         providerId,
         notificationTitle,
         notificationBody,
-        notificationData
+        notificationData,
+        "system"
       );
     } catch (error) {
       console.error(
@@ -1495,6 +1523,473 @@ export const moderateProviderApplication = onCall(
       providerId: providerId,
       action: action,
       status: nextStatus,
+    };
+  }
+);
+// MARK: - Account Deletion
+
+/**
+ * Deletes documents owned by a user.
+ *
+ * @param {string} collectionName Firestore collection name.
+ * @param {string} ownerField Field containing the user ID.
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after deletion.
+ */
+async function deleteOwnedDocuments(
+  collectionName: string,
+  ownerField: string,
+  uid: string
+): Promise<void> {
+  let hasMoreDocuments = true;
+
+  while (hasMoreDocuments) {
+    const snapshot = await db
+      .collection(collectionName)
+      .where(ownerField, "==", uid)
+      .limit(200)
+      .get();
+
+    hasMoreDocuments = !snapshot.empty;
+
+    if (!hasMoreDocuments) {
+      return;
+    }
+
+    const batch = db.batch();
+
+    snapshot.docs.forEach((document) => {
+      batch.delete(document.ref);
+    });
+
+    await batch.commit();
+  }
+}
+
+/**
+ * Anonymizes reservations linked to a deleted user.
+ *
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after anonymization.
+ */
+async function anonymizeUserReservations(
+  uid: string
+): Promise<void> {
+  const customerReservations = await db
+    .collection("reservations")
+    .where("customerId", "==", uid)
+    .get();
+
+  if (!customerReservations.empty) {
+    const customerWriter = db.bulkWriter();
+
+    customerReservations.docs.forEach((document) => {
+      customerWriter.set(
+        document.ref,
+        {
+          customerName: "Silinmiş Kullanıcı",
+          customerPhone:
+            admin.firestore.FieldValue.delete(),
+          customerPhotoURL:
+            admin.firestore.FieldValue.delete(),
+          address:
+            admin.firestore.FieldValue.delete(),
+          specialRequests:
+            admin.firestore.FieldValue.delete(),
+          attachments:
+            admin.firestore.FieldValue.delete(),
+          customerAccountDeleted: true,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await customerWriter.close();
+  }
+
+  const providerReservations = await db
+    .collection("reservations")
+    .where("providerId", "==", uid)
+    .get();
+
+  if (!providerReservations.empty) {
+    const providerWriter = db.bulkWriter();
+
+    providerReservations.docs.forEach((document) => {
+      providerWriter.set(
+        document.ref,
+        {
+          providerName: "Silinmiş Uzman",
+          providerPhone:
+            admin.firestore.FieldValue.delete(),
+          providerPhotoURL:
+            admin.firestore.FieldValue.delete(),
+          providerAccountDeleted: true,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await providerWriter.close();
+  }
+}
+
+/**
+ * Anonymizes reviews linked to a deleted user.
+ *
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after anonymization.
+ */
+async function anonymizeUserReviews(
+  uid: string
+): Promise<void> {
+  const customerReviews = await db
+    .collection("reviews")
+    .where("customerId", "==", uid)
+    .get();
+
+  if (!customerReviews.empty) {
+    const customerWriter = db.bulkWriter();
+
+    customerReviews.docs.forEach((document) => {
+      customerWriter.set(
+        document.ref,
+        {
+          customerName: "Silinmiş Kullanıcı",
+          customerPhotoURL:
+            admin.firestore.FieldValue.delete(),
+          comment: "",
+          photos: [],
+          customerAccountDeleted: true,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await customerWriter.close();
+  }
+
+  const providerReviews = await db
+    .collection("reviews")
+    .where("providerId", "==", uid)
+    .get();
+
+  if (!providerReviews.empty) {
+    const providerWriter = db.bulkWriter();
+
+    providerReviews.docs.forEach((document) => {
+      providerWriter.set(
+        document.ref,
+        {
+          providerAccountDeleted: true,
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await providerWriter.close();
+  }
+}
+
+/**
+ * Anonymizes conversations and messages.
+ *
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after anonymization.
+ */
+async function anonymizeUserConversations(
+  uid: string
+): Promise<void> {
+  const conversations = await db
+    .collection("conversations")
+    .where("participantIds", "array-contains", uid)
+    .get();
+
+  for (const conversation of conversations.docs) {
+    const namePath =
+      new admin.firestore.FieldPath(
+        "participantNames",
+        uid
+      );
+
+    const photoPath =
+      new admin.firestore.FieldPath(
+        "participantPhotoURLs",
+        uid
+      );
+
+    const unreadPath =
+      new admin.firestore.FieldPath(
+        "unreadCounts",
+        uid
+      );
+
+    await conversation.ref.update(
+      namePath,
+      "Silinmiş Kullanıcı",
+      photoPath,
+      admin.firestore.FieldValue.delete(),
+      unreadPath,
+      0,
+      "updatedAt",
+      admin.firestore.FieldValue.serverTimestamp()
+    );
+
+    const sentMessages = await conversation.ref
+      .collection("messages")
+      .where("senderId", "==", uid)
+      .get();
+
+    if (sentMessages.empty) {
+      continue;
+    }
+
+    const messageWriter = db.bulkWriter();
+
+    sentMessages.docs.forEach((message) => {
+      messageWriter.set(
+        message.ref,
+        {
+          text: "Bu mesaj silinmiş bir hesaba aittir.",
+          senderAccountDeleted: true,
+        },
+        {
+          merge: true,
+        }
+      );
+    });
+
+    await messageWriter.close();
+  }
+}
+
+/**
+ * Deletes all Storage files belonging to the user.
+ *
+ * @param {string} uid User ID.
+ * @return {Promise<void>} Resolves after deletion.
+ */
+async function deleteUserStorageFiles(
+  uid: string
+): Promise<void> {
+  const bucket = admin.storage().bucket();
+
+  const prefixes = [
+    `certificates/${uid}/`,
+    `verification_documents/${uid}/`,
+    `portfolio/${uid}/`,
+    `listing_images/${uid}/`,
+    `profile_photos/${uid}/`,
+    `profile_images/${uid}/`,
+    `review_photos/${uid}/`,
+  ];
+
+  await Promise.all(
+    prefixes.map(async (prefix) => {
+      await bucket.deleteFiles({
+        prefix: prefix,
+      });
+    })
+  );
+
+  // Delete the flat profile image.
+  await bucket
+    .file(`profile_images/${uid}.jpg`)
+    .delete({
+      ignoreNotFound: true,
+    });
+}
+
+export const deleteUserAccount = onCall(
+  {
+    region: "europe-west1",
+    timeoutSeconds: 540,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Hesabı silmek için giriş yapmalısınız."
+      );
+    }
+
+    if (request.auth.token.admin === true) {
+      throw new HttpsError(
+        "permission-denied",
+        "Admin hesabı uygulama içinden silinemez."
+      );
+    }
+
+    const confirmation =
+      typeof request.data?.confirmation === "string" ?
+        request.data.confirmation.trim() :
+        "";
+
+    if (confirmation !== "DELETE_MY_ACCOUNT") {
+      throw new HttpsError(
+        "invalid-argument",
+        "Hesap silme onayı geçersiz."
+      );
+    }
+
+    const uid = request.auth.uid;
+
+    const authTime = Number(
+      request.auth.token.auth_time ?? 0
+    );
+
+    const currentTime = Math.floor(
+      Date.now() / 1000
+    );
+
+    const secondsSinceLogin =
+      currentTime - authTime;
+
+    if (
+      !authTime ||
+      secondsSinceLogin > 600
+    ) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Hesabı silmeden önce yeniden giriş yapmalısınız."
+      );
+    }
+
+    try {
+      // Keep shared records but remove personal information.
+      await anonymizeUserConversations(uid);
+      await anonymizeUserReservations(uid);
+      await anonymizeUserReviews(uid);
+
+      // Delete content owned only by this user.
+      await deleteOwnedDocuments(
+        "services",
+        "providerId",
+        uid
+      );
+
+      await deleteOwnedDocuments(
+        "notifications",
+        "userId",
+        uid
+      );
+
+      // Delete booked slot subcollections.
+      await db.recursiveDelete(
+        db
+          .collection("provider_booked_slots")
+          .doc(uid)
+      );
+
+      // Delete private Storage files.
+      await deleteUserStorageFiles(uid);
+
+      const batch = db.batch();
+
+      batch.delete(
+        db.collection("favorites").doc(uid)
+      );
+
+      batch.delete(
+        db.collection("service_providers").doc(uid)
+      );
+
+      batch.delete(
+        db.collection("provider_private_data").doc(uid)
+      );
+
+      batch.delete(
+        db.collection("users").doc(uid)
+      );
+
+      await batch.commit();
+      // Delete Firebase Authentication account last.
+      await admin.auth().deleteUser(uid);
+
+      console.log(
+        "User account deleted:",
+        uid
+      );
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error(
+        "User account deletion failed:",
+        uid,
+        error
+      );
+
+      throw new HttpsError(
+        "internal",
+        "Hesap silinirken beklenmeyen bir hata oluştu."
+      );
+    }
+  }
+);
+
+
+/**
+ * Checks whether a Firestore field contains a usable value.
+ *
+ * @param {unknown} value Field value to check.
+ * @return {boolean} True when the value is not empty.
+ */
+
+
+// MARK: - Phone Availability
+
+export const checkPhoneAvailability = onCall(
+  {
+    region: "europe-west1",
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Telefon kontrolü için giriş yapmalısınız."
+      );
+    }
+
+    const rawPhone = request.data?.phone;
+
+    const phone =
+      typeof rawPhone === "string" ?
+        rawPhone.replace(/\D/g, "") :
+        "";
+
+    if (phone.length < 10 || phone.length > 15) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Geçerli bir telefon numarası gönderilmelidir."
+      );
+    }
+
+    const snapshot = await db
+      .collection("users")
+      .where("phoneNumber", "==", phone)
+      .limit(1)
+      .get();
+
+    return {
+      taken: !snapshot.empty,
     };
   }
 );

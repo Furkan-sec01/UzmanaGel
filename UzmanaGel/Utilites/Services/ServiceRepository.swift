@@ -246,7 +246,6 @@ final class ServiceRepository {
         city: String,
         imageURL: String?
     ) async throws -> String {
-        try await ensureExpertProvider(profile: profile, providerId: providerId)
 
         let ref = db.collection("services").document()
         let serviceId = ref.documentID
@@ -292,7 +291,6 @@ final class ServiceRepository {
             "isActive": true,
             "description": profile.about ?? "",
             "image": profile.profileImageURL ?? "",
-            "phoneNumber": profile.phoneNumber,
             "rating": existingRating,
             "reviewCount": existingReviewCount,
             "experienceYears": profile.experienceYears,
