@@ -61,6 +61,7 @@ struct ExpertHomepage: View {
                     createListingFAB
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -72,7 +73,23 @@ struct ExpertHomepage: View {
                     }
                 }
 
-
+                ToolbarItem(placement: .principal) {
+                    Text("UzmanaGel")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        withAnimation {
+                            langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
+                        }
+                    } label: {
+                        Text(langManager.languageCode == "tr" ? "TR" : "EN")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color("PrimaryColor"))
+                    }
+                }
             }
             .sheet(isPresented: $showMenu) {
                 expertMenuSheet
@@ -105,10 +122,17 @@ struct ExpertHomepage: View {
                 if let uid = session.userId {
                     NavigationStack {
                         ExpertProfilePage(userId: uid, onRefresh: { Task { await loadProfile() } })
+                            .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+                            .toolbarBackground(.visible, for: .navigationBar)
+                            .toolbarColorScheme(.dark, for: .navigationBar)
                             .toolbar {
                                 ToolbarItem(placement: .topBarLeading) {
-                                    Button("Kapat") {
+                                    Button {
                                         showProfilePage = false
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.white)
                                     }
                                 }
                             }
@@ -120,8 +144,12 @@ struct ExpertHomepage: View {
                     ExpertReservationsPage()
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
+                                Button {
                                     showReservationsPage = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -130,10 +158,17 @@ struct ExpertHomepage: View {
             .fullScreenCover(isPresented: $showMessagesPage) {
                 NavigationStack {
                     MessagesPage()
+                        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+                        .toolbarBackground(.visible, for: .navigationBar)
+                        .toolbarColorScheme(.dark, for: .navigationBar)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
+                                Button {
                                     showMessagesPage = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -145,8 +180,12 @@ struct ExpertHomepage: View {
                         ExpertPortfolioPage(userId: uid, profile: profile, onSave: { Task { await loadProfile() } })
                             .toolbar {
                                 ToolbarItem(placement: .topBarLeading) {
-                                    Button("Kapat") {
+                                    Button {
                                         showExpertPortfolioPage = false
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.white)
                                     }
                                 }
                             }
@@ -159,8 +198,12 @@ struct ExpertHomepage: View {
                         ProviderReviewsPage(providerId: uid)
                             .toolbar {
                                 ToolbarItem(placement: .topBarLeading) {
-                                    Button("Kapat") {
+                                    Button {
                                         showReviewsPage = false
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.white)
                                     }
                                 }
                             }
@@ -170,10 +213,17 @@ struct ExpertHomepage: View {
             .fullScreenCover(isPresented: $showProviderDashboard) {
                 NavigationStack {
                     ProviderDashboardView()
+                        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+                        .toolbarBackground(.visible, for: .navigationBar)
+                        .toolbarColorScheme(.dark, for: .navigationBar)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
+                                Button {
                                     showProviderDashboard = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -182,10 +232,17 @@ struct ExpertHomepage: View {
             .fullScreenCover(isPresented: $showSchedule) {
                 NavigationStack {
                     ScheduleView()
+                        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+                        .toolbarBackground(.visible, for: .navigationBar)
+                        .toolbarColorScheme(.dark, for: .navigationBar)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
+                                Button {
                                     showSchedule = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -194,10 +251,17 @@ struct ExpertHomepage: View {
             .fullScreenCover(isPresented: $showFinance) {
                 NavigationStack {
                     FinanceView()
+                        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+                        .toolbarBackground(.visible, for: .navigationBar)
+                        .toolbarColorScheme(.dark, for: .navigationBar)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
+                                Button {
                                     showFinance = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -206,10 +270,17 @@ struct ExpertHomepage: View {
             .fullScreenCover(isPresented: $showProviderStats) {
                 NavigationStack {
                     ProviderStatsView()
+                        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+                        .toolbarBackground(.visible, for: .navigationBar)
+                        .toolbarColorScheme(.dark, for: .navigationBar)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
+                                Button {
                                     showProviderStats = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -218,10 +289,17 @@ struct ExpertHomepage: View {
             .fullScreenCover(isPresented: $showProviderServices) {
                 NavigationStack {
                     ProviderServicesView()
+                        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+                        .toolbarBackground(.visible, for: .navigationBar)
+                        .toolbarColorScheme(.dark, for: .navigationBar)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
+                                Button {
                                     showProviderServices = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -230,10 +308,17 @@ struct ExpertHomepage: View {
             .fullScreenCover(isPresented: $showProviderPortfolio) {
                 NavigationStack {
                     PortfolioView()
+                        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+                        .toolbarBackground(.visible, for: .navigationBar)
+                        .toolbarColorScheme(.dark, for: .navigationBar)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button("Kapat") {
+                                Button {
                                     showProviderPortfolio = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -323,10 +408,10 @@ private extension ExpertHomepage {
                         .foregroundColor(.primary)
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Profil tamamlanma")
+                    Text("Profil tamamlanma".localized)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
-                    Text(canOpen ? "Tamamlandı" : "%\(pct) dolu")
+                    Text(canOpen ? "Tamamlandı".localized : "%\(pct) " + "dolu".localized)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.primary)
                 }
@@ -345,7 +430,7 @@ private extension ExpertHomepage {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 18))
                         .foregroundColor(.green)
-                    Text("Profiliniz tamam. İlan açabilirsiniz.")
+                    Text("Profiliniz tamam. İlan açabilirsiniz.".localized)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.green)
                 }
@@ -359,7 +444,7 @@ private extension ExpertHomepage {
                     Image(systemName: "info.circle.fill")
                         .font(.system(size: 18))
                         .foregroundColor(Color("PrimaryColor").opacity(0.8))
-                    Text("İlan açmak için çalışma detayları, banka bilgileri ve adres bilgilerinizi Profilim sayfasından tamamlayın.")
+                    Text("İlan açmak için çalışma detayları, banka bilgileri ve adres bilgilerinizi Profilim sayfasından tamamlayın.".localized)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.secondary)
                 }
@@ -402,7 +487,7 @@ private extension ExpertHomepage {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Hoş geldin")
+                Text("Hoş geldin".localized)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
 
@@ -469,7 +554,7 @@ private extension ExpertHomepage {
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Başvuru durumu")
+                    Text("Başvuru durumu".localized)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
 
@@ -485,7 +570,7 @@ private extension ExpertHomepage {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Admin açıklaması")
+                    Text("Admin açıklaması".localized)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(.secondary)
 
@@ -504,7 +589,7 @@ private extension ExpertHomepage {
                     showProfilePage = true
                 } label: {
                     Label(
-                        "Belgeleri Güncelle",
+                        "Belgeleri Güncelle".localized,
                         systemImage: "doc.badge.gearshape"
                     )
                     .font(.system(size: 14, weight: .semibold))
@@ -561,7 +646,7 @@ private extension ExpertHomepage {
         case "approved", "onaylandı":
             return (
                 "checkmark.circle.fill",
-                "Başvuru Onaylandı",
+                "Başvuru Onaylandı".localized,
                 Color.green,
                 Color.green
             )
@@ -569,7 +654,7 @@ private extension ExpertHomepage {
         case "documentsrequired":
             return (
                 "doc.badge.ellipsis",
-                "Eksik Belge İsteniyor",
+                "Eksik Belge İsteniyor".localized,
                 Color.orange,
                 Color.orange
             )
@@ -577,7 +662,7 @@ private extension ExpertHomepage {
         case "rejected", "reddedildi":
             return (
                 "xmark.circle.fill",
-                "Başvuru Reddedildi",
+                "Başvuru Reddedildi".localized,
                 Color.red,
                 Color.red
             )
@@ -585,7 +670,7 @@ private extension ExpertHomepage {
         case "draft", "taslak":
             return (
                 "pencil.circle.fill",
-                "Başvuru Taslak Durumunda",
+                "Başvuru Taslak Durumunda".localized,
                 Color.blue,
                 Color.blue
             )
@@ -593,7 +678,7 @@ private extension ExpertHomepage {
         default:
             return (
                 "clock.badge.checkmark",
-                "Başvuru İnceleniyor",
+                "Başvuru İnceleniyor".localized,
                 Color.orange,
                 Color.orange
             )
@@ -606,7 +691,7 @@ private extension ExpertHomepage {
                 Image(systemName: "square.grid.2x2.fill")
                     .font(.system(size: 15))
                     .foregroundColor(Color("PrimaryColor"))
-                Text("Hızlı Erişim")
+                Text("Hızlı Erişim".localized)
                     .font(.system(size: 17, weight: .bold))
                     .foregroundColor(.primary)
             }
@@ -618,8 +703,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "doc.text.fill",
-                        title: "İlanlarım",
-                        subtitle: listingCount == 0 ? "İlanlarınızı yönetin" : "\(listingCount) ilan",
+                        title: "İlanlarım".localized,
+                        subtitle: listingCount == 0 ? "İlanlarınızı yönetin".localized : "\(listingCount) " + "ilan".localized,
                         color: Color("PrimaryColor"),
                         badge: listingCount > 0 ? "\(listingCount)" : nil
                     )
@@ -632,8 +717,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "person.crop.rectangle.fill",
-                        title: "Profilim",
-                        subtitle: "Kişisel ve iş bilgileri",
+                        title: "Profilim".localized,
+                        subtitle: "Kişisel ve iş bilgileri".localized,
                         color: Color("TertiaryColor")
                     )
                 }
@@ -658,8 +743,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "message.fill",
-                        title: "Mesajlar",
-                        subtitle: "Müşterilerle olan konuşmalarınızı görüntüleyin",
+                        title: "Mesajlar".localized,
+                        subtitle: "Müşterilerle olan konuşmalarınızı görüntüleyin".localized,
                         color: .blue
                     )
                 }
@@ -671,8 +756,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "chart.bar.fill",
-                        title: "Panel",
-                        subtitle: "Genel durum ve performans özeti",
+                        title: "Panel".localized,
+                        subtitle: "Genel durum ve performans özeti".localized,
                         color: .purple
                     )
                 }
@@ -684,8 +769,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "calendar",
-                        title: "Takvim",
-                        subtitle: "Çalışma programınızı görüntüleyin",
+                        title: "Takvim".localized,
+                        subtitle: "Çalışma programınızı görüntüleyin".localized,
                         color: .green
                     )
                 }
@@ -697,8 +782,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "creditcard.fill",
-                        title: "Finans",
-                        subtitle: "Kazanç ve ödeme bilgilerini görüntüleyin",
+                        title: "Finans".localized,
+                        subtitle: "Kazanç ve ödeme bilgilerini görüntüleyin".localized,
                         color: .mint
                     )
                 }
@@ -710,8 +795,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "chart.line.uptrend.xyaxis",
-                        title: "İstatistikler",
-                        subtitle: "Performans ve hizmet istatistikleri",
+                        title: "İstatistikler".localized,
+                        subtitle: "Performans ve hizmet istatistikleri".localized,
                         color: .indigo
                     )
                 }
@@ -723,8 +808,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "wrench.and.screwdriver.fill",
-                        title: "Hizmet Yönetimi",
-                        subtitle: "Hizmetlerinizi görüntüleyin",
+                        title: "Hizmet Yönetimi".localized,
+                        subtitle: "Hizmetlerinizi görüntüleyin".localized,
                         color: .orange
                     )
                 }
@@ -736,8 +821,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "photo.stack.fill",
-                        title: "Yeni Portföy",
-                        subtitle: "Portföy ekranını görüntüleyin",
+                        title: "Yeni Portföy".localized,
+                        subtitle: "Portföy ekranını görüntüleyin".localized,
                         color: Color("PrimaryColor")
                     )
                 }
@@ -749,8 +834,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "building.2.fill",
-                        title: "İş Profili",
-                        subtitle: "İşletme profilinizi düzenleyin",
+                        title: "İş Profili".localized,
+                        subtitle: "İşletme profilinizi düzenleyin".localized,
                         color: Color("TertiaryColor")
                     )
                 }
@@ -762,8 +847,8 @@ private extension ExpertHomepage {
                 } label: {
                     actionRowContent(
                         icon: "photo.on.rectangle.angled",
-                        title: "Portföy",
-                        subtitle: profile.portfolioImageURLs.isEmpty ? "Örnek işlerinizi ekleyin" : "\(profile.portfolioImageURLs.count) fotoğraf",
+                        title: "Portföy".localized,
+                        subtitle: profile.portfolioImageURLs.isEmpty ? "Örnek işlerinizi ekleyin".localized : "\(profile.portfolioImageURLs.count) " + "fotoğraf".localized,
                         color: Color("PrimaryColor")
                     )
                 }
@@ -818,10 +903,10 @@ private extension ExpertHomepage {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Menü")
+                    Text("Menü".localized)
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.primary)
-                    Text("Hesap ayarları ve hızlı erişim")
+                    Text("Hesap ayarları ve hızlı erişim".localized)
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
                 }
@@ -839,12 +924,12 @@ private extension ExpertHomepage {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 8) {
-                    menuRow(icon: "person.circle.fill", title: "Profilim", subtitle: "Bilgilerinizi düzenleyin") {
+                    menuRow(icon: "person.circle.fill", title: "Profilim".localized, subtitle: "Bilgilerinizi düzenleyin".localized) {
                         showMenu = false
                         showProfilePage = true
                     }
 
-                    menuRow(icon: "doc.text.fill", title: "İlanlarım", subtitle: listingCount == 0 ? "İlanlarınızı yönetin" : "\(listingCount) ilan") {
+                    menuRow(icon: "doc.text.fill", title: "İlanlarım".localized, subtitle: listingCount == 0 ? "İlanlarınızı yönetin".localized : "\(listingCount) " + "ilan".localized) {
                         showMenu = false
                         showListingsPage = true
                     }
@@ -860,8 +945,8 @@ private extension ExpertHomepage {
 
                     menuRow(
                         icon: "message.fill",
-                        title: "Mesajlar",
-                        subtitle: "Müşteri konuşmalarınızı görüntüleyin"
+                        title: "Mesajlar".localized,
+                        subtitle: "Müşteri konuşmalarınızı görüntüleyin".localized
                     ) {
                         showMenu = false
                         showMessagesPage = true
@@ -869,14 +954,14 @@ private extension ExpertHomepage {
 
                     menuRow(
                         icon: "star.bubble.fill",
-                        title: "Yorumlar",
-                        subtitle: "Müşteri yorumlarınızı görüntüleyin"
+                        title: "Yorumlar".localized,
+                        subtitle: "Müşteri yorumlarınızı görüntüleyin".localized
                     ) {
                         showMenu = false
                         showReviewsPage = true
                     }
 
-                    menuRow(icon: "photo.on.rectangle.angled", title: "Portföy", subtitle: "Portföyünüzü yönetin") {
+                    menuRow(icon: "photo.on.rectangle.angled", title: "Portföy".localized, subtitle: "Portföyünüzü yönetin".localized) {
                         showMenu = false
                         showExpertPortfolioPage = true
                     }
@@ -885,8 +970,8 @@ private extension ExpertHomepage {
 
                     menuRow(
                         icon: "chart.bar.fill",
-                        title: "Panel",
-                        subtitle: "Genel durum ve performans özeti"
+                        title: "Panel".localized,
+                        subtitle: "Genel durum ve performans özeti".localized
                     ) {
                         showMenu = false
                         showProviderDashboard = true
@@ -894,41 +979,41 @@ private extension ExpertHomepage {
 
                     menuRow(
                         icon: "calendar",
-                        title: "Takvim",
-                        subtitle: "Çalışma programınızı görüntüleyin"
+                        title: "Takvim".localized,
+                        subtitle: "Çalışma programınızı görüntüleyin".localized
                     ) {
                         showMenu = false
                         showSchedule = true
                     }
 
-                    menuRow(icon: "creditcard.fill", title: "Finans", subtitle: "Kazanç ve ödeme bilgileri") {
+                    menuRow(icon: "creditcard.fill", title: "Finans".localized, subtitle: "Kazanç ve ödeme bilgileri".localized) {
                         showMenu = false
                         showFinance = true
                     }
 
-                    menuRow(icon: "chart.line.uptrend.xyaxis", title: "İstatistikler", subtitle: "Performans verileri") {
+                    menuRow(icon: "chart.line.uptrend.xyaxis", title: "İstatistikler".localized, subtitle: "Performans verileri".localized) {
                         showMenu = false
                         showProviderStats = true
                     }
 
-                    menuRow(icon: "wrench.and.screwdriver.fill", title: "Hizmet Yönetimi", subtitle: "Hizmetlerinizi görüntüleyin") {
+                    menuRow(icon: "wrench.and.screwdriver.fill", title: "Hizmet Yönetimi".localized, subtitle: "Hizmetlerinizi görüntüleyin".localized) {
                         showMenu = false
                         showProviderServices = true
                     }
 
-                    menuRow(icon: "photo.stack.fill", title: "Yeni Portföy", subtitle: "Portföy ekranını görüntüleyin") {
+                    menuRow(icon: "photo.stack.fill", title: "Yeni Portföy".localized, subtitle: "Portföy ekranını görüntüleyin".localized) {
                         showMenu = false
                         showProviderPortfolio = true
                     }
 
-                    menuRow(icon: "building.2.fill", title: "İş Profili", subtitle: "İşletme profilinizi düzenleyin") {
+                    menuRow(icon: "building.2.fill", title: "İş Profili".localized, subtitle: "İşletme profilinizi düzenleyin".localized) {
                         showMenu = false
                         showEditBusinessProfile = true
                     }
 
                     Divider().padding(.horizontal, 20)
 
-                    menuRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış Yap", subtitle: "Hesabınızdan çıkış yapın", isDestructive: true) {
+                    menuRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış Yap".localized, subtitle: "Hesabınızdan çıkış yapın".localized, isDestructive: true) {
                         showMenu = false
                         session.signOut()
                     }
@@ -977,7 +1062,7 @@ private extension ExpertHomepage {
             ProgressView()
                 .scaleEffect(1.3)
                 .tint(Color("PrimaryColor"))
-            Text("Yükleniyor...")
+            Text("Yükleniyor...".localized)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.secondary)
         }
@@ -989,7 +1074,7 @@ private extension ExpertHomepage {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 52))
                 .foregroundStyle(.orange.opacity(0.9))
-            Text(loadError ?? "Profil yüklenemedi")
+            Text(loadError ?? "Profil yüklenemedi".localized)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -997,7 +1082,7 @@ private extension ExpertHomepage {
             Button {
                 Task { await loadProfile() }
             } label: {
-                Text("Tekrar Dene")
+                Text("Tekrar Dene".localized)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 28)

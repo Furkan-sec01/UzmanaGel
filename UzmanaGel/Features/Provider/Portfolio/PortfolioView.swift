@@ -18,16 +18,16 @@ struct PortfolioView: View {
                 } else if viewModel.portfolioItems.isEmpty {
                     EmptyStateView(
                         iconName: "photo.on.rectangle.angled",
-                        title: "Galeri Henüz Boş",
-                        message: "Yaptığınız işlerden fotoğraflar ekleyerek müşterilere kalitenizi gösterin.",
-                        buttonTitle: "Fotoğraf Ekle"
+                        title: "Gallery is Empty",
+                        message: "Show your quality to customers by adding photos of your work.",
+                        buttonTitle: "Add Photo"
                     ) {
                         showUploadForm = true
                     }
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: Constants.spacingM) {
-                            Text("Sürükleyip bırakarak fotoğrafların sırasını değiştirebilirsiniz.")
+                            Text("You can change the order of photos by dragging and dropping.")
                                 .font(.caption)
                                 .foregroundColor(Color.themeSecondaryText)
                                 .padding(.horizontal)
@@ -48,12 +48,34 @@ struct PortfolioView: View {
                     }
                 }
                 
+                // Upload yükleme spinner overlay
+                if viewModel.isUploading {
+                    ZStack {
+                        Color.black.opacity(0.35).ignoresSafeArea()
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.4)
+                                .tint(.white)
+                            Text("Fotoğraf yükleniyor...")
+                                .font(.callout)
+                                .foregroundColor(.white)
+                                .fontWeight(.medium)
+                        }
+                        .padding(32)
+                        .background(Color.black.opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                    }
+                }
+                
                 // Toast overlays
                 if let success = viewModel.successMessage {
                     toastOverlay(message: success)
                 }
+                if let error = viewModel.errorMessage {
+                    toastOverlay(message: error, isError: true)
+                }
             }
-            .navigationTitle("Portfolyo Galerisi")
+            .navigationTitle("Portfolio Gallery")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -86,30 +108,38 @@ struct PortfolioView: View {
     private func portfolioCell(_ item: PortfolioItem) -> some View {
         CardView(cornerRadius: Constants.radiusM, shadowRadius: Constants.shadowRadiusS) {
             VStack(alignment: .leading, spacing: 8) {
-                AsyncImage(url: URL(string: item.imageUrl)) { img in
-                    img.resizable().scaledToFill()
-                } placeholder: {
-                    Color.themeSecondaryText.opacity(0.1).shimmer()
-                }
-                .frame(height: 120)
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: Constants.radiusS))
+                Color.clear
+                    .frame(height: 120)
+                    .overlay(
+                        AsyncImage(url: URL(string: item.imageUrl)) { img in
+                            img
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            Color.themeSecondaryText.opacity(0.1).shimmer()
+                        }
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: Constants.radiusS))
                 
                 Text(item.description)
                     .font(.caption2)
                     .foregroundColor(Color.themeText)
                     .lineLimit(2)
-                    .frame(height: 28)
+                    .multilineTextAlignment(.leading)
+                    .frame(height: 32, alignment: .topLeading)
+                
+                Spacer(minLength: 0)
                 
                 Button {
                     viewModel.fullscreenItem = item
                 } label: {
-                    Text("Görüntüle")
+                    Text("View")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(Color.themePrimary)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
+            .frame(height: 200, alignment: .top)
         }
     }
     
@@ -121,7 +151,7 @@ struct PortfolioView: View {
                     VStack(spacing: Constants.spacingM) {
                         CardView {
                             VStack(alignment: .leading, spacing: Constants.spacingM) {
-                                Text("Fotoğraf Detayları")
+                                Text("Photo Details")
                                     .font(.subheadline)
                                     .fontWeight(.bold)
                                     .foregroundColor(Color.themeSecondaryText)
@@ -129,7 +159,7 @@ struct PortfolioView: View {
                                 PhotosPicker(selection: $selectedItems, maxSelectionCount: 3, matching: .images) {
                                     HStack {
                                         Image(systemName: "photo.stack")
-                                        Text("Fotoğraf Seç (\(selectedItems.count) adet)")
+                                        Text("Select Photo (\(selectedItems.count) items)")
                                     }
                                     .font(.subheadline)
                                     .fontWeight(.bold)
@@ -141,10 +171,10 @@ struct PortfolioView: View {
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Açıklama (Müşterilere Gösterilecek)")
+                                    Text("Description (Visible to Customers)")
                                         .font(.caption)
                                         .foregroundColor(Color.themeSecondaryText)
-                                    TextField("Yaptığınız işi kısaca tanımlayın", text: $uploadDescription)
+                                    TextField("Briefly describe the work you did", text: $uploadDescription)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                 }
                                 
@@ -160,7 +190,7 @@ struct PortfolioView: View {
                                         }
                                     }
                                 } label: {
-                                    Text("Galeriye Ekle")
+                                    Text("Add to Gallery")
                                         .fontWeight(.semibold)
                                         .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
@@ -176,11 +206,11 @@ struct PortfolioView: View {
                     }
                 }
             }
-            .navigationTitle("Yeni Fotoğraf")
+            .navigationTitle("New Photo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Close") {
                         showUploadForm = false
                         selectedItems = []
                         uploadDescription = ""
@@ -211,7 +241,7 @@ struct PortfolioView: View {
                             .font(.body)
                             .foregroundColor(.white)
                         
-                        Text("Yükleme: " + dateString(for: item.createdAt))
+                        Text("Uploaded: " + dateString(for: item.createdAt))
                             .font(.caption2)
                             .foregroundColor(.gray)
                     }
@@ -228,7 +258,7 @@ struct PortfolioView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "slider.horizontal.3")
-                                Text("Filtre / Kırp")
+                                Text("Filter / Crop")
                             }
                             .foregroundColor(.white)
                             .padding()
@@ -241,7 +271,7 @@ struct PortfolioView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "trash")
-                                Text("Fotoğrafı Sil")
+                                Text("Delete Photo")
                             }
                             .foregroundColor(.white)
                             .padding()
@@ -252,11 +282,11 @@ struct PortfolioView: View {
                     .padding(.bottom)
                 }
             }
-            .navigationTitle("Portfolyo Detay")
+            .navigationTitle("Portfolio Detail")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Kapat") {
+                    Button("Close") {
                         viewModel.fullscreenItem = nil
                     }
                     .foregroundColor(.white)
@@ -271,7 +301,7 @@ struct PortfolioView: View {
     private var cropFilterSimulatorSheet: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("Görsel Filtre & Kırpma Simülasyonu")
+                Text("Image Filter & Cropping Simulation")
                     .font(.headline)
                     .padding(.top)
                 
@@ -279,14 +309,14 @@ struct PortfolioView: View {
                 
                 // Show simple filters selector
                 HStack(spacing: 15) {
-                    filterButton(name: "Orijinal", icon: "photo")
-                    filterButton(name: "Siyah Beyaz", icon: "photo.fill")
-                    filterButton(name: "Sıcak Ton", icon: "sun.max.fill")
+                    filterButton(name: "Original", icon: "photo")
+                    filterButton(name: "Black & White", icon: "photo.fill")
+                    filterButton(name: "Warm Tone", icon: "sun.max.fill")
                 }
                 
                 Spacer()
                 
-                Button("Filtreyi Uygula ve Kaydet") {
+                Button("Apply Filter and Save") {
                     viewModel.showCropFilterSimulator = false
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -297,7 +327,7 @@ struct PortfolioView: View {
                 .clipShape(RoundedRectangle(cornerRadius: Constants.radiusM))
                 .padding()
             }
-            .navigationTitle("Filtre / Kırp")
+            .navigationTitle("Filter / Crop")
             .navigationBarTitleDisplayMode(.inline)
             .background(Color.themeBackground)
         }
@@ -326,24 +356,28 @@ struct PortfolioView: View {
     }
     
     @ViewBuilder
-    private func toastOverlay(message: String) -> some View {
+    private func toastOverlay(message: String, isError: Bool = false) -> some View {
         VStack {
             Spacer()
             HStack {
-                Image(systemName: "checkmark.circle.fill")
+                Image(systemName: isError ? "xmark.circle.fill" : "checkmark.circle.fill")
                 Text(message)
                     .font(.footnote)
                     .fontWeight(.medium)
             }
             .padding()
-            .background(Color.themeSuccess)
+            .background(isError ? Color.themeError : Color.themeSuccess)
             .foregroundColor(.white)
             .clipShape(Capsule())
             .shadow(radius: 5)
             .padding(.bottom, Constants.paddingXL)
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    viewModel.successMessage = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    if isError {
+                        viewModel.errorMessage = nil
+                    } else {
+                        viewModel.successMessage = nil
+                    }
                 }
             }
         }

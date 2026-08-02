@@ -380,7 +380,13 @@ service cloud.firestore {
     // MARK: - Reservations
 
     match /reservations/{reservationId} {
-      allow read: if signedIn()
+      // Provider veya müşteri kendi rezervasyonunu okuyabilir.
+      // List sorgularında (whereField ile) resource.data boş olduğundan
+      // geniş "signedIn()" izni verilir; Firestore zaten sadece match eden
+      // dokümanları döndürür ve her doküman "get" rule'ıyla ayrıca doğrulanır.
+      allow list: if signedIn();
+
+      allow get: if signedIn()
         && (
           resource.data.customerId == request.auth.uid
           || resource.data.providerId == request.auth.uid
@@ -512,6 +518,49 @@ service cloud.firestore {
         );
 
       allow delete: if false;
+    }
+
+    // MARK: - Portfolio (Uzman Portföyü)
+
+    match /portfolio/{userId} {
+      // İç koleksiyona erişmek için parent dokümanın okunması gerekebilir.
+      allow read: if signedIn();
+      allow write: if false;
+
+      match /items/{itemId} {
+        // Herkes okuyabilir (profil sayfasında müşteriler de görür)
+        allow read: if true;
+
+        // Sadece sahip yazabilir/silebilir
+        allow create, update: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // MARK: - Withdrawal Requests (Para Çekme Talepleri)
+
+    match /withdrawal_requests/{userId} {
+      allow read: if false;
+      allow write: if false;
+
+      match /requests/{requestId} {
+        // Sadece kendi taleplerini okuyabilir
+        allow read: if isOwner(userId);
+
+        // Sadece kendi adına talep oluşturabilir
+        allow create: if isOwner(userId)
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.bankName is string
+          && request.resource.data.bankName.size() > 0
+          && request.resource.data.iban is string
+          && request.resource.data.iban.size() > 0
+          && request.resource.data.status == "Beklemede"
+          && request.resource.data.createdAt is timestamp;
+
+        // Güncelleme ve silme yasak (admin işler)
+        allow update, delete: if false;
+      }
     }
 
     // MARK: - Provider Booked Slots

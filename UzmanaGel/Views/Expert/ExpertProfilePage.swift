@@ -50,7 +50,7 @@ struct ExpertProfilePage: View {
             }
         }
         .background(Color("BackgroundColor"))
-        .navigationTitle("Profilim")
+        .navigationTitle("Profilim".localized)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .task {
@@ -67,7 +67,7 @@ struct ExpertProfilePage: View {
             ProgressView()
                 .scaleEffect(1.2)
                 .tint(Color("PrimaryColor"))
-            Text("Profiliniz yükleniyor...")
+            Text("Profiliniz yükleniyor...".localized)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.secondary)
         }
@@ -79,13 +79,13 @@ struct ExpertProfilePage: View {
             Image(systemName: "person.crop.circle.badge.exclamationmark")
                 .font(.system(size: 56))
                 .foregroundColor(.secondary.opacity(0.8))
-            Text("Profil yüklenemedi")
+            Text("Profil yüklenemedi".localized)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(.primary)
-            Text("Lütfen tekrar deneyin.")
+            Text("Lütfen tekrar deneyin.".localized)
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
-            Button("Tekrar dene") {
+            Button("Tekrar dene".localized) {
                 Task { await loadProfile() }
             }
             .font(.system(size: 15, weight: .semibold))
@@ -116,7 +116,7 @@ struct ExpertProfilePage: View {
                 Image(systemName: "eye.fill")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color("PrimaryColor"))
-                Text("Müşteriler seni nasıl görüyor")
+                Text("Müşteriler seni nasıl görüyor".localized)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.secondary)
             }
@@ -176,7 +176,7 @@ struct ExpertProfilePage: View {
             .disabled(isUploadingPhoto)
 
             VStack(spacing: 4) {
-                Text(profile.displayName.isEmpty ? "Uzman" : profile.displayName)
+                Text(profile.displayName.isEmpty ? "Uzman".localized : profile.displayName)
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.primary)
                 if !profile.businessName.isEmpty {
@@ -185,7 +185,7 @@ struct ExpertProfilePage: View {
                         .foregroundColor(.secondary)
                 }
                 if profile.profileImageURL == nil && !isUploadingPhoto {
-                    Text("Fotoğrafı değiştirmek için dokunun")
+                    Text("Fotoğrafı değiştirmek için dokunun".localized)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Color("PrimaryColor").opacity(0.9))
                         .padding(.top, 2)
@@ -238,28 +238,28 @@ struct ExpertProfilePage: View {
 
         let completionText: String
         if pct < 100 {
-            completionText = "İlan açmak için %100 olmalı"
+            completionText = "İlan açmak için %100 olmalı".localized
         } else if isComplete {
-            completionText = "İlan açabilirsiniz"
+            completionText = "İlan açabilirsiniz".localized
         } else if isPending {
-            completionText = "Onay bekleniyor"
+            completionText = "Onay bekleniyor".localized
         } else if requiresDocuments {
-            completionText = "Belgeleri güncelleyip tekrar gönderin"
+            completionText = "Belgeleri güncelleyip tekrar gönderin".localized
         } else if isRejected {
-            completionText = "Bilgileri düzenleyip tekrar gönderin"
+            completionText = "Bilgileri düzenleyip tekrar gönderin".localized
         } else {
-            completionText = "Onay için gönderin"
+            completionText = "Onay için gönderin".localized
         }
 
         let submitButtonTitle =
             requiresDocuments || isRejected
-                ? "Tekrar incelemeye gönder"
-                : "İncelemeye gönder"
+                ? "Tekrar incelemeye gönder".localized
+                : "İncelemeye gönder".localized
 
         return VStack(spacing: 16) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Profil tamamlanma")
+                    Text("Profil tamamlanma".localized)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.secondary)
 
@@ -319,7 +319,7 @@ struct ExpertProfilePage: View {
                         .font(.system(size: 18))
                         .foregroundColor(.green)
 
-                    Text("Profiliniz tamam. İlan açabilirsiniz.")
+                    Text("Profiliniz tamam. İlan açabilirsiniz.".localized)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.green)
                 }
@@ -334,8 +334,7 @@ struct ExpertProfilePage: View {
                         .foregroundColor(.orange)
 
                     Text(
-                        "Başvurunuz inceleniyor. " +
-                        "Onaylandıktan sonra ilan açabileceksiniz."
+                        "Başvurunuz inceleniyor. Onaylandıktan sonra ilan açabileceksiniz.".localized
                     )
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.primary)
@@ -352,8 +351,7 @@ struct ExpertProfilePage: View {
                             .foregroundColor(.orange)
 
                         Text(
-                            "İstenen belgeleri güncelledikten sonra " +
-                            "başvurunuzu yeniden incelemeye gönderin."
+                            "İstenen belgeleri güncelledikten sonra başvurunuzu yeniden incelemeye gönderin.".localized
                         )
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.primary)
@@ -369,8 +367,7 @@ struct ExpertProfilePage: View {
                             .foregroundColor(.red)
 
                         Text(
-                            "Gerekli düzeltmeleri yaptıktan sonra " +
-                            "başvurunuzu yeniden gönderebilirsiniz."
+                            "Gerekli düzeltmeleri yaptıktan sonra başvurunuzu yeniden gönderebilirsiniz.".localized
                         )
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.primary)
@@ -420,7 +417,7 @@ struct ExpertProfilePage: View {
 
     private func submitForApproval() async {
         guard !userId.isEmpty else {
-            submissionError = "Oturum bilgisi bulunamadı."
+            submissionError = "Oturum bilgisi bulunamadı.".localized
             return
         }
 
@@ -451,7 +448,7 @@ struct ExpertProfilePage: View {
 
     private func sectionList(profile: ExpertProfile) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Profil bilgileri")
+            Text("Profil bilgileri".localized)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 4)
@@ -459,8 +456,8 @@ struct ExpertProfilePage: View {
             VStack(spacing: ProfileDesign.rowSpacing) {
                 sectionRow(
                     icon: "person.text.rectangle.fill",
-                    title: "İşletme ve profesyonel bilgiler",
-                    subtitle: "Şirket/şahıs, kategori, deneyim, vergi no, sertifika",
+                    title: "İşletme ve profesyonel bilgiler".localized,
+                    subtitle: "Şirket/şahıs, kategori, deneyim, vergi no, sertifika".localized,
                     color: Color("PrimaryColor"),
                     isFilled: isBusinessProfessionalFilled(profile)
                 ) {
@@ -469,8 +466,8 @@ struct ExpertProfilePage: View {
 
                 sectionRow(
                     icon: "calendar.badge.clock",
-                    title: "Çalışma detayları",
-                    subtitle: "Şehir, günler, saatler, fiyat",
+                    title: "Çalışma detayları".localized,
+                    subtitle: "Şehir, günler, saatler, fiyat".localized,
                     color: Color("TertiaryColor"),
                     isFilled: !profile.serviceCities.isEmpty && !profile.workingDays.isEmpty && !(profile.workingHoursStart ?? "").isEmpty && profile.minPrice != nil && !(profile.serviceType ?? "").isEmpty
                 ) {
@@ -479,8 +476,8 @@ struct ExpertProfilePage: View {
 
                 sectionRow(
                     icon: "creditcard.fill",
-                    title: "Banka bilgileri",
-                    subtitle: "IBAN, hesap sahibi",
+                    title: "Banka bilgileri".localized,
+                    subtitle: "IBAN, hesap sahibi".localized,
                     color: Color("PrimaryColor"),
                     isFilled: profile.bankName != nil && !(profile.bankName ?? "").isEmpty && profile.iban != nil && !(profile.iban ?? "").isEmpty
                 ) {
@@ -489,8 +486,8 @@ struct ExpertProfilePage: View {
 
                 sectionRow(
                     icon: "mappin.and.ellipse",
-                    title: "Adres ve Hakkında",
-                    subtitle: "Adres, kısa tanıtım",
+                    title: "Adres ve Hakkında".localized,
+                    subtitle: "Adres, kısa tanıtım".localized,
                     color: Color("TertiaryColor"),
                     isFilled: !(profile.address ?? "").isEmpty && !(profile.about ?? "").isEmpty
                 ) {
@@ -499,8 +496,8 @@ struct ExpertProfilePage: View {
 
                 sectionRow(
                     icon: "person.text.rectangle.fill",
-                    title: "Kimlik doğrulama",
-                    subtitle: "Kimlik belgesi ön ve arka yüz",
+                    title: "Kimlik doğrulama".localized,
+                    subtitle: "Kimlik belgesi ön ve arka yüz".localized,
                     color: Color("PrimaryColor"),
                     isFilled: !(profile.idFrontURL ?? "").isEmpty && !(profile.idBackURL ?? "").isEmpty
                 ) {
@@ -509,8 +506,8 @@ struct ExpertProfilePage: View {
 
                 sectionRow(
                     icon: "photo.on.rectangle.angled",
-                    title: "Portföy",
-                    subtitle: "Önceki işlerinizden fotoğraflar",
+                    title: "Portföy".localized,
+                    subtitle: "Önceki işlerinizden fotoğraflar".localized,
                     color: Color("TertiaryColor"),
                     isFilled: !profile.portfolioImageURLs.isEmpty
                 ) {
@@ -619,7 +616,7 @@ struct ExpertProfileCustomerPreview: View {
                         .overlay(Image(systemName: "person.fill").font(.system(size: 24)).foregroundColor(Color("PrimaryColor").opacity(0.6)))
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(profile.displayName.isEmpty ? "Uzman" : profile.displayName)
+                    Text(profile.displayName.isEmpty ? "Uzman".localized : profile.displayName)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.primary)
                     if !profile.businessName.isEmpty {
@@ -628,7 +625,7 @@ struct ExpertProfileCustomerPreview: View {
                             .foregroundColor(.secondary)
                     }
                     if profile.experienceYears > 0 {
-                        Text("\(profile.experienceYears) yıl deneyim")
+                        Text("\(profile.experienceYears) " + "yıl deneyim".localized)
                             .font(.system(size: 12))
                             .foregroundColor(Color("PrimaryColor"))
                     }
@@ -671,20 +668,20 @@ struct ExpertAddressAboutPage: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Adres")
+                    Text("Adres".localized)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.secondary)
-                    TextField("Çalışma adresiniz veya hizmet verdiğiniz bölge", text: $address, axis: .vertical)
+                    TextField("Çalışma adresiniz veya hizmet verdiğiniz bölge".localized, text: $address, axis: .vertical)
                         .lineLimit(3...6)
                         .padding(14)
                         .background(Color(.secondarySystemBackground))
                         .cornerRadius(12)
                 }
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Hakkında")
+                    Text("Hakkında".localized)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.secondary)
-                    TextField("Kendinizi ve hizmetlerinizi kısaca tanıtın", text: $about, axis: .vertical)
+                    TextField("Kendinizi ve hizmetlerinizi kısaca tanıtın".localized, text: $about, axis: .vertical)
                         .lineLimit(4...8)
                         .padding(14)
                         .background(Color(.secondarySystemBackground))
@@ -700,7 +697,7 @@ struct ExpertAddressAboutPage: View {
                 } label: {
                     HStack {
                         if isSaving { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)) }
-                        else { Text("Kaydet") }
+                        else { Text("Kaydet".localized) }
                     }
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
@@ -715,7 +712,7 @@ struct ExpertAddressAboutPage: View {
             .padding(20)
         }
         .background(Color("BackgroundColor"))
-        .navigationTitle("Adres ve Hakkında")
+        .navigationTitle("Adres ve Hakkında".localized)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             address = profile.address ?? ""
@@ -794,7 +791,7 @@ struct ExpertIdVerificationPage: View {
         ZStack(alignment: .bottom) {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Kimlik belgenizin ön ve arka yüzünün net fotoğraflarını yükleyin.")
+                    Text("Kimlik belgenizin ön ve arka yüzünün net fotoğraflarını yükleyin.".localized)
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 4)
@@ -1064,7 +1061,7 @@ struct ExpertPortfolioPage: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Önceki işlerinizden fotoğraflar ekleyin. Müşteriler bu görselleri görebilir.")
+                Text("Add photos of your previous work. Customers will be able to see these images.".localized)
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
 
@@ -1112,7 +1109,7 @@ struct ExpertPortfolioPage: View {
                                 .font(.system(size: 22))
                                 .foregroundColor(Color("PrimaryColor"))
                         }
-                        Text(portfolioURLs.isEmpty ? "Fotoğraf ekle" : "Daha fazla ekle")
+                        Text(portfolioURLs.isEmpty ? "Add Photo".localized : "Add More".localized)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(Color("PrimaryColor"))
                     }
@@ -1137,7 +1134,7 @@ struct ExpertPortfolioPage: View {
                 } label: {
                     HStack {
                         if isSaving { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)) }
-                        else { Text("Kaydet") }
+                        else { Text("Save".localized) }
                     }
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
@@ -1152,8 +1149,11 @@ struct ExpertPortfolioPage: View {
             .padding(20)
         }
         .background(Color("BackgroundColor"))
-        .navigationTitle("Portföy")
+        .navigationTitle("Portfolio".localized)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
             portfolioURLs = profile.portfolioImageURLs
         }

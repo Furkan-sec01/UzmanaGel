@@ -46,7 +46,8 @@ service firebase.storage {
       allow create, update: if isOwner(userId)
         && isImageUpload(10 * 1024 * 1024);
 
-      allow delete: if false;
+      // Uzman kendi portfolyo fotoğrafını silebilir
+      allow delete: if isOwner(userId);
     }
 
     // Listing photos

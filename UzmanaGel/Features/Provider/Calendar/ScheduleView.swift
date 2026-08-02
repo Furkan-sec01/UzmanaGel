@@ -11,7 +11,7 @@ struct ScheduleView: View {
     // Calendar layout properties
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
     private let calendar = Calendar.current
-    private let weekdays = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
+    private let weekdays = ["Pzt".localized, "Sal".localized, "Çar".localized, "Per".localized, "Cum".localized, "Cmt".localized, "Paz".localized]
     
     var body: some View {
         NavigationStack {
@@ -35,11 +35,17 @@ struct ScheduleView: View {
                             Button {
                                 showingBatchSettings = true
                             } label: {
-                                HStack {
+                                HStack(spacing: 12) {
                                     Image(systemName: "calendar.badge.plus")
-                                    Text("Toplu Müsaitlik Düzenle")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(Color.themePrimary)
+                                    Text("Toplu Müsaitlik Düzenle".localized)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(Color.themeText)
                                     Spacer()
                                     Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(Color.themeSecondaryText.opacity(0.5))
                                 }
                                 .padding()
                                 .glassmorphic(cornerRadius: Constants.radiusM)
@@ -50,11 +56,17 @@ struct ScheduleView: View {
                             Button {
                                 showingRecurringSettings = true
                             } label: {
-                                HStack {
+                                HStack(spacing: 12) {
                                     Image(systemName: "timer")
-                                    Text("Çalışma Gün ve Saatleri")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(Color.themePrimary)
+                                    Text("Çalışma Gün ve Saatleri".localized)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(Color.themeText)
                                     Spacer()
                                     Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(Color.themeSecondaryText.opacity(0.5))
                                 }
                                 .padding()
                                 .glassmorphic(cornerRadius: Constants.radiusM)
@@ -69,7 +81,7 @@ struct ScheduleView: View {
                     toastOverlay(message: success)
                 }
             }
-            .navigationTitle("Çalışma Takvimi")
+            .navigationTitle("Çalışma Takvimi".localized)
             .navigationBarTitleDisplayMode(.inline)
             .task {
                 await viewModel.loadAvailability()
@@ -90,10 +102,10 @@ struct ScheduleView: View {
     
     private var legendRow: some View {
         HStack(spacing: 12) {
-            legendItem(color: Color.themeSuccess, title: "Müsait")
-            legendItem(color: Color.themeWarning, title: "Kısmi Dolu")
-            legendItem(color: Color.themeError, title: "Dolu / Kapalı")
-            legendItem(color: Color.themeBorder, title: "Planlanmamış")
+            legendItem(color: Color.themeSuccess, title: "Müsait".localized)
+            legendItem(color: Color.themeWarning, title: "Kısmi Dolu".localized)
+            legendItem(color: Color.themeError, title: "Dolu / Kapalı".localized)
+            legendItem(color: Color.themeBorder, title: "Planlanmamış".localized)
         }
         .font(.caption2)
         .padding(.horizontal)
@@ -188,7 +200,7 @@ struct ScheduleView: View {
                         let dayReservations = viewModel.reservations(for: selectedDate)
 
                         CardView {
-                            Toggle("Bugün Hizmete Açık", isOn: Binding(
+                            Toggle("Bugün Hizmete Açık".localized, isOn: Binding(
                                 get: { slot.isAvailable },
                                 set: { _ in
                                     Task {
@@ -203,7 +215,7 @@ struct ScheduleView: View {
                         .padding(.horizontal)
 
                         VStack(alignment: .leading, spacing: Constants.spacingS) {
-                            Text("Saat Dilimleri")
+                            Text("Saat Dilimleri".localized)
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(Color.themeSecondaryText)
@@ -225,7 +237,7 @@ struct ScheduleView: View {
                                                     timeString: tSlot.timeString
                                                 )
                                             } label: {
-                                                Text(tSlot.isBooked ? "Dolu (Randevu Alındı)" : "Müsait")
+                                                Text(tSlot.isBooked ? "Dolu (Randevu Alındı)".localized : "Müsait".localized)
                                                     .font(.caption2)
                                                     .fontWeight(.bold)
                                                     .foregroundColor(.white)
@@ -251,7 +263,7 @@ struct ScheduleView: View {
 
                         if !dayReservations.isEmpty {
                             VStack(alignment: .leading, spacing: Constants.spacingS) {
-                                Text("Günün Rezervasyonları")
+                                Text("Günün Rezervasyonları".localized)
                                     .font(.caption)
                                     .fontWeight(.bold)
                                     .foregroundColor(Color.themeSecondaryText)
@@ -305,19 +317,19 @@ struct ScheduleView: View {
                     } else {
                         EmptyStateView(
                             iconName: "calendar.badge.clock",
-                            title: "Müsaitlik Girilmemiş",
-                            message: "Bu gün için çalışma planı bulunmamaktadır."
+                            title: "Müsaitlik Girilmemiş".localized,
+                            message: "Bu gün için çalışma planı bulunmamaktadır.".localized
                         )
                     }
 
                     Spacer()
                 }
             }
-            .navigationTitle("Gün Detayı")
+            .navigationTitle("Gün Detayı".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         showingDayDetail = false
                     }
                 }
@@ -340,11 +352,11 @@ struct ScheduleView: View {
                 VStack(spacing: Constants.spacingL) {
                     CardView {
                         VStack(spacing: Constants.spacingM) {
-                            DatePicker("Başlangıç Tarihi", selection: $viewModel.batchStartDate, displayedComponents: .date)
+                            DatePicker("Başlangıç Tarihi".localized, selection: $viewModel.batchStartDate, displayedComponents: .date)
                             Divider()
-                            DatePicker("Bitiş Tarihi", selection: $viewModel.batchEndDate, displayedComponents: .date)
+                            DatePicker("Bitiş Tarihi".localized, selection: $viewModel.batchEndDate, displayedComponents: .date)
                             Divider()
-                            Toggle("Hizmete Açık (Müsait)", isOn: $viewModel.batchIsAvailable)
+                            Toggle("Hizmete Açık (Müsait)".localized, isOn: $viewModel.batchIsAvailable)
                                 .tint(Color.themeSuccess)
                         }
                         .font(.subheadline)
@@ -357,7 +369,7 @@ struct ScheduleView: View {
                             showingBatchSettings = false
                         }
                     } label: {
-                        Text("Müsaitliği Uygula")
+                        Text("Müsaitliği Uygula".localized)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -371,11 +383,11 @@ struct ScheduleView: View {
                     Spacer()
                 }
             }
-            .navigationTitle("Toplu Düzenleme")
+            .navigationTitle("Toplu Düzenleme".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         showingBatchSettings = false
                     }
                 }
@@ -392,7 +404,7 @@ struct ScheduleView: View {
                     VStack(spacing: Constants.spacingL) {
                         CardView {
                             VStack(alignment: .leading, spacing: Constants.spacingM) {
-                                Text("Standart Çalışma Saatleri")
+                                Text("Standart Çalışma Saatleri".localized)
                                     .font(.subheadline)
                                     .fontWeight(.bold)
                                 
@@ -400,11 +412,11 @@ struct ScheduleView: View {
                                     TextField("09:00", text: $viewModel.recurringStartHour)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .frame(width: 80)
-                                    Text("ile")
+                                    Text("ile".localized)
                                     TextField("18:00", text: $viewModel.recurringEndHour)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .frame(width: 80)
-                                    Text("arası")
+                                    Text("arası".localized)
                                     Spacer()
                                 }
                                 .font(.footnote)
@@ -414,7 +426,7 @@ struct ScheduleView: View {
                         
                         CardView {
                             VStack(alignment: .leading, spacing: Constants.spacingM) {
-                                Text("Çalışılan Günler")
+                                Text("Çalışılan Günler".localized)
                                     .font(.subheadline)
                                     .fontWeight(.bold)
                                 
@@ -440,7 +452,7 @@ struct ScheduleView: View {
                             viewModel.saveRecurringSettings()
                             showingRecurringSettings = false
                         } label: {
-                            Text("Varsayılan Ayarları Kaydet")
+                            Text("Varsayılan Ayarları Kaydet".localized)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -454,11 +466,11 @@ struct ScheduleView: View {
                     .padding(.vertical)
                 }
             }
-            .navigationTitle("Çalışma Ayarları")
+            .navigationTitle("Çalışma Ayarları".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         showingRecurringSettings = false
                     }
                 }
@@ -507,7 +519,7 @@ struct ScheduleView: View {
     
     
     private func dayOfWeekName(for day: Int) -> String {
-        let names = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
+        let names = ["Pazartesi".localized, "Salı".localized, "Çarşamba".localized, "Perşembe".localized, "Cuma".localized, "Cumartesi".localized, "Pazar".localized]
         return names[day - 1]
     }
     

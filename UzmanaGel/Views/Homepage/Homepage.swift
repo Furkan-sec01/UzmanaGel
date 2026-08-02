@@ -234,6 +234,7 @@ struct Homepage: View {
                 .refreshable {
                     vm.load()
                 }
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
                 .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarColorScheme(.dark, for: .navigationBar)
@@ -246,9 +247,13 @@ struct Homepage: View {
                         }
                     }
                     
+                    ToolbarItem(placement: .principal) {
+                        Text("UzmanaGel")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+                    }
 
-                    
-                                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    ToolbarItemGroup(placement: .navigationBarTrailing) {
                         Button {
                         #if os(iOS)
                             UISelectionFeedbackGenerator().selectionChanged()

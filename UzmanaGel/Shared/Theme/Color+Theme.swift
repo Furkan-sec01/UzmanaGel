@@ -11,7 +11,7 @@ extension Color {
     })
     
     static let themeBackground = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark ? UIColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 1.0) : UIColor(red: 0.96, green: 0.97, blue: 0.99, alpha: 1.0)
+        traits.userInterfaceStyle == .dark ? UIColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 1.0) : UIColor(red: 0.988, green: 0.984, blue: 0.941, alpha: 1.0)
     })
     
     static let themeCardBackground = Color(uiColor: UIColor { traits in

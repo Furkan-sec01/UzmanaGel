@@ -12,7 +12,7 @@ struct ProviderDashboardView: View {
                 Color.themeBackground.ignoresSafeArea()
                 
                 if viewModel.isLoading {
-                    LoadingView(message: "Dashboard yükleniyor...")
+                    LoadingView(message: "Dashboard yükleniyor...".localized)
                 } else {
                     ScrollView {
                         VStack(spacing: Constants.spacingL) {
@@ -30,7 +30,7 @@ struct ProviderDashboardView: View {
                                 spacing: 16
                             ) {
                                 StatCard(
-                                    title: "Bugünkü Randevu",
+                                    title: "Bugünkü Randevu".localized,
                                     value: String(
                                         viewModel.todayAppointments.count
                                     ),
@@ -40,7 +40,7 @@ struct ProviderDashboardView: View {
                                 )
 
                                 StatCard(
-                                    title: "Bekleyen Talep",
+                                    title: "Bekleyen Talep".localized,
                                     value: String(
                                         viewModel.pendingBookingsCount
                                     ),
@@ -50,7 +50,7 @@ struct ProviderDashboardView: View {
                                 )
 
                                 StatCard(
-                                    title: "Yaklaşan Randevu",
+                                    title: "Yaklaşan Randevu".localized,
                                     value: String(
                                         viewModel.upcomingBookingsCount
                                     ),
@@ -60,7 +60,7 @@ struct ProviderDashboardView: View {
                                 )
 
                                 StatCard(
-                                    title: "Tamamlanan İş",
+                                    title: "Tamamlanan İş".localized,
                                     value: viewModel.totalJobsCount,
                                     changeText: nil,
                                     iconName: "checkmark.circle",
@@ -81,7 +81,7 @@ struct ProviderDashboardView: View {
                     }
                 }
             }
-            .navigationTitle("Usta Paneli")
+            .navigationTitle("Usta Paneli".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -119,10 +119,10 @@ struct ProviderDashboardView: View {
         CardView(cornerRadius: Constants.radiusL, shadowRadius: Constants.shadowRadiusS) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Çalışma Durumu")
+                    Text("Çalışma Durumu".localized)
                         .font(.caption)
                         .foregroundColor(Color.themeSecondaryText)
-                    Text(viewModel.isAvailable ? "Yeni İşlere Açıksınız" : "Müsait Değilsiniz")
+                    Text(viewModel.isAvailable ? "Yeni İşlere Açıksınız".localized : "Müsait Değilsiniz".localized)
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(viewModel.isAvailable ? Color.themeSuccess : Color.themeError)
@@ -153,8 +153,8 @@ struct ProviderDashboardView: View {
     
     private var quickActionsRow: some View {
         HStack(spacing: 12) {
-            quickActionItem(icon: "calendar.badge.clock", count: viewModel.pendingBookingsCount, title: "Bekleyenler", color: Color.themeWarning)
-            quickActionItem(icon: "bubble.left.and.bubble.right", count: viewModel.unreadMessagesCount, title: "Mesajlar", color: Color.themePrimary)
+            quickActionItem(icon: "calendar.badge.clock", count: viewModel.pendingBookingsCount, title: "Bekleyenler".localized, color: Color.themeWarning)
+            quickActionItem(icon: "bubble.left.and.bubble.right", count: viewModel.unreadMessagesCount, title: "Mesajlar".localized, color: Color.themePrimary)
         }
     }
     
@@ -182,7 +182,7 @@ struct ProviderDashboardView: View {
                             .fontWeight(.bold)
                             .foregroundColor(Color.themeText)
                         
-                        Text("Yeni")
+                        Text("Yeni".localized)
                             .font(.system(size: 9, weight: .bold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
@@ -198,7 +198,7 @@ struct ProviderDashboardView: View {
     
     private var todayAppointmentsSection: some View {
         VStack(alignment: .leading, spacing: Constants.spacingS) {
-            Text("Bugünün Randevuları")
+            Text("Bugünün Randevuları".localized)
                 .font(.caption)
                 .fontWeight(.bold)
                 .foregroundColor(Color.themeSecondaryText)
@@ -206,7 +206,7 @@ struct ProviderDashboardView: View {
             
             if viewModel.todayAppointments.isEmpty {
                 CardView {
-                    Text("Bugün için planlanmış bir randevunuz bulunmamaktadır.")
+                    Text("Bugün için planlanmış bir randevunuz bulunmamaktadır.".localized)
                         .font(.footnote)
                         .foregroundColor(Color.themeSecondaryText)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -257,7 +257,7 @@ struct ProviderDashboardView: View {
             alignment: .leading,
             spacing: Constants.spacingL
         ) {
-            Text("İş İstatistikleri")
+            Text("İş İstatistikleri".localized)
                 .font(.caption)
                 .fontWeight(.bold)
                 .foregroundColor(Color.themeSecondaryText)
@@ -268,7 +268,7 @@ struct ProviderDashboardView: View {
                     alignment: .leading,
                     spacing: Constants.spacingM
                 ) {
-                    Text("Son 6 Ay Tamamlanan İşler")
+                    Text("Son 6 Ay Tamamlanan İşler".localized)
                         .font(.subheadline)
                         .fontWeight(.bold)
                         .foregroundColor(Color.themeText)
@@ -278,21 +278,19 @@ struct ProviderDashboardView: View {
                     }) {
                         dashboardEmptyState(
                             icon: "chart.bar.xaxis",
-                            title: "Henüz tamamlanan iş yok",
-                            message:
-                                "Son altı aya ait tamamlanan iş " +
-                                "verisi bulunmuyor."
+                            title: "Henüz tamamlanan iş yok".localized,
+                            message: "Son altı aya ait tamamlanan iş verisi bulunmuyor.".localized
                         )
                     } else {
                         Chart {
                             ForEach(viewModel.monthlyJobs) { item in
                                 BarMark(
                                     x: .value(
-                                        "Ay",
+                                        "Ay".localized,
                                         item.monthName
                                     ),
                                     y: .value(
-                                        "Tamamlanan İş",
+                                        "Tamamlanan İş".localized,
                                         item.count
                                     )
                                 )
@@ -312,7 +310,7 @@ struct ProviderDashboardView: View {
                     alignment: .leading,
                     spacing: Constants.spacingM
                 ) {
-                    Text("Tamamlanan Hizmet Dağılımı")
+                    Text("Tamamlanan Hizmet Dağılımı".localized)
                         .font(.subheadline)
                         .fontWeight(.bold)
                         .foregroundColor(Color.themeText)
@@ -320,10 +318,8 @@ struct ProviderDashboardView: View {
                     if viewModel.popularServices.isEmpty {
                         dashboardEmptyState(
                             icon: "chart.pie",
-                            title: "Hizmet verisi bulunmuyor",
-                            message:
-                                "Tamamlanan işler oluştuğunda hizmet " +
-                                "dağılımı burada gösterilecek."
+                            title: "Hizmet verisi bulunmuyor".localized,
+                            message: "Tamamlanan işler oluştuğunda hizmet dağılımı burada gösterilecek.".localized
                         )
                     } else {
                         Chart {
@@ -332,7 +328,7 @@ struct ProviderDashboardView: View {
                             ) { item in
                                 SectorMark(
                                     angle: .value(
-                                        "Tamamlanan İş",
+                                        "Tamamlanan İş".localized,
                                         item.value
                                     ),
                                     innerRadius: .ratio(0.55),
@@ -340,7 +336,7 @@ struct ProviderDashboardView: View {
                                 )
                                 .foregroundStyle(
                                     by: .value(
-                                        "Hizmet",
+                                        "Hizmet".localized,
                                         item.serviceName
                                     )
                                 )

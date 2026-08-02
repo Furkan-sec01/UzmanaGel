@@ -12,7 +12,7 @@ struct EditBusinessProfileView: View {
     @State private var showCertificateImporter = false
     @State private var isAddingCategory = false
     
-    let availableCategories = ["Temizlik", "Tesisatçı", "Elektrikçi", "Boya & Badana", "Marangoz", "Nakliyat", "Bahçe Bakım"]
+    let availableCategories = ["Cleaning", "Plumber", "Electrician", "Painting", "Carpenter", "Moving", "Gardening"]
     
     var body: some View {
         NavigationStack {
@@ -32,30 +32,30 @@ struct EditBusinessProfileView: View {
                         // 3. Business Info Form
                         CardView {
                             VStack(alignment: .leading, spacing: Constants.spacingM) {
-                                Text("İşletme Bilgileri")
+                                Text("Business Information")
                                     .font(.subheadline)
                                     .fontWeight(.bold)
                                     .foregroundColor(Color.themeSecondaryText)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("İşletme Adı")
+                                    Text("Business Name")
                                         .font(.caption)
                                         .foregroundColor(Color.themeSecondaryText)
-                                    TextField("İşletme Adı", text: $viewModel.businessName)
+                                    TextField("Business Name", text: $viewModel.businessName)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                 }
                                 
                                 // Category Badge selection
                                 VStack(alignment: .leading, spacing: Constants.spacingS) {
                                     HStack {
-                                        Text("Hizmet Kategorileri")
+                                        Text("Service Categories")
                                             .font(.caption)
                                             .foregroundColor(Color.themeSecondaryText)
                                         Spacer()
                                         Button {
                                             isAddingCategory = true
                                         } label: {
-                                            Text("+ Ekle")
+                                            Text("+ Add")
                                                 .font(.caption2)
                                                 .fontWeight(.bold)
                                                 .foregroundColor(Color.themePrimary)
@@ -87,7 +87,7 @@ struct EditBusinessProfileView: View {
                                 // Description with character limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        Text("İşletme Açıklaması")
+                                        Text("Business Description")
                                             .font(.caption)
                                             .foregroundColor(Color.themeSecondaryText)
                                         Spacer()
@@ -116,7 +116,7 @@ struct EditBusinessProfileView: View {
                                         ProgressView()
                                             .tint(.white)
                                     } else {
-                                        Text("Değişiklikleri Kaydet")
+                                        Text("Save Changes")
                                             .fontWeight(.semibold)
                                     }
                                 }
@@ -142,12 +142,19 @@ struct EditBusinessProfileView: View {
                     toastOverlay(message: error, isError: true)
                 }
             }
-            .navigationTitle("Profili Düzenle")
+            .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
                     }
                 }
             }
@@ -228,7 +235,7 @@ struct EditBusinessProfileView: View {
                                 Color.themePrimary.opacity(0.6)
                             )
 
-                        Text("İşletme Profili")
+                        Text("Business Profile")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .foregroundColor(
@@ -294,7 +301,7 @@ struct EditBusinessProfileView: View {
             }
             .padding(.bottom, 55)
 
-            Text("Logo, Değişiklikleri Kaydet butonuyla yüklenir.")
+            Text("Logo is uploaded with the Save Changes button.")
                 .font(.caption)
                 .foregroundColor(Color.themeSecondaryText)
         }
@@ -318,7 +325,7 @@ struct EditBusinessProfileView: View {
                         .foregroundColor(viewModel.isCertified ? Color.themeSuccess : Color.themeWarning)
                         .font(.title3)
                     
-                    Text(viewModel.isCertified ? "Onaylı Hesap" : "Belge Onayı Bekliyor")
+                    Text(viewModel.isCertified ? "Verified Account" : "Awaiting Document Approval")
                         .font(.subheadline)
                         .fontWeight(.bold)
                     
@@ -331,7 +338,7 @@ struct EditBusinessProfileView: View {
                 }
                 
                 if !viewModel.isCertified {
-                    Text("Uygulamada ilan verebilmek için kimlik ve yetkinlik belgelerinizi tamamlamanız gerekmektedir. Eksik belgeler:")
+                    Text("To post a listing in the application, you must complete your identity and competency documents. Missing documents:")
                         .font(.caption)
                         .foregroundColor(Color.themeSecondaryText)
                     
@@ -351,7 +358,7 @@ struct EditBusinessProfileView: View {
 
                     if !viewModel.certificateURLs.isEmpty {
                         Label(
-                            "\(viewModel.certificateURLs.count) belge yüklendi. İnceleme bekleniyor.",
+                            "\(viewModel.certificateURLs.count) documents uploaded. Awaiting review.",
                             systemImage: "checkmark.circle.fill"
                         )
                         .font(.caption)
@@ -365,7 +372,7 @@ struct EditBusinessProfileView: View {
                             matching: .images
                         ) {
                             Label(
-                                "Fotoğraf Olarak Belge Yükle",
+                                "Upload Document as Photo",
                                 systemImage: "photo.badge.plus"
                             )
                             .font(.caption)
@@ -381,7 +388,7 @@ struct EditBusinessProfileView: View {
                             showCertificateImporter = true
                         } label: {
                             Label(
-                                "PDF Belge Yükle",
+                                "Upload PDF Document",
                                 systemImage: "doc.badge.plus"
                             )
                             .font(.caption)
@@ -394,7 +401,7 @@ struct EditBusinessProfileView: View {
                         .disabled(viewModel.isUploadingCertificate)
 
                         if viewModel.isUploadingCertificate {
-                            ProgressView("Belge yükleniyor...")
+                            ProgressView("Uploading document...")
                                 .font(.caption)
                         }
                     }
@@ -422,11 +429,11 @@ struct EditBusinessProfileView: View {
                     }
                 }
             }
-            .navigationTitle("Kategori Ekle")
+            .navigationTitle("Add Category")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Close") {
                         isAddingCategory = false
                     }
                 }

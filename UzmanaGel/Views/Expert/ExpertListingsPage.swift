@@ -45,7 +45,7 @@ struct ExpertListingsPage: View {
                         .scaleEffect(1.3)
                         .tint(Color("PrimaryColor"))
 
-                    Text("İlanlar yükleniyor...")
+                    Text("İlanlar yükleniyor...".localized)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.secondary)
                 }
@@ -57,7 +57,7 @@ struct ExpertListingsPage: View {
                         .font(.system(size: 40))
                         .foregroundColor(.orange)
 
-                    Text("İlanlar yüklenemedi")
+                    Text("İlanlar yüklenemedi".localized)
                         .font(.system(size: 17, weight: .semibold))
 
                     Text(errorMessage)
@@ -65,7 +65,7 @@ struct ExpertListingsPage: View {
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
 
-                    Button("Tekrar Dene") {
+                    Button("Tekrar Dene".localized) {
                         Task {
                             await loadServices()
                         }
@@ -96,13 +96,20 @@ struct ExpertListingsPage: View {
             }
         }
         .background(Color("BackgroundColor"))
-        .navigationTitle("İlanlarım")
+        .navigationTitle("İlanlarım".localized)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Kapat") {
+                Button {
                     dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
                 }
             }
         }
@@ -119,15 +126,15 @@ struct ExpertListingsPage: View {
                 onDismiss: { serviceToEdit = nil }
             )
         }
-        .alert("İlanı sil", isPresented: $deleteConfirm) {
-            Button("İptal", role: .cancel) { serviceToDelete = nil }
-            Button("Sil", role: .destructive) {
+        .alert("İlanı sil".localized, isPresented: $deleteConfirm) {
+            Button("İptal".localized, role: .cancel) { serviceToDelete = nil }
+            Button("Sil".localized, role: .destructive) {
                 guard let svc = serviceToDelete else { return }
                 Task { await deleteService(svc); serviceToDelete = nil }
             }
         } message: {
             if let svc = serviceToDelete {
-                Text("\"\(svc.title)\" ilanı silinecek. Bu işlem geri alınamaz.")
+                Text("\"\(svc.title)\"" + " ilanı silinecek. Bu işlem geri alınamaz.".localized)
             }
         }
     }
@@ -135,10 +142,10 @@ struct ExpertListingsPage: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Yayındaki ilanlar")
+                Text("Yayındaki ilanlar".localized)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
-                Text("· \(services.count) ilan")
+                Text("· \(services.count)" + " ilan".localized)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
             }
@@ -149,17 +156,20 @@ struct ExpertListingsPage: View {
         VStack(spacing: 24) {
             ZStack {
                 Circle()
-                    .fill(Color("PrimaryColor").opacity(0.1))
+                    .fill(Color("PrimaryColor").opacity(0.06))
+                    .frame(width: 130, height: 130)
+                Circle()
+                    .fill(Color("PrimaryColor").opacity(0.12))
                     .frame(width: 100, height: 100)
                 Image(systemName: "doc.badge.plus")
                     .font(.system(size: 44))
                     .foregroundColor(Color("PrimaryColor"))
             }
             VStack(spacing: 8) {
-                Text("Henüz ilanınız yok")
+                Text("Henüz ilanınız yok".localized)
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.primary)
-                Text("Ana uzman ekranındaki + butonu ile yeni ilan açabilir,\nmüşterilere hizmetlerinizi sunabilirsiniz.")/// sag alt diyodu ana uzman ekranı ile degistirdik
+                Text("Ana uzman ekranındaki + butonu ile yeni ilan açabilir,\nmüşterilere hizmetlerinizi sunabilirsiniz.".localized)/// sag alt diyodu ana uzman ekranı ile degistirdik
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -300,7 +310,7 @@ struct ExpertEditListingView: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: EditListingDesign.sectionSpacing) {
-                    editSection(title: "İlan görseli", icon: "photo") {
+                    editSection(title: "İlan görseli".localized, icon: "photo") {
                         VStack(spacing: 12) {
                             Group {
                                 if let selectedListingImageData,
@@ -341,7 +351,7 @@ struct ExpertEditListingView: View {
                                 matching: .images
                             ) {
                                 Label(
-                                    "İlan Görselini Değiştir",
+                                    "İlan Görselini Değiştir".localized,
                                     systemImage: "photo.badge.plus"
                                 )
                                 .font(.system(size: 14, weight: .semibold))
@@ -352,22 +362,22 @@ struct ExpertEditListingView: View {
                             .tint(Color("PrimaryColor"))
                             .disabled(isSaving)
 
-                            Text("Yeni görsel kaydetme sırasında yüklenecek.")
+                            Text("Yeni görsel kaydetme sırasında yüklenecek.".localized)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
 
-                    editSection(title: "Temel bilgiler", icon: "doc.text") {
+                    editSection(title: "Temel bilgiler".localized, icon: "doc.text") {
                         VStack(alignment: .leading, spacing: 14) {
-                            fieldRow("İlan başlığı") {
-                                TextField("Başlık", text: $title)
+                            fieldRow("İlan başlığı".localized) {
+                                TextField("Başlık".localized, text: $title)
                                     .padding(12)
                                     .background(Color(.secondarySystemBackground))
                                     .cornerRadius(10)
                             }
-                            fieldRow("Kategori") {
-                                Picker("Kategori", selection: $selectedCategory) {
+                            fieldRow("Kategori".localized) {
+                                Picker("Kategori".localized, selection: $selectedCategory) {
                                     ForEach(categories, id: \.self) { Text($0).tag($0) }
                                 }
                                 .pickerStyle(.menu)
@@ -375,16 +385,16 @@ struct ExpertEditListingView: View {
                         }
                     }
 
-                    editSection(title: "Fiyat ve süre", icon: "clock.badge.checkmark") {
+                    editSection(title: "Fiyat ve süre".localized, icon: "clock.badge.checkmark") {
                         VStack(alignment: .leading, spacing: 14) {
-                            fieldRow("Süre") {
-                                Picker("Süre", selection: $duration) {
-                                    ForEach(durationOptions, id: \.self) { Text($0).tag($0) }
+                            fieldRow("Süre".localized) {
+                                Picker("Süre".localized, selection: $duration) {
+                                    ForEach(durationOptions, id: \.self) { Text($0.localized).tag($0) }
                                 }
                                 .pickerStyle(.menu)
                             }
-                            fieldRow("Fiyat (₺)") {
-                                TextField("Fiyat", text: $priceText)
+                            fieldRow("Fiyat (₺)".localized) {
+                                TextField("Fiyat".localized, text: $priceText)
                                     .keyboardType(.numberPad)
                                     .padding(12)
                                     .background(Color(.secondarySystemBackground))
@@ -393,16 +403,16 @@ struct ExpertEditListingView: View {
                         }
                     }
 
-                    editSection(title: "Konum ve açıklama", icon: "mappin.circle") {
+                    editSection(title: "Konum ve açıklama".localized, icon: "mappin.circle") {
                         VStack(alignment: .leading, spacing: 14) {
-                            fieldRow("Şehir") {
-                                Picker("Şehir", selection: $selectedCity) {
+                            fieldRow("Şehir".localized) {
+                                Picker("Şehir".localized, selection: $selectedCity) {
                                     ForEach(cities, id: \.self) { Text($0).tag($0) }
                                 }
                                 .pickerStyle(.menu)
                             }
-                            fieldRow("Açıklama") {
-                                TextField("Açıklama", text: $descriptionText, axis: .vertical)
+                            fieldRow("Açıklama".localized) {
+                                TextField("Açıklama".localized, text: $descriptionText, axis: .vertical)
                                     .lineLimit(4...8)
                                     .padding(12)
                                     .background(Color(.secondarySystemBackground))
@@ -427,7 +437,7 @@ struct ExpertEditListingView: View {
                             } else {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 18))
-                                Text("Değişiklikleri Kaydet")
+                                Text("Değişiklikleri Kaydet".localized)
                             }
                         }
                         .font(.system(size: 16, weight: .semibold))
@@ -445,11 +455,11 @@ struct ExpertEditListingView: View {
                 .padding(.bottom, 32)
             }
             .background(Color("BackgroundColor"))
-            .navigationTitle("İlanı Düzenle")
+            .navigationTitle("İlanı Düzenle".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") { onDismiss(); dismiss() }
+                    Button("Kapat".localized) { onDismiss(); dismiss() }
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(Color("PrimaryColor"))
                 }
@@ -485,7 +495,7 @@ struct ExpertEditListingView: View {
                 Image(systemName: "photo")
                     .font(.system(size: 30))
 
-                Text("İlan görseli yok")
+                Text("İlan görseli yok".localized)
                     .font(.caption)
             }
             .foregroundColor(.secondary)
@@ -525,7 +535,7 @@ struct ExpertEditListingView: View {
         defer { isSaving = false }
         let price = Int(priceText) ?? 0
         guard price > 0 else {
-            errorMessage = "Geçerli bir fiyat girin."
+            errorMessage = "Geçerli bir fiyat girin.".localized
             return
         }
         do {
@@ -533,7 +543,7 @@ struct ExpertEditListingView: View {
 
             if let selectedListingImageData {
                 guard let image = UIImage(data: selectedListingImageData) else {
-                    errorMessage = "Seçilen görsel okunamadı."
+                    errorMessage = "Seçilen görsel okunamadı.".localized
                     return
                 }
 

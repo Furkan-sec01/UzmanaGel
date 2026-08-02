@@ -85,6 +85,9 @@ struct ProviderReviewsPage: View {
         }
         .navigationTitle(providerName.isEmpty ? "Değerlendirmeler".localized : "\(providerName) Yorumları")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             await viewModel.loadReviews()
         }
@@ -125,7 +128,7 @@ struct ProviderReviewsPage: View {
                         Text("Değerlendir".localized)
                     }
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color("PrimaryColor"))
+                    .foregroundColor(.white)
                 }
             }
         }

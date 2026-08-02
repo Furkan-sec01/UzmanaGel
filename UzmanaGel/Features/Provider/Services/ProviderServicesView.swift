@@ -14,13 +14,13 @@ struct ProviderServicesView: View {
             Color.themeBackground.ignoresSafeArea()
             
             if viewModel.isLoading && viewModel.services.isEmpty {
-                LoadingView(message: "Hizmetleriniz yükleniyor...")
+                LoadingView(message: "Loading your services...")
             } else if viewModel.services.isEmpty {
                 EmptyStateView(
                     iconName: "square.dashed.badge.plus",
-                    title: "Hizmet Bulunamadı",
-                    message: "Müşterilere sunabileceğiniz hizmetlerinizi ekleyerek kazanmaya başlayın.",
-                    buttonTitle: "Yeni Hizmet Ekle"
+                    title: "No Services Found",
+                    message: "Start earning by adding services you can offer to customers.",
+                    buttonTitle: "Add New Service"
                 ) {
                     editingService = nil
                     viewModel.resetForm()
@@ -49,7 +49,7 @@ struct ProviderServicesView: View {
                 toastOverlay(message: error, isError: true)
             }
         }
-        .navigationTitle("Hizmet Yönetimi")
+        .navigationTitle("Service Management")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -68,14 +68,14 @@ struct ProviderServicesView: View {
         }
         .alert(item: $serviceToDelete) { service in
             Alert(
-                title: Text("Hizmeti Sil"),
-                message: Text("'\(service.title)' hizmetini silmek istediğinize emin misiniz?"),
-                primaryButton: .destructive(Text("Sil")) {
+                title: Text("Delete Service"),
+                message: Text("Are you sure you want to delete the '\(service.title)' service?"),
+                primaryButton: .destructive(Text("Delete")) {
                     Task {
                         await viewModel.softDeleteService(id: service.id)
                     }
                 },
-                secondaryButton: .cancel(Text("Vazgeç"))
+                secondaryButton: .cancel(Text("Cancel"))
             )
         }
         .task {
@@ -124,7 +124,7 @@ struct ProviderServicesView: View {
                     
                     Spacer()
                     
-                    Text("Tahmini Süre: \(service.durationMinutes) dk")
+                    Text("Estimated Time: \(service.durationMinutes) min")
                         .font(.caption2)
                         .foregroundColor(Color.themeSecondaryText)
                 }
@@ -142,7 +142,7 @@ struct ProviderServicesView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "pencil")
-                            Text("Düzenle")
+                            Text("Edit")
                         }
                         .font(.caption2)
                         .foregroundColor(Color.themePrimary)
@@ -154,7 +154,7 @@ struct ProviderServicesView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "trash")
-                            Text("Sil")
+                            Text("Delete")
                         }
                         .font(.caption2)
                         .foregroundColor(Color.themeError)
@@ -176,21 +176,21 @@ struct ProviderServicesView: View {
                     VStack(spacing: Constants.spacingM) {
                         CardView {
                             VStack(alignment: .leading, spacing: Constants.spacingM) {
-                                Text(editingService == nil ? "Yeni Hizmet Ekle" : "Hizmeti Düzenle")
+                                Text(editingService == nil ? "Add New Service" : "Edit Service")
                                     .font(.subheadline)
                                     .fontWeight(.bold)
                                     .foregroundColor(Color.themeSecondaryText)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Hizmet Başlığı")
+                                    Text("Service Title")
                                         .font(.caption)
                                         .foregroundColor(Color.themeSecondaryText)
-                                    TextField("Örn: Kombi Bakımı", text: $viewModel.title)
+                                    TextField("Ex: Boiler Maintenance", text: $viewModel.title)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Açıklama")
+                                    Text("Description")
                                         .font(.caption)
                                         .foregroundColor(Color.themeSecondaryText)
                                     TextEditor(text: $viewModel.description)
@@ -201,27 +201,27 @@ struct ProviderServicesView: View {
                                         )
                                 }
                                 
-                                Picker("Fiyat Tipi", selection: $viewModel.pricingType) {
-                                    Text("Saatlik").tag(ExpertService.PricingType.hourly)
-                                    Text("Proje Bazlı").tag(ExpertService.PricingType.fixed)
+                                Picker("Pricing Type", selection: $viewModel.pricingType) {
+                                    Text("Hourly").tag(ExpertService.PricingType.hourly)
+                                    Text("Project Based").tag(ExpertService.PricingType.fixed)
                                 }
                                 .pickerStyle(SegmentedPickerStyle())
                                 
                                 HStack(spacing: Constants.spacingM) {
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Fiyat (₺)")
+                                        Text("Price (₺)")
                                             .font(.caption)
                                             .foregroundColor(Color.themeSecondaryText)
-                                        TextField("Fiyat", text: $viewModel.price)
+                                        TextField("Price", text: $viewModel.price)
                                             .keyboardType(.numberPad)
                                             .textFieldStyle(RoundedBorderTextFieldStyle())
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Süre (Dakika)")
+                                        Text("Duration (Minutes)")
                                             .font(.caption)
                                             .foregroundColor(Color.themeSecondaryText)
-                                        TextField("Süre", text: $viewModel.duration)
+                                        TextField("Duration", text: $viewModel.duration)
                                             .keyboardType(.numberPad)
                                             .textFieldStyle(RoundedBorderTextFieldStyle())
                                     }
@@ -229,14 +229,14 @@ struct ProviderServicesView: View {
                                 
                                 // Images Picker
                                 VStack(alignment: .leading, spacing: Constants.spacingS) {
-                                    Text("Hizmet Görselleri")
+                                    Text("Service Images")
                                         .font(.caption)
                                         .foregroundColor(Color.themeSecondaryText)
                                     
                                     PhotosPicker(selection: $imageItems, maxSelectionCount: 5, matching: .images) {
                                         HStack {
                                             Image(systemName: "photo.stack")
-                                            Text("Görsel Seç (\(viewModel.selectedImagesData.count)/5)")
+                                            Text("Select Image (\(imageItems.count)/5)")
                                         }
                                         .font(.caption)
                                         .fontWeight(.semibold)
@@ -248,7 +248,7 @@ struct ProviderServicesView: View {
                                     }
                                 }
                                 
-                                Toggle("Hizmeti Aktifleştir", isOn: $viewModel.isActive)
+                                Toggle("Activate Service", isOn: $viewModel.isActive)
                                     .tint(Color.themePrimary)
                                     .font(.subheadline)
                                     .padding(.vertical, 4)
@@ -267,7 +267,7 @@ struct ProviderServicesView: View {
                                         ProgressView()
                                             .tint(.white)
                                     } else {
-                                        Text(editingService == nil ? "Ekle" : "Değişiklikleri Kaydet")
+                                        Text(editingService == nil ? "Add" : "Save Changes")
                                             .fontWeight(.semibold)
                                     }
                                 }
@@ -284,11 +284,11 @@ struct ProviderServicesView: View {
                     }
                 }
             }
-            .navigationTitle(editingService == nil ? "Yeni Hizmet" : "Hizmet Düzenle")
+            .navigationTitle(editingService == nil ? "New Service" : "Edit Service")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Close") {
                         showingAddEditSheet = false
                     }
                 }

@@ -42,7 +42,7 @@ struct ExpertReservationsPage: View {
         "Diğer"
     ]
 
-    private let accentYellow = Color("TertiaryColor")
+    private let primaryColor = Color("PrimaryColor")
     private let bgColor      = Color("BackgroundColor")
     private let cardSecondaryTextColor = Color.black.opacity(0.62)
 
@@ -82,7 +82,7 @@ struct ExpertReservationsPage: View {
                 if viewModel.isLoading {
                     VStack(spacing: 16) {
                         ProgressView()
-                            .tint(accentYellow)
+                            .tint(primaryColor)
                             .scaleEffect(1.4)
                         Text("Rezervasyonlar yükleniyor...".localized)
                             .font(.subheadline)
@@ -106,6 +106,9 @@ struct ExpertReservationsPage: View {
         }
         .navigationTitle("Gelen Rezervasyonlar".localized)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task { await viewModel.loadReservations() }
         .refreshable { await viewModel.loadReservations() }
         .alert("Hata".localized, isPresented: $viewModel.showError) {
@@ -153,32 +156,43 @@ struct ExpertReservationsPage: View {
 
     // MARK: - Filter Picker
     private var filterPicker: some View {
-        HStack(spacing: 0) {
-            ForEach(ExpertReservationFilter.allCases) { filter in
-                let isSelected = selectedFilter == filter
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { selectedFilter = filter }
-                } label: {
-                    Text(filter.title)
-                        .font(.caption)
-                        .fontWeight(isSelected ? .bold : .regular)
-                        .foregroundColor(isSelected ? .white : accentYellow)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
-                        .background(isSelected ? accentYellow : accentYellow.opacity(0.12))
-                }
-                .buttonStyle(.plain)
-                if filter != ExpertReservationFilter.allCases.last {
-                    Divider().background(accentYellow.opacity(0.3))
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(ExpertReservationFilter.allCases) { filter in
+                    let isSelected = selectedFilter == filter
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                            selectedFilter = filter
+                        }
+                    } label: {
+                        Text(filter.title)
+                            .font(.system(size: 14, weight: isSelected ? .bold : .regular))
+                            .foregroundColor(isSelected ? .white : primaryColor)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(
+                                Group {
+                                    if isSelected {
+                                        primaryColor
+                                    } else {
+                                        primaryColor.opacity(0.1)
+                                    }
+                                }
+                            )
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(isSelected ? Color.clear : primaryColor.opacity(0.3), lineWidth: 1)
+                            )
+                            .shadow(color: isSelected ? primaryColor.opacity(0.35) : .clear, radius: 8, x: 0, y: 3)
+                            .scaleEffect(isSelected ? 1.03 : 1.0)
+                    }
+                    .buttonStyle(.plain)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.7), value: selectedFilter)
                 }
             }
+            .padding(.horizontal, 16)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(accentYellow.opacity(0.4), lineWidth: 1)
-        )
-        .frame(height: 44)
     }
 
     // MARK: - Reservations List
@@ -200,14 +214,14 @@ struct ExpertReservationsPage: View {
             Spacer()
             ZStack {
                 Circle()
-                    .fill(accentYellow.opacity(0.12))
+                    .fill(primaryColor.opacity(0.12))
                     .frame(width: 90, height: 90)
                 Circle()
-                    .fill(accentYellow.opacity(0.07))
+                    .fill(primaryColor.opacity(0.07))
                     .frame(width: 118, height: 118)
                 Image(systemName: "calendar.badge.exclamationmark")
                     .font(.system(size: 38))
-                    .foregroundColor(accentYellow)
+                    .foregroundColor(primaryColor)
             }
             VStack(spacing: 8) {
                 Text(emptyStateTitle)
@@ -254,7 +268,7 @@ struct ExpertReservationsPage: View {
                     HStack(spacing: 4) {
                         Image(systemName: "person.fill")
                             .font(.caption2)
-                            .foregroundColor(accentYellow)
+                            .foregroundColor(primaryColor)
                         Text(reservation.customerName)
                             .font(.caption)
                             .foregroundColor(cardSecondaryTextColor)
@@ -264,11 +278,11 @@ struct ExpertReservationsPage: View {
                 statusBadge(reservation.status)
             }
 
-            Divider().background(accentYellow.opacity(0.25))
+            Divider().background(primaryColor.opacity(0.25))
 
             HStack(spacing: 8) {
                 Image(systemName: "calendar")
-                    .foregroundColor(accentYellow)
+                    .foregroundColor(primaryColor)
                     .font(.subheadline)
                 Text(formatDate(reservation.reservationDate))
                     .font(.subheadline)
@@ -279,7 +293,7 @@ struct ExpertReservationsPage: View {
                 HStack(spacing: 6) {
                     Image(systemName: "note.text")
                         .font(.caption)
-                        .foregroundColor(accentYellow.opacity(0.7))
+                        .foregroundColor(primaryColor.opacity(0.7))
                     Text(reservation.note)
                         .font(.caption)
                         .foregroundColor(cardSecondaryTextColor)
@@ -297,10 +311,10 @@ struct ExpertReservationsPage: View {
                 }
                 .font(.caption)
                 .fontWeight(.semibold)
-                .foregroundColor(accentYellow)
+                .foregroundColor(primaryColor)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(accentYellow.opacity(0.12))
+                .background(primaryColor.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 9))
             }
             .buttonStyle(.plain)
@@ -315,9 +329,9 @@ struct ExpertReservationsPage: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(accentYellow.opacity(0.3), lineWidth: 1)
+                .stroke(primaryColor.opacity(0.3), lineWidth: 1)
         )
-        .shadow(color: accentYellow.opacity(0.1), radius: 8, x: 0, y: 3)
+        .shadow(color: primaryColor.opacity(0.1), radius: 8, x: 0, y: 3)
     }
 
     private func pendingActionButtons(for reservation: Reservation) -> some View {
@@ -354,7 +368,7 @@ struct ExpertReservationsPage: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(accentYellow)
+                .background(primaryColor)
                 .clipShape(RoundedRectangle(cornerRadius: 9))
             }
             .buttonStyle(.plain)
@@ -376,7 +390,7 @@ struct ExpertReservationsPage: View {
     private func statusColor(_ status: ReservationStatus) -> Color {
         switch status {
         case .pending:    return .orange
-        case .accepted:   return accentYellow
+        case .accepted:   return primaryColor
         case .inProgress: return .blue
         case .completed:  return Color("PrimaryColor")
         case .rejected:   return .red

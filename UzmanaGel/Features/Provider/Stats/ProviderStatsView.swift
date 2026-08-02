@@ -14,11 +14,11 @@ struct ProviderStatsView: View {
                     VStack(spacing: Constants.spacingL) {
                         
                         // 1. Date Range Picker
-                        Picker("Tarih Aralığı", selection: $viewModel.selectedRangeIndex) {
-                            Text("7 Gün").tag(0)
-                            Text("30 Gün").tag(1)
-                            Text("3 Ay").tag(2)
-                            Text("1 Yıl").tag(3)
+                        Picker("Date Range", selection: $viewModel.selectedRangeIndex) {
+                            Text("7 Days").tag(0)
+                            Text("30 Days").tag(1)
+                            Text("3 Months").tag(2)
+                            Text("1 Year").tag(3)
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         .padding(.horizontal)
@@ -35,20 +35,27 @@ struct ProviderStatsView: View {
                         // 4. Monthly trend visualization
                         CardView {
                             VStack(alignment: .leading, spacing: Constants.spacingM) {
-                                Text("Aylara Göre Kazanç Dağılımı")
+                                Text("Aylık Kazanç Dağılımı")
                                     .font(.subheadline)
                                     .fontWeight(.bold)
                                 
-                                Chart {
-                                    BarMark(x: .value("Ay", "Oca"), y: .value("Kazanç", 4500))
-                                    BarMark(x: .value("Ay", "Şub"), y: .value("Kazanç", 6200))
-                                    BarMark(x: .value("Ay", "Mar"), y: .value("Kazanç", 5100))
-                                    BarMark(x: .value("Ay", "Nis"), y: .value("Kazanç", 8200))
-                                    BarMark(x: .value("Ay", "May"), y: .value("Kazanç", 10400))
-                                    BarMark(x: .value("Ay", "Haz"), y: .value("Kazanç", viewModel.animatedEarnings))
+                                if viewModel.recentEarnings.isEmpty {
+                                    Text("Henüz tamamlanan iş yok.")
+                                        .font(.caption)
+                                        .foregroundColor(Color.themeSecondaryText)
+                                        .frame(height: 180)
+                                } else {
+                                    Chart {
+                                        ForEach(viewModel.recentEarnings) { item in
+                                            BarMark(
+                                                x: .value("Ay", item.month),
+                                                y: .value("Kazanç", item.amount)
+                                            )
+                                        }
+                                    }
+                                    .foregroundStyle(Color.themePrimary.gradient)
+                                    .frame(height: 180)
                                 }
-                                .foregroundStyle(Color.themePrimary.gradient)
-                                .frame(height: 180)
                             }
                         }
                         .padding(.horizontal)
@@ -57,7 +64,7 @@ struct ProviderStatsView: View {
                 }
                 
                 if viewModel.isLoading {
-                    LoadingView(message: "Rapor hazırlanıyor...")
+                    LoadingView(message: "Preparing report...")
                 }
                 
                 if let success = viewModel.successMessage {
@@ -66,11 +73,11 @@ struct ProviderStatsView: View {
             }
             .navigationTitle("Detaylı İstatistikler")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                viewModel.startCounters()
+            .task {
+                await viewModel.loadStats()
             }
             .onChange(of: viewModel.selectedRangeIndex) { _, _ in
-                viewModel.startCounters()
+                Task { await viewModel.onRangeChanged() }
             }
         }
     }
@@ -79,10 +86,10 @@ struct ProviderStatsView: View {
     
     private var metricsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-            metricCard(title: "Toplam Kazanç", value: "₺\(Int(viewModel.animatedEarnings))", icon: "turkishlirasign.circle", color: Color.themeSuccess)
-            metricCard(title: "Tamamlanan İş", value: "\(Int(viewModel.animatedJobsCount)) adet", icon: "checkmark.circle", color: Color.themePrimary)
-            metricCard(title: "Ortalama Puan", value: String(format: "%.1f", viewModel.animatedRating), icon: "star.fill", color: Color.themeWarning)
-            metricCard(title: "Ziyaretçi Sayısı", value: "\(Int(viewModel.animatedViews))", icon: "person.2.fill", color: Color.themeSecondary)
+            metricCard(title: "Total Earnings", value: "₺\(Int(viewModel.animatedEarnings))", icon: "turkishlirasign.circle", color: Color.themeSuccess)
+            metricCard(title: "Completed Jobs", value: "\(Int(viewModel.animatedJobsCount))", icon: "checkmark.circle", color: Color.themePrimary)
+            metricCard(title: "Average Rating", value: String(format: "%.1f", viewModel.animatedRating), icon: "star.fill", color: Color.themeWarning)
+            metricCard(title: "Visitor Count", value: "\(Int(viewModel.animatedViews))", icon: "person.2.fill", color: Color.themeSecondary)
         }
     }
     
@@ -109,18 +116,18 @@ struct ProviderStatsView: View {
     private var exportButtonsCard: some View {
         CardView {
             VStack(alignment: .leading, spacing: Constants.spacingM) {
-                Text("Rapor Dışa Aktarma")
+                Text("Export Report")
                     .font(.subheadline)
                     .fontWeight(.bold)
                 
                 HStack(spacing: 12) {
-                    exportButton(title: "PDF İndir", icon: "doc.richtext.fill") {
+                    exportButton(title: "Download PDF", icon: "doc.richtext.fill") {
                         Task { await viewModel.exportPDF() }
                     }
-                    exportButton(title: "CSV Aktar", icon: "tablecells.fill") {
+                    exportButton(title: "Export CSV", icon: "tablecells.fill") {
                         Task { await viewModel.exportCSV() }
                     }
-                    exportButton(title: "E-Posta", icon: "envelope.fill") {
+                    exportButton(title: "Email", icon: "envelope.fill") {
                         Task { await viewModel.emailReport() }
                     }
                 }

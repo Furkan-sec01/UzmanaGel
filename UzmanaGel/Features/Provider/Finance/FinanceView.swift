@@ -41,7 +41,7 @@ struct FinanceView: View {
                     toastOverlay(message: error, isError: true)
                 }
             }
-            .navigationTitle("Finansal Yönetim")
+            .navigationTitle("Finansal Yönetim".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -50,7 +50,7 @@ struct FinanceView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "banknote")
-                            Text("Para Çek")
+                            Text("Para Çek".localized)
                         }
                         .font(.caption)
                         .fontWeight(.bold)
@@ -77,7 +77,7 @@ struct FinanceView: View {
             VStack(spacing: Constants.spacingM) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Toplam Bakiye")
+                        Text("Toplam Bakiye".localized)
                             .font(.caption)
                             .foregroundColor(Color.themeSecondaryText)
                         Text("₺\(String(format: "%.2f", viewModel.totalBalance))")
@@ -88,7 +88,7 @@ struct FinanceView: View {
                     Spacer()
                     
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text("Çekilebilir Bakiye")
+                        Text("Çekilebilir Bakiye".localized)
                             .font(.caption)
                             .foregroundColor(Color.themeSecondaryText)
                         Text("₺\(String(format: "%.2f", viewModel.withdrawableBalance))")
@@ -104,7 +104,7 @@ struct FinanceView: View {
                 Button {
                     showingWithdrawalForm = true
                 } label: {
-                    Text("Banka Hesabına Aktar")
+                    Text("Banka Hesabına Aktar".localized)
                         .font(.subheadline)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -120,7 +120,7 @@ struct FinanceView: View {
     
     private var earningsHistorySection: some View {
         VStack(alignment: .leading, spacing: Constants.spacingS) {
-            Text("Kazanç Geçmişi")
+            Text("Kazanç Geçmişi".localized)
                 .font(.caption)
                 .fontWeight(.bold)
                 .foregroundColor(Color.themeSecondaryText)
@@ -147,7 +147,7 @@ struct FinanceView: View {
                                     .fontWeight(.bold)
                                     .foregroundColor(earn.isPending ? Color.themeWarning : Color.themeSuccess)
                                 
-                                Text(earn.isPending ? "Beklemede" : "Tamamlandı")
+                                Text(earn.isPending ? "Beklemede".localized : "Tamamlandı".localized)
                                     .font(.system(size: 8, weight: .bold))
                                     .foregroundColor(earn.isPending ? Color.themeWarning : Color.themeSuccess)
                             }
@@ -165,7 +165,7 @@ struct FinanceView: View {
     
     private var payoutRequestsSection: some View {
         VStack(alignment: .leading, spacing: Constants.spacingS) {
-            Text("Para Çekme Talepleri")
+            Text("Para Çekme Talepleri".localized)
                 .font(.caption)
                 .fontWeight(.bold)
                 .foregroundColor(Color.themeSecondaryText)
@@ -173,7 +173,7 @@ struct FinanceView: View {
             
             if viewModel.requests.isEmpty {
                 CardView {
-                    Text("Henüz para çekme talebiniz bulunmamaktadır.")
+                    Text("Henüz para çekme talebiniz bulunmamaktadır.".localized)
                         .font(.footnote)
                         .foregroundColor(Color.themeSecondaryText)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -219,7 +219,7 @@ struct FinanceView: View {
     
     private var invoicesSection: some View {
         VStack(alignment: .leading, spacing: Constants.spacingS) {
-            Text("Faturalar ve Vergiler")
+            Text("Faturalar ve Vergiler".localized)
                 .font(.caption)
                 .fontWeight(.bold)
                 .foregroundColor(Color.themeSecondaryText)
@@ -234,7 +234,7 @@ struct FinanceView: View {
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
                                     .foregroundColor(Color.themeText)
-                                Text("Komisyon Faturası")
+                                Text("Komisyon Faturası".localized)
                                     .font(.caption2)
                                     .foregroundColor(Color.themeSecondaryText)
                             }
@@ -245,7 +245,7 @@ struct FinanceView: View {
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: "doc.text")
-                                    Text("Görüntüle")
+                                    Text("Görüntüle".localized)
                                 }
                                 .font(.caption2)
                                 .fontWeight(.semibold)
@@ -274,31 +274,31 @@ struct FinanceView: View {
                     VStack(spacing: Constants.spacingM) {
                         CardView {
                             VStack(alignment: .leading, spacing: Constants.spacingM) {
-                                Text("Çekim Talebi Oluştur")
+                                Text("Çekim Talebi Oluştur".localized)
                                     .font(.subheadline)
                                     .fontWeight(.bold)
                                     .foregroundColor(Color.themeSecondaryText)
                                 
-                                Text("Çekilebilir Tutar: ₺\(Int(viewModel.withdrawableBalance))")
+                                Text("Çekilebilir Tutar".localized + ": ₺\(Int(viewModel.withdrawableBalance))")
                                     .font(.footnote)
                                     .fontWeight(.semibold)
                                     .foregroundColor(Color.themeSuccess)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Çekilecek Tutar (₺)")
+                                    Text("Çekilecek Tutar (₺)".localized)
                                         .font(.caption)
                                         .foregroundColor(Color.themeSecondaryText)
-                                    TextField("Tutar", text: $viewModel.withdrawAmount)
+                                    TextField("Tutar".localized, text: $viewModel.withdrawAmount)
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Banka Seçimi")
+                                    Text("Banka Seçimi".localized)
                                         .font(.caption)
                                         .foregroundColor(Color.themeSecondaryText)
                                     
-                                    Picker("Banka", selection: $viewModel.selectedBank) {
+                                    Picker("Banka".localized, selection: $viewModel.selectedBank) {
                                         ForEach(viewModel.bankList, id: \.self) { bank in
                                             Text(bank).tag(bank)
                                         }
@@ -308,7 +308,7 @@ struct FinanceView: View {
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("IBAN Numarası")
+                                    Text("IBAN Numarası".localized)
                                         .font(.caption)
                                         .foregroundColor(Color.themeSecondaryText)
                                     TextField("TR00 0000 0000 0000 0000 0000 00", text: $viewModel.iban)
@@ -329,7 +329,7 @@ struct FinanceView: View {
                                         ProgressView()
                                             .tint(.white)
                                     } else {
-                                        Text("Talep Gönder")
+                                        Text("Talep Gönder".localized)
                                             .fontWeight(.semibold)
                                     }
                                 }
@@ -346,11 +346,11 @@ struct FinanceView: View {
                     }
                 }
             }
-            .navigationTitle("Para Çek")
+            .navigationTitle("Para Çek".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         showingWithdrawalForm = false
                     }
                 }
@@ -372,7 +372,7 @@ struct FinanceView: View {
                                 Image(systemName: "checkmark.seal.fill")
                                     .foregroundColor(Color.themeSuccess)
                                     .font(.title2)
-                                Text("UzmanaGel Dijital Fatura")
+                                Text("UzmanaGel Dijital Fatura".localized)
                                     .font(.headline)
                                     .fontWeight(.bold)
                                 Spacer()
@@ -381,7 +381,7 @@ struct FinanceView: View {
                             Divider()
                             
                             HStack {
-                                Text("Fatura Dönemi:")
+                                Text("Fatura Dönemi:".localized)
                                     .font(.caption)
                                     .foregroundColor(Color.themeSecondaryText)
                                 Spacer()
@@ -391,7 +391,7 @@ struct FinanceView: View {
                             }
                             
                             HStack {
-                                Text("Fatura Numarası:")
+                                Text("Fatura Numarası:".localized)
                                     .font(.caption)
                                     .foregroundColor(Color.themeSecondaryText)
                                 Spacer()
@@ -401,7 +401,7 @@ struct FinanceView: View {
                             }
                             
                             HStack {
-                                Text("Hizmet Komisyon Bedeli:")
+                                Text("Hizmet Komisyon Bedeli:".localized)
                                     .font(.caption)
                                     .foregroundColor(Color.themeSecondaryText)
                                 Spacer()
@@ -413,7 +413,7 @@ struct FinanceView: View {
                             
                             Divider()
                             
-                            Text("Bu fatura elektronik imza ile imzalanmıştır. Maliye Bakanlığı standartlarına uygundur.")
+                            Text("Bu fatura elektronik imza ile imzalanmıştır. Maliye Bakanlığı standartlarına uygundur.".localized)
                                 .font(.system(size: 8))
                                 .italic()
                                 .foregroundColor(Color.themeSecondaryText)
@@ -429,7 +429,7 @@ struct FinanceView: View {
                     } label: {
                         HStack {
                             Image(systemName: "square.and.arrow.up")
-                            Text("Paylaş veya İndir")
+                            Text("Paylaş veya İndir".localized)
                         }
                         .foregroundColor(.white)
                         .padding()
@@ -442,11 +442,11 @@ struct FinanceView: View {
                 }
                 .padding(.vertical)
             }
-            .navigationTitle("Fatura Detayı")
+            .navigationTitle("Fatura Detayı".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Kapat") {
+                    Button("Kapat".localized) {
                         viewModel.selectedInvoice = nil
                     }
                 }
