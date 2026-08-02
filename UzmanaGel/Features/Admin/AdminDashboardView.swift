@@ -97,11 +97,11 @@ struct AdminDashboardView: View {
                         }
                     } label: {
                         Text(langManager.languageCode == "tr" ? "TR" : "EN")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.white.opacity(0.2))
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(Color("PrimaryColor"))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.white)
                             .clipShape(Capsule())
                     }
                 }
