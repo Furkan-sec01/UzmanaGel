@@ -90,20 +90,20 @@ struct AdminDashboardView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
-                    } label: {
-                        // Fixed width matches trailing capsule so .principal stays dead-centre
-                        HStack {
-                            Text(langManager.languageCode == "tr" ? "TR" : "EN")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                            Spacer()
+                    // Color.clear holds the width; TR/EN button sits at leading edge
+                    Color.clear
+                        .frame(width: 90, height: 1)
+                        .overlay(alignment: .leading) {
+                            Button {
+                                langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
+                            } label: {
+                                Text(langManager.languageCode == "tr" ? "TR" : "EN")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .buttonStyle(.plain)
+                            .transaction { $0.animation = nil }
                         }
-                        .frame(width: 90)
-                    }
-                    .buttonStyle(.plain)
-                    .transaction { $0.animation = nil }
                 }
 
                 ToolbarItem(placement: .principal) {
