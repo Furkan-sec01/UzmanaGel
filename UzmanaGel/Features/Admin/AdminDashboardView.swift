@@ -90,20 +90,18 @@ struct AdminDashboardView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    // Color.clear holds the width; TR/EN button sits at leading edge
-                    Color.clear
-                        .frame(width: 90, height: 1)
-                        .overlay(alignment: .leading) {
-                            Button {
-                                langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
-                            } label: {
-                                Text(langManager.languageCode == "tr" ? "TR" : "EN")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                            .buttonStyle(.plain)
-                            .transaction { $0.animation = nil }
-                        }
+                    Button {
+                        langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
+                    } label: {
+                        Text(langManager.languageCode == "tr" ? "TR" : "EN")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(Color("PrimaryColor"))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.white)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 ToolbarItem(placement: .principal) {
@@ -117,9 +115,9 @@ struct AdminDashboardView: View {
                     Button {
                         session.signOut()
                     } label: {
-                        HStack(spacing: 5) {
+                        HStack(spacing: 4) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(size: 12, weight: .bold))
                             Text(langManager.translate("Çıkış Yap"))
                                 .font(.system(size: 13, weight: .bold))
                         }
@@ -130,7 +128,6 @@ struct AdminDashboardView: View {
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .transaction { $0.animation = nil }
                 }
             }
         }
