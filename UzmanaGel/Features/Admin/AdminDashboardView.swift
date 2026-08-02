@@ -94,12 +94,11 @@ struct AdminDashboardView: View {
                         langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
                     } label: {
                         Text(langManager.languageCode == "tr" ? "TR" : "EN")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(Color("PrimaryColor"))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
-                            .background(Color.white)
-                            .clipShape(Capsule())
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.black.opacity(0.25))
+                            .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -114,17 +113,12 @@ struct AdminDashboardView: View {
                     Button {
                         session.signOut()
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 12, weight: .bold))
-                            Text(langManager.translate("Çıkış Yap"))
-                                .font(.system(size: 13, weight: .bold))
-                        }
-                        .foregroundColor(Color("PrimaryColor"))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.white)
-                        .clipShape(Capsule())
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.black.opacity(0.25))
+                            .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
                 }
