@@ -95,10 +95,11 @@ struct AdminDashboardView: View {
                     } label: {
                         Text(langManager.languageCode == "tr" ? "TR" : "EN")
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Color.black.opacity(0.25))
-                            .clipShape(Circle())
+                            .foregroundColor(Color("PrimaryColor"))
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 7)
+                            .background(Color.white)
+                            .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -114,11 +115,12 @@ struct AdminDashboardView: View {
                         session.signOut()
                     } label: {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Color.black.opacity(0.25))
-                            .clipShape(Circle())
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(Color("PrimaryColor"))
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 8)
+                            .background(Color.white)
+                            .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
                 }
