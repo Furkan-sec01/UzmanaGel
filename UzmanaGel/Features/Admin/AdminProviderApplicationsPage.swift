@@ -89,59 +89,6 @@ struct AdminProviderApplicationsPage: View {
         }
     }
 
-    private func applicationCard(
-        _ application: ExpertProfile
-    ) -> some View {
-        HStack(spacing: 14) {
-            profileImage(application)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(
-                    application.businessName.isEmpty
-                        ? application.displayName
-                        : application.businessName
-                )
-                .font(.headline)
-                .foregroundStyle(.primary)
-
-                Text(application.displayName)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 8) {
-                    statusBadge
-
-                    Text(
-                        "%\(application.profileCompletionPercentage) tamamlandı"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.secondary)
-        }
-        .padding(16)
-        .background(cardColor)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-        )
-        .overlay {
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-            .stroke(Color.primary.opacity(0.08))
-        }
-    }
-
     private var emptyState: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -150,7 +97,7 @@ struct AdminProviderApplicationsPage: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.orange.opacity(0.18), Color.amber.opacity(0.08)],
+                            colors: [Color.orange.opacity(0.18), Color.yellow.opacity(0.08)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -165,7 +112,7 @@ struct AdminProviderApplicationsPage: View {
                     .font(.system(size: 46, weight: .semibold))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.orange, .amber],
+                            colors: [.orange, .yellow],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
