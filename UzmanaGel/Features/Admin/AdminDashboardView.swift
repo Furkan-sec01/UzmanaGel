@@ -98,7 +98,7 @@ struct AdminDashboardView: View {
                     } label: {
                         Text(langManager.languageCode == "tr" ? "TR" : "EN")
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color(red: 0.4, green: 0.75, blue: 1.0))
+                            .foregroundColor(.white)
                     }
                     .buttonStyle(.plain)
                 }
@@ -109,11 +109,15 @@ struct AdminDashboardView: View {
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                             Text(langManager.translate("Çıkış Yap"))
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                         }
-                        .foregroundColor(Color(red: 0.4, green: 0.75, blue: 1.0))
+                        .foregroundColor(Color("PrimaryColor"))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.white)
+                        .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
                 }
