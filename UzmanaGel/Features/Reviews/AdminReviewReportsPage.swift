@@ -337,6 +337,9 @@ struct AdminReviewReportsPage: View {
         .background(backgroundColor.ignoresSafeArea())
         .navigationTitle("Bildirilen Yorumlar")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task(id: "\(session.isAdmin)-\(selectedStatus)") {
             guard session.isAdmin else {
                 return
@@ -384,8 +387,8 @@ struct AdminReviewReportsPage: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 6)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
 
             Group {
                 if viewModel.isLoading &&
@@ -400,22 +403,92 @@ struct AdminReviewReportsPage: View {
                           viewModel.reports.isEmpty {
                     errorView(message: errorMessage)
                 } else if viewModel.reports.isEmpty {
-                    ContentUnavailableView(
-                        selectedStatus == "pending"
-                            ? "Bekleyen Bildirim Yok"
-                            : "İncelemede Yorum Yok",
-                        systemImage: "checkmark.shield",
-                        description: Text(
-                            selectedStatus == "pending"
-                                ? "İncelenmesi gereken yeni bir yorum bildirimi bulunmuyor."
-                                : "İleri incelemeye alınmış bir yorum bulunmuyor."
-                        )
-                    )
+                    emptyState
                 } else {
                     reportsList
                 }
             }
         }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.green.opacity(0.18), Color.teal.opacity(0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 110, height: 110)
+
+                Circle()
+                    .stroke(Color.green.opacity(0.2), lineWidth: 1.5)
+                    .frame(width: 126, height: 126)
+
+                Image(systemName: selectedStatus == "pending" ? "shield.checkmark.fill" : "person.badge.shield.checkmark.fill")
+                    .font(.system(size: 46, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.green, .teal],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Text(selectedStatus == "pending" ? "Bekleyen Bildirim Yok" : "İncelemede Yorum Yok")
+                        .font(.title3.bold())
+                        .foregroundStyle(.primary)
+
+                    Text("0")
+                        .font(.caption.bold())
+                        .foregroundStyle(.green)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.green.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+
+                Text(
+                    selectedStatus == "pending"
+                        ? "İncelenmesi gereken yeni bir yorum bildirimi bulunmuyor."
+                        : "İleri incelemeye alınmış bir yorum bulunmuyor."
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            }
+
+            Button {
+                Task {
+                    await viewModel.loadReports(status: selectedStatus)
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("Yenile")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundStyle(Color("PrimaryColor"))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(Color("PrimaryColor").opacity(0.1))
+                .clipShape(Capsule())
+            }
+            .padding(.top, 8)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var reportsList: some View {
@@ -515,38 +588,42 @@ struct AdminReviewReportsPage: View {
             viewModel.processingReportId == report.id
         let isFlagged = report.status == "flagged"
 
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Label(
-                    report.category,
-                    systemImage: "exclamationmark.triangle.fill"
-                )
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(.red)
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.red)
+
+                    Text(report.category)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.red)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color.red.opacity(0.1))
+                .clipShape(Capsule())
 
                 Spacer()
 
-                Text(
-                    isFlagged
-                        ? "İncelemede"
-                        : "Bekliyor"
-                )
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(
-                    isFlagged ? Color.purple : Color.orange
-                )
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(isFlagged ? Color.purple : Color.orange)
+                        .frame(width: 6, height: 6)
+
+                    Text(isFlagged ? "İncelemede" : "Bekliyor")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(isFlagged ? Color.purple : Color.orange)
+                }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(
-                    (isFlagged ? Color.purple : Color.orange)
-                        .opacity(0.14)
-                )
+                .background((isFlagged ? Color.purple : Color.orange).opacity(0.12))
                 .clipShape(Capsule())
             }
 
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Bildirim açıklaması")
-                    .font(.caption)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("BİLDİRİM NEDENİ")
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.secondary)
 
                 Text(
@@ -555,56 +632,63 @@ struct AdminReviewReportsPage: View {
                         : report.description
                 )
                 .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
             }
-
-            Divider()
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(report.customerName)
-                        .font(.system(size: 14, weight: .semibold))
+                    HStack(spacing: 5) {
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color("PrimaryColor"))
+
+                        Text(report.customerName)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.primary)
+                    }
 
                     Spacer()
 
                     if let rating = report.rating {
-                        Label(
-                            String(format: "%.1f", rating),
-                            systemImage: "star.fill"
-                        )
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.orange)
+                        HStack(spacing: 3) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.orange)
+                            Text(String(format: "%.1f", rating))
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.primary)
+                        }
                     }
                 }
 
-                Text(report.reviewComment)
-                    .font(.system(size: 14))
-                    .foregroundStyle(.primary)
-            }
+                Text("“\(report.reviewComment)”")
+                    .font(.system(size: 13, weight: .regular))
+                    .italic()
+                    .foregroundStyle(.secondary)
 
-            if let createdAt = report.createdAt {
-                Text(
-                    createdAt.formatted(
-                        date: .abbreviated,
-                        time: .shortened
-                    )
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                if let createdAt = report.createdAt {
+                    HStack {
+                        Spacer()
+                        Text(createdAt.formatted(date: .abbreviated, time: .shortened))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
+            .padding(12)
+            .background(Color.primary.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             Divider()
 
             if isProcessing {
                 HStack {
                     Spacer()
-
                     ProgressView()
                         .controlSize(.small)
-
                     Text("İşlem yapılıyor...")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.secondary)
-
                     Spacer()
                 }
                 .frame(minHeight: 38)
@@ -621,6 +705,7 @@ struct AdminReviewReportsPage: View {
                                 "İncelemeye Al",
                                 systemImage: "flag.fill"
                             )
+                            .font(.system(size: 14, weight: .bold))
                             .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
@@ -638,6 +723,7 @@ struct AdminReviewReportsPage: View {
                                 "Raporu Reddet",
                                 systemImage: "xmark.circle"
                             )
+                            .font(.system(size: 13, weight: .semibold))
                             .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
@@ -652,12 +738,12 @@ struct AdminReviewReportsPage: View {
                                 "Yorumu Kaldır",
                                 systemImage: "trash"
                             )
+                            .font(.system(size: 13, weight: .bold))
                             .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
                     }
                 }
-                .font(.system(size: 13, weight: .semibold))
             }
         }
         .padding(16)

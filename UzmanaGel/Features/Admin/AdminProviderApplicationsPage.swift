@@ -28,6 +28,9 @@ struct AdminProviderApplicationsPage: View {
         .background(backgroundColor.ignoresSafeArea())
         .navigationTitle("Uzman Başvuruları")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task(id: session.isAdmin) {
             guard session.isAdmin else {
                 return
@@ -41,6 +44,8 @@ struct AdminProviderApplicationsPage: View {
                     AdminProviderApplicationHistoryPage()
                 } label: {
                     Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
                 }
                 .accessibilityLabel("Başvuru geçmişi")
             }
@@ -137,55 +142,189 @@ struct AdminProviderApplicationsPage: View {
         }
     }
 
-    @ViewBuilder
-    private func profileImage(
-        _ application: ExpertProfile
-    ) -> some View {
-        if let value = application.profileImageURL,
-           let url = URL(string: value),
-           !value.isEmpty {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                default:
-                    profilePlaceholder
+    private var emptyState: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.orange.opacity(0.18), Color.amber.opacity(0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 110, height: 110)
+
+                Circle()
+                    .stroke(Color.orange.opacity(0.2), lineWidth: 1.5)
+                    .frame(width: 126, height: 126)
+
+                Image(systemName: "person.badge.clock")
+                    .font(.system(size: 46, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.orange, .amber],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Text("Bekleyen Başvuru Yok")
+                        .font(.title3.bold())
+                        .foregroundStyle(.primary)
+
+                    Text("0")
+                        .font(.caption.bold())
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.orange.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+
+                Text("Yeni bir uzman başvurusu gönderildiğinde burada görünecektir.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            Button {
+                Task {
+                    await viewModel.loadApplications()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("Listeyi Yenile")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundStyle(Color("PrimaryColor"))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(Color("PrimaryColor").opacity(0.1))
+                .clipShape(Capsule())
+            }
+            .padding(.top, 8)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func applicationCard(_ application: ExpertProfile) -> some View {
+        HStack(spacing: 16) {
+            profileImage(application)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(
+                    application.businessName.isEmpty
+                        ? application.displayName
+                        : application.businessName
+                )
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(.primary)
+
+                if !application.businessName.isEmpty {
+                    Text(application.displayName)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack(spacing: 8) {
+                    statusBadge
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.green)
+                        Text("%\(application.profileCompletionPercentage)")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.primary.opacity(0.05))
+                    .clipShape(Capsule())
                 }
             }
-            .frame(width: 58, height: 58)
-            .clipShape(Circle())
-        } else {
-            profilePlaceholder
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color.secondary.opacity(0.6))
         }
+        .padding(16)
+        .background(Color("CardBackground"))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private func profileImage(_ application: ExpertProfile) -> some View {
+        ZStack {
+            if let value = application.profileImageURL,
+               let url = URL(string: value),
+               !value.isEmpty {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        profilePlaceholder
+                    }
+                }
+                .frame(width: 54, height: 54)
+                .clipShape(Circle())
+            } else {
+                profilePlaceholder
+            }
+        }
+        .overlay(
+            Circle()
+                .stroke(Color("PrimaryColor").opacity(0.2), lineWidth: 2)
+        )
     }
 
     private var profilePlaceholder: some View {
-        Image(systemName: "person.crop.circle.fill")
-            .font(.system(size: 52))
-            .foregroundStyle(.secondary)
-            .frame(width: 58, height: 58)
+        ZStack {
+            Circle()
+                .fill(Color("PrimaryColor").opacity(0.1))
+                .frame(width: 54, height: 54)
+
+            Image(systemName: "person.fill")
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(Color("PrimaryColor"))
+        }
     }
 
     private var statusBadge: some View {
-        Text("Bekliyor")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.orange)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(Color.orange.opacity(0.14))
-            .clipShape(Capsule())
-    }
+        HStack(spacing: 4) {
+            Circle()
+                .fill(Color.orange)
+                .frame(width: 6, height: 6)
 
-    private var emptyState: some View {
-        ContentUnavailableView(
-            "Bekleyen Başvuru Yok",
-            systemImage: "person.badge.clock",
-            description: Text(
-                "Yeni bir uzman başvurusu gönderildiğinde burada görünecek."
-            )
-        )
+            Text("Bekliyor")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.orange)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(Color.orange.opacity(0.12))
+        .clipShape(Capsule())
     }
 
     private func errorState(message: String) -> some View {

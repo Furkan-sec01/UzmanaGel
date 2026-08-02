@@ -171,10 +171,7 @@ struct AdminModerationHistoryPage: View {
                     description: Text(errorMessage)
                 )
             } else if viewModel.items.isEmpty {
-                ContentUnavailableView(
-                    "Moderasyon Geçmişi Yok",
-                    systemImage: "clock.arrow.circlepath"
-                )
+                emptyState
             } else {
                 historyList
             }
@@ -186,6 +183,9 @@ struct AdminModerationHistoryPage: View {
         .background(backgroundColor.ignoresSafeArea())
         .navigationTitle("Moderasyon Geçmişi")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task(id: session.isAdmin) {
             guard session.isAdmin else {
                 return
@@ -195,8 +195,74 @@ struct AdminModerationHistoryPage: View {
         }
     }
 
+    private var emptyState: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.purple.opacity(0.18), Color.pink.opacity(0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 110, height: 110)
+
+                Circle()
+                    .stroke(Color.purple.opacity(0.2), lineWidth: 1.5)
+                    .frame(width: 126, height: 126)
+
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 46, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.purple, .pink],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+
+            VStack(spacing: 8) {
+                Text("Moderasyon Geçmişi Yok")
+                    .font(.title3.bold())
+                    .foregroundStyle(.primary)
+
+                Text("Tamamlanan yorum moderasyon işlemleri burada görüntülenecektir.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            Button {
+                Task {
+                    await viewModel.loadHistory()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("Yenile")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundStyle(Color("PrimaryColor"))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(Color("PrimaryColor").opacity(0.1))
+                .clipShape(Capsule())
+            }
+            .padding(.top, 8)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var historyList: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 14) {
                 ForEach(viewModel.items) { item in
                     historyCard(item)
@@ -209,71 +275,131 @@ struct AdminModerationHistoryPage: View {
         }
     }
 
-    private func historyCard(
-        _ item: AdminModerationHistoryItem
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label(
-                    item.action.title,
-                    systemImage: item.action.systemImage
-                )
-                .font(.headline)
+    private func historyCard(_ item: AdminModerationHistoryItem) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center) {
+                HStack(spacing: 6) {
+                    Image(systemName: item.action.systemImage)
+                        .font(.system(size: 13, weight: .bold))
+                    Text(item.action.title)
+                        .font(.system(size: 13, weight: .bold))
+                }
                 .foregroundStyle(item.action.tint)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(item.action.tint.opacity(0.12))
+                .clipShape(Capsule())
 
                 Spacer()
 
                 if let date = item.date {
-                    Text(
-                        date.formatted(
-                            date: .abbreviated,
-                            time: .shortened
-                        )
-                    )
-                    .font(.caption)
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 11))
+                        Text(date.formatted(date: .abbreviated, time: .shortened))
+                            .font(.system(size: 11, weight: .medium))
+                    }
                     .foregroundStyle(.secondary)
                 }
             }
 
             if !item.category.isEmpty {
-                Text("Kategori: \(item.category)")
-                    .font(.subheadline.weight(.semibold))
+                HStack(spacing: 6) {
+                    Text("Kategori:")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.primary)
+
+                    Text(item.category)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color("PrimaryColor"))
+                }
             }
 
             if !item.comment.isEmpty {
-                Text(item.comment)
-                    .font(.subheadline)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("YORUM İÇERİĞİ")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.secondary)
+
+                    Text("“\(item.comment)”")
+                        .font(.system(size: 13))
+                        .italic()
+                        .foregroundStyle(.primary)
+                }
+                .padding(10)
+                .background(Color.primary.opacity(0.03))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
 
-            Text("Kullanıcı: \(item.userName)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
 
-            Text("Yorum ID: \(item.reviewId)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
+                    Text("Kullanıcı:")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+
+                    Text(formatIdentifier(item.userName))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                }
+
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+
+                    Text("Yorum ID:")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+
+                    Text(formatIdentifier(item.reviewId))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                }
+            }
 
             if !item.note.isEmpty {
-                Text("Admin notu: \(item.note)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(item.action.tint)
+                        .frame(width: 3)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Admin Notu")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(item.action.tint)
+
+                        Text(item.note)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .padding(8)
+                .background(item.action.tint.opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
         }
         .padding(16)
-        .background(cardColor)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 16,
-                style: .continuous
-            )
+        .background(Color("CardBackground"))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .overlay {
-            RoundedRectangle(
-                cornerRadius: 16,
-                style: .continuous
-            )
-            .stroke(Color.primary.opacity(0.08))
+        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
+    }
+
+    private func formatIdentifier(_ raw: String) -> String {
+        if raw.count > 16 {
+            let prefix = raw.prefix(8)
+            let suffix = raw.suffix(6)
+            return "\(prefix)...\(suffix)"
         }
+        return raw
     }
 }

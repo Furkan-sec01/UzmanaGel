@@ -285,6 +285,9 @@ struct AdminProviderApplicationHistoryPage: View {
         .background(backgroundColor.ignoresSafeArea())
         .navigationTitle("Başvuru Geçmişi")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task(id: session.isAdmin) {
             guard session.isAdmin else {
                 return
@@ -305,9 +308,7 @@ struct AdminProviderApplicationHistoryPage: View {
                     ?? "Bilinmeyen bir hata oluştu."
             )
         }
-        }
-
-        
+    }
 
     @ViewBuilder
     private var adminContent: some View {
@@ -324,8 +325,8 @@ struct AdminProviderApplicationHistoryPage: View {
     }
 
     private var historyList: some View {
-        ScrollView {
-            LazyVStack(spacing: 14) {
+        ScrollView(showsIndicators: false) {
+            LazyVStack(spacing: 16) {
                 ForEach(viewModel.records) { record in
                     historyCard(record)
                 }
@@ -344,17 +345,16 @@ struct AdminProviderApplicationHistoryPage: View {
                                 "Daha Fazla Yükle",
                                 systemImage: "arrow.down.circle"
                             )
+                            .font(.system(size: 14, weight: .bold))
                             .frame(maxWidth: .infinity)
                         }
                     }
                     .buttonStyle(.bordered)
+                    .tint(Color("PrimaryColor"))
                     .disabled(viewModel.isLoadingMore)
                 }
             }
             .padding(16)
-        }
-        .refreshable {
-            await viewModel.loadHistory()
         }
     }
 
@@ -363,126 +363,132 @@ struct AdminProviderApplicationHistoryPage: View {
     ) -> some View {
         let style = actionStyle(record.action)
 
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: style.icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(style.color)
-                    .frame(width: 42, height: 42)
-                    .background(style.color.opacity(0.14))
-                    .clipShape(
-                        RoundedRectangle(
-                            cornerRadius: 12,
-                            style: .continuous
-                        )
-                    )
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(style.color.opacity(0.12))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: style.icon)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(style.color)
+                }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(record.providerName)
-                        .font(.headline)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.primary)
 
                     if !record.businessName.isEmpty {
                         Text(record.businessName)
-                            .font(.subheadline)
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 Spacer()
 
-                Text(style.title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(style.color)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .background(style.color.opacity(0.14))
-                    .clipShape(Capsule())
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(style.color)
+                        .frame(width: 6, height: 6)
+
+                    Text(style.title)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(style.color)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(style.color.opacity(0.12))
+                .clipShape(Capsule())
             }
 
-            Divider()
-
-            HStack {
-                statusLabel(
-                    title: "Önceki",
-                    value: statusTitle(record.previousStatus)
-                )
+            // Status transition pill box
+            HStack(spacing: 12) {
+                statusPill(title: "Önceki", status: record.previousStatus)
 
                 Image(systemName: "arrow.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.secondary.opacity(0.6))
 
-                statusLabel(
-                    title: "Yeni",
-                    value: statusTitle(record.status)
-                )
+                statusPill(title: "Yeni", status: record.status)
             }
+            .padding(12)
+            .background(Color.primary.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             if !record.adminNote.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Admin açıklaması")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color("PrimaryColor"))
+                        .frame(width: 3)
 
-                    Text(record.adminNote)
-                        .font(.subheadline)
-                        .foregroundStyle(.primary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Admin Açıklaması")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color("PrimaryColor"))
+
+                        Text(record.adminNote)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.primary)
+                    }
                 }
+                .padding(10)
+                .background(Color("PrimaryColor").opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
 
             Divider()
 
-            HStack(alignment: .bottom) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("İşlemi yapan")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            HStack(alignment: .center) {
+                HStack(spacing: 6) {
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.secondary)
 
-                    Text(record.adminName)
-                        .font(.subheadline.weight(.medium))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("İşlemi yapan")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+
+                        Text(record.adminName)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.primary)
+                    }
                 }
 
                 Spacer()
 
                 if let reviewedAt = record.reviewedAt {
-                    Text(
-                        reviewedAt.formatted(
-                            date: .abbreviated,
-                            time: .shortened
-                        )
-                    )
-                    .font(.caption)
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 11))
+                        Text(reviewedAt.formatted(date: .abbreviated, time: .shortened))
+                            .font(.system(size: 12, weight: .medium))
+                    }
                     .foregroundStyle(.secondary)
                 }
             }
         }
         .padding(16)
-        .background(cardColor)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
+        .background(Color("CardBackground"))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .overlay {
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-            .stroke(Color.primary.opacity(0.08))
-        }
+        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
     }
 
-    private func statusLabel(
-        title: String,
-        value: String
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+    private func statusPill(title: String, status: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.caption2)
+                .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.secondary)
 
-            Text(value)
-                .font(.caption.weight(.semibold))
+            Text(statusTitle(status))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -5,79 +5,105 @@ struct AdminDashboardView: View {
     @EnvironmentObject private var session: SessionViewModel
 
     private let backgroundColor = Color("BackgroundColor")
-    private let cardColor = Color("CardBackground")
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
                     headerCard
 
-                    Text("Yönetim Araçları")
-                        .font(.title3.bold())
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "square.grid.2x2.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color("PrimaryColor"))
 
-                    NavigationLink {
-                        AdminProviderApplicationsPage()
-                    } label: {
-                        moduleCard(
-                            title: "Uzman Başvuruları ve Belgeler",
-                            description: "Bekleyen uzman başvurularını ve doğrulama belgelerini incele.",
-                            systemImage: "person.badge.shield.checkmark.fill",
-                            iconColor: .blue
-                        )
-                    }
-                    .buttonStyle(.plain)
+                            Text("Yönetim Araçları")
+                                .font(.title3.bold())
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(.horizontal, 4)
 
-                    NavigationLink {
-                        AdminProviderApplicationHistoryPage()
-                    } label: {
-                        moduleCard(
-                            title: "Uzman Başvuru Geçmişi",
-                            description: "Onay, ret ve eksik belge kararlarını görüntüle.",
-                            systemImage: "person.crop.circle.badge.clock",
-                            iconColor: .indigo
-                        )
-                    }
-                    .buttonStyle(.plain)
+                        VStack(spacing: 14) {
+                            NavigationLink {
+                                AdminProviderApplicationsPage()
+                            } label: {
+                                moduleCard(
+                                    title: "Uzman Başvuruları ve Belgeler",
+                                    description: "Bekleyen uzman başvurularını ve doğrulama belgelerini incele.",
+                                    systemImage: "person.badge.shield.checkmark.fill",
+                                    badgeText: "Başvurular",
+                                    gradientColors: [Color.blue, Color.cyan]
+                                )
+                            }
+                            .buttonStyle(ModernPressableButtonStyle())
 
-                    NavigationLink {
-                        AdminReviewReportsPage()
-                    } label: {
-                        moduleCard(
-                            title: "Bildirilen Yorumlar",
-                            description: "Kullanıcıların bildirdiği yorumları incele.",
-                            systemImage: "exclamationmark.bubble.fill",
-                            iconColor: .orange
-                        )
-                    }
-                    .buttonStyle(.plain)
+                            NavigationLink {
+                                AdminProviderApplicationHistoryPage()
+                            } label: {
+                                moduleCard(
+                                    title: "Uzman Başvuru Geçmişi",
+                                    description: "Onay, ret ve eksik belge kararlarını görüntüle.",
+                                    systemImage: "person.crop.circle.badge.clock",
+                                    badgeText: "Geçmiş",
+                                    gradientColors: [Color.indigo, Color.purple]
+                                )
+                            }
+                            .buttonStyle(ModernPressableButtonStyle())
 
-                    NavigationLink {
-                        AdminModerationHistoryPage()
-                    } label: {
-                        moduleCard(
-                            title: "Moderasyon Geçmişi",
-                            description: "Tamamlanan yorum moderasyon işlemlerini görüntüle.",
-                            systemImage: "clock.arrow.circlepath",
-                            iconColor: .purple
-                        )
+                            NavigationLink {
+                                AdminReviewReportsPage()
+                            } label: {
+                                moduleCard(
+                                    title: "Bildirilen Yorumlar",
+                                    description: "Kullanıcıların bildirdiği yorumları incele.",
+                                    systemImage: "exclamationmark.bubble.fill",
+                                    badgeText: "Moderasyon",
+                                    gradientColors: [Color.orange, Color.red]
+                                )
+                            }
+                            .buttonStyle(ModernPressableButtonStyle())
+
+                            NavigationLink {
+                                AdminModerationHistoryPage()
+                            } label: {
+                                moduleCard(
+                                    title: "Moderasyon Geçmişi",
+                                    description: "Tamamlanan yorum moderasyon işlemlerini görüntüle.",
+                                    systemImage: "clock.arrow.circlepath",
+                                    badgeText: "Arşiv",
+                                    gradientColors: [Color.purple, Color.pink]
+                                )
+                            }
+                            .buttonStyle(ModernPressableButtonStyle())
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
-                .padding(16)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 20)
             }
             .background(backgroundColor.ignoresSafeArea())
             .navigationTitle("Yönetim Paneli")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         session.signOut()
                     } label: {
-                        Label(
-                            "Çıkış Yap",
-                            systemImage: "rectangle.portrait.and.arrow.right"
-                        )
+                        HStack(spacing: 6) {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.system(size: 14, weight: .bold))
+                            Text("Çıkış")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.2))
+                        .clipShape(Capsule())
                     }
                 }
             }
@@ -85,97 +111,127 @@ struct AdminDashboardView: View {
     }
 
     private var headerCard: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "shield.checkered")
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
-                .background(Color.blue)
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: 16,
-                        style: .continuous
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
+                    .frame(width: 58, height: 58)
 
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Admin Hesabı")
-                    .font(.headline)
+                Image(systemName: "shield.checkered")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(.white)
+            }
 
-                Text("Platform yönetimi ve moderasyon işlemleri")
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text("Admin Hesabı")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+
+                    Text("YÖNETİCİ")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundStyle(Color("PrimaryColor"))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.white)
+                        .clipShape(Capsule())
+                }
+
+                Text("Platform yönetimi ve moderasyon paneli")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.85))
             }
 
             Spacer()
         }
-        .padding(16)
-        .background(cardColor)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color("PrimaryColor"), Color("PrimaryColor").opacity(0.85)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
         )
-        .overlay {
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-            .stroke(Color.primary.opacity(0.08))
-        }
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: Color("PrimaryColor").opacity(0.25), radius: 12, x: 0, y: 6)
     }
 
     private func moduleCard(
         title: String,
         description: String,
         systemImage: String,
-        iconColor: Color
+        badgeText: String,
+        gradientColors: [Color]
     ) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: systemImage)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(iconColor)
-                .frame(width: 48, height: 48)
-                .background(iconColor.opacity(0.14))
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: 14,
-                        style: .continuous
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: gradientColors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
+                    .frame(width: 52, height: 52)
+                    .shadow(color: gradientColors[0].opacity(0.3), radius: 6, x: 0, y: 3)
 
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                Image(systemName: systemImage)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(title)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Text(badgeText)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(gradientColors[0])
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(gradientColors[0].opacity(0.12))
+                        .clipShape(Capsule())
+                }
 
                 Text(description)
-                    .font(.subheadline)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
                     .multilineTextAlignment(.leading)
             }
 
-            Spacer()
-
             Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color.secondary.opacity(0.6))
         }
         .padding(16)
-        .background(cardColor)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
+        .background(Color("CardBackground"))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .overlay {
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-            .stroke(Color.primary.opacity(0.08))
-        }
+        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
     }
 }
+
+struct ModernPressableButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
