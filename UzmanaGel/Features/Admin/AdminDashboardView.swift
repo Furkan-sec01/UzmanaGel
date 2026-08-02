@@ -94,10 +94,10 @@ struct AdminDashboardView: View {
                         langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
                     } label: {
                         Text(langManager.languageCode == "tr" ? "TR" : "EN")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 15, weight: .bold))
                             .foregroundColor(Color("PrimaryColor"))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
                             .background(Color.white)
                             .clipShape(Capsule())
                     }
