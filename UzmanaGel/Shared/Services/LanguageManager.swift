@@ -70,7 +70,6 @@ class LanguageManager: ObservableObject {
         "Moderasyon Geçmişi": "Moderation History",
         "Tamamlanan yorum moderasyon işlemlerini görüntüle.": "View completed review moderation logs.",
         "Başvurular": "Applications",
-        "Geçmiş": "History",
         "Moderasyon": "Moderation",
         "Arşiv": "Archive",
         
