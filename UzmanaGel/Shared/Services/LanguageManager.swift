@@ -53,6 +53,26 @@ class LanguageManager: ObservableObject {
         "Destek": "Support",
         "Yardım merkezi ve müşteri hizmetleri": "Help center & customer service",
         "Destek ve Yardım Ekranı": "Support & Help Screen",
+
+        // Admin Panel Translations
+        "Yönetim Paneli": "Admin Panel",
+        "Yönetici": "ADMIN",
+        "YÖNETİCİ": "ADMIN",
+        "Admin Hesabı": "Admin Account",
+        "Platform yönetimi ve moderasyon paneli": "Platform management & moderation panel",
+        "Yönetim Araçları": "Management Tools",
+        "Uzman Başvuruları ve Belgeler": "Expert Applications & Documents",
+        "Bekleyen uzman başvurularını ve doğrulama belgelerini incele.": "Review pending expert applications & verification documents.",
+        "Uzman Başvuru Geçmişi": "Expert Application History",
+        "Onay, ret ve eksik belge kararlarını görüntüle.": "View approval, rejection and document decision history.",
+        "Bildirilen Yorumlar": "Reported Reviews",
+        "Kullanıcıların bildirdiği yorumları incele.": "Review user-reported comments and feedback.",
+        "Moderasyon Geçmişi": "Moderation History",
+        "Tamamlanan yorum moderasyon işlemlerini görüntüle.": "View completed review moderation logs.",
+        "Başvurular": "Applications",
+        "Geçmiş": "History",
+        "Moderasyon": "Moderation",
+        "Arşiv": "Archive",
         
         // Preferences Page / View
         "BİLDİRİM AYARLARI": "NOTIFICATION SETTINGS",

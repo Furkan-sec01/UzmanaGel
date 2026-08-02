@@ -3,6 +3,7 @@ import SwiftUI
 struct AdminDashboardView: View {
 
     @EnvironmentObject private var session: SessionViewModel
+    @ObservedObject private var langManager = LanguageManager.shared
 
     private let backgroundColor = Color("BackgroundColor")
 
@@ -18,7 +19,7 @@ struct AdminDashboardView: View {
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundStyle(Color("PrimaryColor"))
 
-                            Text("Yönetim Araçları")
+                            Text(langManager.translate("Yönetim Araçları"))
                                 .font(.title3.bold())
                                 .foregroundStyle(.primary)
                         }
@@ -29,10 +30,10 @@ struct AdminDashboardView: View {
                                 AdminProviderApplicationsPage()
                             } label: {
                                 moduleCard(
-                                    title: "Uzman Başvuruları ve Belgeler",
-                                    description: "Bekleyen uzman başvurularını ve doğrulama belgelerini incele.",
+                                    title: langManager.translate("Uzman Başvuruları ve Belgeler"),
+                                    description: langManager.translate("Bekleyen uzman başvurularını ve doğrulama belgelerini incele."),
                                     systemImage: "person.badge.shield.checkmark.fill",
-                                    badgeText: "Başvurular",
+                                    badgeText: langManager.translate("Başvurular"),
                                     gradientColors: [Color.blue, Color.cyan]
                                 )
                             }
@@ -42,10 +43,10 @@ struct AdminDashboardView: View {
                                 AdminProviderApplicationHistoryPage()
                             } label: {
                                 moduleCard(
-                                    title: "Uzman Başvuru Geçmişi",
-                                    description: "Onay, ret ve eksik belge kararlarını görüntüle.",
+                                    title: langManager.translate("Uzman Başvuru Geçmişi"),
+                                    description: langManager.translate("Onay, ret ve eksik belge kararlarını görüntüle."),
                                     systemImage: "person.crop.circle.badge.clock",
-                                    badgeText: "Geçmiş",
+                                    badgeText: langManager.translate("Geçmiş"),
                                     gradientColors: [Color.indigo, Color.purple]
                                 )
                             }
@@ -55,10 +56,10 @@ struct AdminDashboardView: View {
                                 AdminReviewReportsPage()
                             } label: {
                                 moduleCard(
-                                    title: "Bildirilen Yorumlar",
-                                    description: "Kullanıcıların bildirdiği yorumları incele.",
+                                    title: langManager.translate("Bildirilen Yorumlar"),
+                                    description: langManager.translate("Kullanıcıların bildirdiği yorumları incele."),
                                     systemImage: "exclamationmark.bubble.fill",
-                                    badgeText: "Moderasyon",
+                                    badgeText: langManager.translate("Moderasyon"),
                                     gradientColors: [Color.orange, Color.red]
                                 )
                             }
@@ -68,10 +69,10 @@ struct AdminDashboardView: View {
                                 AdminModerationHistoryPage()
                             } label: {
                                 moduleCard(
-                                    title: "Moderasyon Geçmişi",
-                                    description: "Tamamlanan yorum moderasyon işlemlerini görüntüle.",
+                                    title: langManager.translate("Moderasyon Geçmişi"),
+                                    description: langManager.translate("Tamamlanan yorum moderasyon işlemlerini görüntüle."),
                                     systemImage: "clock.arrow.circlepath",
-                                    badgeText: "Arşiv",
+                                    badgeText: langManager.translate("Arşiv"),
                                     gradientColors: [Color.purple, Color.pink]
                                 )
                             }
@@ -83,12 +84,28 @@ struct AdminDashboardView: View {
                 .padding(.vertical, 20)
             }
             .background(backgroundColor.ignoresSafeArea())
-            .navigationTitle("Yönetim Paneli")
+            .navigationTitle(langManager.translate("Yönetim Paneli"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        withAnimation {
+                            langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
+                        }
+                    } label: {
+                        Text(langManager.languageCode == "tr" ? "TR" : "EN")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.2))
+                            .clipShape(Capsule())
+                    }
+                }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         session.signOut()
@@ -96,7 +113,7 @@ struct AdminDashboardView: View {
                         HStack(spacing: 5) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
                                 .font(.system(size: 14, weight: .semibold))
-                            Text("Çıkış Yap")
+                            Text(langManager.translate("Çıkış Yap"))
                                 .font(.system(size: 14, weight: .semibold))
                         }
                         .foregroundColor(.white)
@@ -126,11 +143,11 @@ struct AdminDashboardView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("Admin Hesabı")
+                    Text(langManager.translate("Admin Hesabı"))
                         .font(.headline.weight(.bold))
                         .foregroundStyle(.white)
 
-                    Text("YÖNETİCİ")
+                    Text(langManager.translate("YÖNETİCİ"))
                         .font(.system(size: 10, weight: .black))
                         .foregroundStyle(Color("PrimaryColor"))
                         .padding(.horizontal, 7)
@@ -139,7 +156,7 @@ struct AdminDashboardView: View {
                         .clipShape(Capsule())
                 }
 
-                Text("Platform yönetimi ve moderasyon paneli")
+                Text(langManager.translate("Platform yönetimi ve moderasyon paneli"))
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.85))
             }
