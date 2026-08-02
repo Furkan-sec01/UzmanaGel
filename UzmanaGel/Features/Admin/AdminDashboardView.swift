@@ -84,7 +84,6 @@ struct AdminDashboardView: View {
                 .padding(.vertical, 20)
             }
             .background(backgroundColor.ignoresSafeArea())
-            .navigationTitle(langManager.translate("Yönetim Paneli"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -101,6 +100,12 @@ struct AdminDashboardView: View {
                             .foregroundColor(.white)
                     }
                     .buttonStyle(.plain)
+                }
+
+                ToolbarItem(placement: .principal) {
+                    Text(langManager.translate("Yönetim Paneli"))
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.white)
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
