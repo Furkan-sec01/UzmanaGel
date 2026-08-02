@@ -89,30 +89,38 @@ struct AdminDashboardView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
+                // Mirror of trailing button — invisible, holds identical width so principal is truly centred
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        withAnimation {
-                            langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
-                        }
-                    } label: {
-                        Text(langManager.languageCode == "tr" ? "TR" : "EN")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                    HStack(spacing: 5) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 13, weight: .bold))
+                        Text(langManager.translate("Çıkış Yap"))
+                            .font(.system(size: 13, weight: .bold))
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.clear)
+                    .clipShape(Capsule())
+                    .opacity(0)
+                    .overlay(alignment: .leading) {
+                        Button {
+                            withAnimation(.none) {
+                                langManager.languageCode = langManager.languageCode == "tr" ? "en" : "tr"
+                            }
+                        } label: {
+                            Text(langManager.languageCode == "tr" ? "TR" : "EN")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
 
                 ToolbarItem(placement: .principal) {
-                    ZStack {
-                        // Longest string holds the space so layout never shifts
-                        Text("Yönetim Paneli")
-                            .font(.system(size: 17, weight: .bold))
-                            .opacity(0)
-                        Text(langManager.translate("Yönetim Paneli"))
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(.white)
-                            .animation(nil, value: langManager.languageCode)
-                    }
+                    Text(langManager.translate("Yönetim Paneli"))
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.white)
+                        .transaction { $0.animation = nil }
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
