@@ -669,7 +669,7 @@ struct AdminReviewReportsPage: View {
                 if let createdAt = report.createdAt {
                     HStack {
                         Spacer()
-                        Text(createdAt.formatted(date: .abbreviated, time: .shortened))
+                        Text(formatTurkishDate(createdAt))
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     }
@@ -812,5 +812,12 @@ struct AdminReviewReportsPage: View {
             .buttonStyle(.borderedProminent)
         }
         .padding(24)
+    }
+
+    private func formatTurkishDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMM yyyy, HH:mm"
+        return formatter.string(from: date)
     }
 }

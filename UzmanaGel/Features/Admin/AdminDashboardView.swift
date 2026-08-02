@@ -93,17 +93,13 @@ struct AdminDashboardView: View {
                     Button {
                         session.signOut()
                     } label: {
-                        HStack(spacing: 6) {
+                        HStack(spacing: 5) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 14, weight: .bold))
-                            Text("Çıkış")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Çıkış Yap")
+                                .font(.system(size: 14, weight: .semibold))
                         }
                         .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.2))
-                        .clipShape(Capsule())
                     }
                 }
             }

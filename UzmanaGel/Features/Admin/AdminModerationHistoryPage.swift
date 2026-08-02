@@ -296,7 +296,7 @@ struct AdminModerationHistoryPage: View {
                     HStack(spacing: 4) {
                         Image(systemName: "calendar")
                             .font(.system(size: 11))
-                        Text(date.formatted(date: .abbreviated, time: .shortened))
+                        Text(formatTurkishDate(date))
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundStyle(.secondary)
@@ -401,5 +401,12 @@ struct AdminModerationHistoryPage: View {
             return "\(prefix)...\(suffix)"
         }
         return raw
+    }
+
+    private func formatTurkishDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMM yyyy, HH:mm"
+        return formatter.string(from: date)
     }
 }
