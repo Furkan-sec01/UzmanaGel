@@ -51,6 +51,72 @@ enum ReservationTimeSelectionHelper {
     }
 }
 
+enum ReservationFormValidationError: Equatable {
+    case bookedSlotsUnavailable
+    case selectedTimeBooked
+    case customerNameMissing
+    case addressMissing
+    case reservationDateNotFuture
+
+    var message: String {
+        switch self {
+        case .bookedSlotsUnavailable:
+            return "Dolu saatler kontrol edilemediği için rezervasyon oluşturulamadı."
+
+        case .selectedTimeBooked:
+            return "Seçtiğiniz saat dolu. Lütfen başka bir saat seçin."
+
+        case .customerNameMissing:
+            return "Kullanıcı adı bulunamadı."
+
+        case .addressMissing:
+            return "Adres bilgisi boş bırakılamaz."
+
+        case .reservationDateNotFuture:
+            return "Geçmiş bir tarih veya saat seçemezsiniz."
+        }
+    }
+}
+
+enum ReservationFormValidator {
+
+    static func validate(
+        bookedSlotsLoaded: Bool,
+        selectedTime: String,
+        bookedTimeStrings: Set<String>,
+        customerName: String,
+        addressText: String,
+        reservationDate: Date,
+        now: Date = Date()
+    ) -> ReservationFormValidationError? {
+        guard bookedSlotsLoaded else {
+            return .bookedSlotsUnavailable
+        }
+
+        guard !bookedTimeStrings.contains(selectedTime) else {
+            return .selectedTimeBooked
+        }
+
+        guard !customerName.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty else {
+            return .customerNameMissing
+        }
+
+        guard !addressText.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty else {
+            return .addressMissing
+        }
+
+        guard reservationDate > now else {
+            return .reservationDateNotFuture
+        }
+
+        return nil
+    }
+}
+
 @MainActor
 final class ReservationViewModel: ObservableObject {
 
