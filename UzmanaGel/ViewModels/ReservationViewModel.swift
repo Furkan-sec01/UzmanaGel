@@ -9,6 +9,48 @@ import Foundation
 import FirebaseAuth
 import Combine
 
+enum ReservationTimeSelectionHelper {
+
+    static func resolvedTime(
+        currentTime: String,
+        availableTimeSlots: [String],
+        bookedTimeStrings: Set<String>
+    ) -> String {
+        guard bookedTimeStrings.contains(currentTime) else {
+            return currentTime
+        }
+
+        return availableTimeSlots.first {
+            !bookedTimeStrings.contains($0)
+        } ?? currentTime
+    }
+
+    static func applying(
+        timeString: String,
+        to date: Date,
+        calendar: Calendar = .current
+    ) -> Date {
+        let parts = timeString
+            .split(separator: ":")
+            .compactMap { Int($0) }
+
+        guard parts.count == 2 else {
+            return date
+        }
+
+        var components = calendar.dateComponents(
+            [.year, .month, .day],
+            from: date
+        )
+
+        components.hour = parts[0]
+        components.minute = parts[1]
+        components.second = 0
+
+        return calendar.date(from: components) ?? date
+    }
+}
+
 @MainActor
 final class ReservationViewModel: ObservableObject {
 
@@ -56,11 +98,15 @@ final class ReservationViewModel: ObservableObject {
 
             didLoadBookedSlots = true
 
-            if bookedTimeStrings.contains(selectedTimeString) {
-                selectedTimeString = availableTimeSlots.first {
-                    !bookedTimeStrings.contains($0)
-                } ?? selectedTimeString
+            let resolvedTime =
+                ReservationTimeSelectionHelper.resolvedTime(
+                    currentTime: selectedTimeString,
+                    availableTimeSlots: availableTimeSlots,
+                    bookedTimeStrings: bookedTimeStrings
+                )
 
+            if resolvedTime != selectedTimeString {
+                selectedTimeString = resolvedTime
                 reservationDate = dateWithSelectedTime(reservationDate)
             }
 
@@ -185,26 +231,11 @@ final class ReservationViewModel: ObservableObject {
     }
 
     private func dateWithSelectedTime(_ date: Date) -> Date {
-        let parts = selectedTimeString
-            .split(separator: ":")
-            .compactMap { Int($0) }
-
-        guard parts.count == 2 else {
-            return date
-        }
-
-        var components = Calendar.current.dateComponents(
-            [.year, .month, .day],
-            from: date
+        ReservationTimeSelectionHelper.applying(
+            timeString: selectedTimeString,
+            to: date
         )
-
-        components.hour = parts[0]
-        components.minute = parts[1]
-        components.second = 0
-
-        return Calendar.current.date(from: components) ?? date
     }
-
     private static func defaultReservationDate() -> Date {
         let tomorrow = Calendar.current.date(
             byAdding: .day,

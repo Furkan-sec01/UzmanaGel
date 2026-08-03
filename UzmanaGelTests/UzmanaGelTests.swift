@@ -246,3 +246,93 @@ struct ReservationStatusTests {
         #expect(ReservationStatus.noShow.isBlockingSlot)
     }
 }
+
+@Suite("Reservation Time Selection Tests")
+struct ReservationTimeSelectionTests {
+
+    @Test("Keeps current time when it is available")
+    func keepsCurrentTimeWhenAvailable() {
+        let result = ReservationTimeSelectionHelper.resolvedTime(
+            currentTime: "11:00",
+            availableTimeSlots: ["09:00", "10:00", "11:00"],
+            bookedTimeStrings: ["09:00", "10:00"]
+        )
+
+        #expect(result == "11:00")
+    }
+
+    @Test("Selects first available time when current time is booked")
+    func selectsFirstAvailableTime() {
+        let result = ReservationTimeSelectionHelper.resolvedTime(
+            currentTime: "09:00",
+            availableTimeSlots: [
+                "09:00",
+                "10:00",
+                "11:00",
+                "12:00"
+            ],
+            bookedTimeStrings: ["09:00", "10:00"]
+        )
+
+        #expect(result == "11:00")
+    }
+
+    @Test("Keeps current time when all slots are booked")
+    func keepsCurrentTimeWhenAllSlotsAreBooked() {
+        let result = ReservationTimeSelectionHelper.resolvedTime(
+            currentTime: "09:00",
+            availableTimeSlots: ["09:00", "10:00"],
+            bookedTimeStrings: ["09:00", "10:00"]
+        )
+
+        #expect(result == "09:00")
+    }
+
+    @Test("Applies selected time to the given date")
+    func appliesSelectedTimeToDate() {
+        let timeZone = TimeZone(secondsFromGMT: 0)!
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+
+        let date = calendar.date(
+            from: DateComponents(
+                year: 2026,
+                month: 8,
+                day: 3,
+                hour: 7,
+                minute: 20
+            )
+        )!
+
+        let result = ReservationTimeSelectionHelper.applying(
+            timeString: "14:45",
+            to: date,
+            calendar: calendar
+        )
+
+        let components = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second],
+            from: result
+        )
+
+        #expect(components.year == 2026)
+        #expect(components.month == 8)
+        #expect(components.day == 3)
+        #expect(components.hour == 14)
+        #expect(components.minute == 45)
+        #expect(components.second == 0)
+    }
+
+    @Test("Returns original date for invalid time")
+    func returnsOriginalDateForInvalidTime() {
+        let date = Date(timeIntervalSince1970: 1_786_000_000)
+
+        let result = ReservationTimeSelectionHelper.applying(
+            timeString: "invalid",
+            to: date
+        )
+
+        #expect(result == date)
+    }
+}
