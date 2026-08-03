@@ -10,6 +10,25 @@ import FirebaseAuth
 import FirebaseFirestore
 import SwiftUI
 
+enum NotificationPreferenceResolver {
+    static func resolve(
+        localValue: Bool?,
+        storedValue: Bool?,
+        legacyValue: Bool?,
+        defaultValue: Bool
+    ) -> Bool {
+        if let storedValue {
+            return storedValue
+        }
+
+        if let localValue {
+            return localValue
+        }
+
+        return legacyValue ?? defaultValue
+    }
+}
+
 
 class FirestorePreferencesService: PreferencesService {
     private let db = Firestore.firestore()
@@ -34,40 +53,31 @@ class FirestorePreferencesService: PreferencesService {
             defaults.object(forKey: "pref_smsNotifications")
             as? Bool ?? false
 
-        let hasLocalMessage =
+        let localMessage =
             defaults.object(
                 forKey: "messageNotificationsEnabled"
-            ) != nil
+            ) as? Bool
 
-        var message =
-            defaults.object(
-                forKey: "messageNotificationsEnabled"
-            ) as? Bool ?? true
+        var message = localMessage ?? true
 
-        let hasLocalSystem =
+        let localSystem =
             defaults.object(
                 forKey: "systemNotificationsEnabled"
-            ) != nil
+            ) as? Bool
 
-        var system =
-            defaults.object(
-                forKey: "systemNotificationsEnabled"
-            ) as? Bool ?? true
+        var system = localSystem ?? true
 
         var booking =
             defaults.object(
                 forKey: "reservationNotificationsEnabled"
             ) as? Bool ?? true
 
-        let hasLocalMarketing =
+        let localMarketing =
             defaults.object(
                 forKey: "marketingNotificationsEnabled"
-            ) != nil
+            ) as? Bool
 
-        var marketing =
-            defaults.object(
-                forKey: "marketingNotificationsEnabled"
-            ) as? Bool ?? false
+        var marketing = localMarketing ?? false
 
         if let uid = currentUserId {
             let document = try await db
@@ -93,39 +103,42 @@ class FirestorePreferencesService: PreferencesService {
                     notificationMap["smsNotificationsEnabled"]
                     as? Bool ?? sms
 
-                if let storedMessage =
-                    notificationMap["messageNotificationsEnabled"]
-                        as? Bool {
-                    message = storedMessage
-                } else if !hasLocalMessage {
-                    message =
+                message = NotificationPreferenceResolver.resolve(
+                    localValue: localMessage,
+                    storedValue:
+                        notificationMap["messageNotificationsEnabled"]
+                        as? Bool,
+                    legacyValue:
                         notificationMap["smsNotificationsEnabled"]
-                        as? Bool ?? message
-                }
+                        as? Bool,
+                    defaultValue: true
+                )
 
-                if let storedSystem =
-                    notificationMap["systemNotificationsEnabled"]
-                        as? Bool {
-                    system = storedSystem
-                } else if !hasLocalSystem {
-                    system =
+                system = NotificationPreferenceResolver.resolve(
+                    localValue: localSystem,
+                    storedValue:
+                        notificationMap["systemNotificationsEnabled"]
+                        as? Bool,
+                    legacyValue:
                         notificationMap["emailNotificationsEnabled"]
-                        as? Bool ?? system
-                }
+                        as? Bool,
+                    defaultValue: true
+                )
 
                 booking =
                     notificationMap["bookingNotificationsEnabled"]
                     as? Bool ?? booking
 
-                if let storedMarketing =
-                    notificationMap["marketingNotificationsEnabled"]
-                        as? Bool {
-                    marketing = storedMarketing
-                } else if !hasLocalMarketing {
-                    marketing =
+                marketing = NotificationPreferenceResolver.resolve(
+                    localValue: localMarketing,
+                    storedValue:
+                        notificationMap["marketingNotificationsEnabled"]
+                        as? Bool,
+                    legacyValue:
                         notificationMap["promoNotificationsEnabled"]
-                        as? Bool ?? marketing
-                }
+                        as? Bool,
+                    defaultValue: false
+                )
             }
         }
 
