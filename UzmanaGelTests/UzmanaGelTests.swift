@@ -183,3 +183,66 @@ struct ReservationSlotKeyBuilderTests {
         #expect(result.timeKey == "0005")
     }
 }
+
+@Suite("Reservation Status Tests")
+struct ReservationStatusTests {
+
+    @Test("Pending supports only valid transitions")
+    func pendingSupportsOnlyValidTransitions() {
+        #expect(ReservationStatus.pending.canTransition(to: .accepted))
+        #expect(ReservationStatus.pending.canTransition(to: .rejected))
+        #expect(ReservationStatus.pending.canTransition(to: .cancelled))
+
+        #expect(!ReservationStatus.pending.canTransition(to: .inProgress))
+        #expect(!ReservationStatus.pending.canTransition(to: .completed))
+        #expect(!ReservationStatus.pending.canTransition(to: .noShow))
+    }
+
+    @Test("Accepted supports only valid transitions")
+    func acceptedSupportsOnlyValidTransitions() {
+        #expect(ReservationStatus.accepted.canTransition(to: .inProgress))
+        #expect(ReservationStatus.accepted.canTransition(to: .noShow))
+        #expect(ReservationStatus.accepted.canTransition(to: .cancelled))
+
+        #expect(!ReservationStatus.accepted.canTransition(to: .pending))
+        #expect(!ReservationStatus.accepted.canTransition(to: .completed))
+        #expect(!ReservationStatus.accepted.canTransition(to: .rejected))
+    }
+
+    @Test("In progress can only become completed")
+    func inProgressCanOnlyBecomeCompleted() {
+        #expect(ReservationStatus.inProgress.canTransition(to: .completed))
+
+        #expect(!ReservationStatus.inProgress.canTransition(to: .pending))
+        #expect(!ReservationStatus.inProgress.canTransition(to: .accepted))
+        #expect(!ReservationStatus.inProgress.canTransition(to: .cancelled))
+    }
+
+    @Test("Terminal statuses cannot transition")
+    func terminalStatusesCannotTransition() {
+        let terminalStatuses: [ReservationStatus] = [
+            .completed,
+            .rejected,
+            .cancelled,
+            .noShow
+        ]
+
+        for currentStatus in terminalStatuses {
+            for newStatus in ReservationStatus.allCases {
+                #expect(!currentStatus.canTransition(to: newStatus))
+            }
+        }
+    }
+
+    @Test("Cancelled and rejected reservations release the slot")
+    func cancelledAndRejectedReservationsReleaseSlot() {
+        #expect(!ReservationStatus.cancelled.isBlockingSlot)
+        #expect(!ReservationStatus.rejected.isBlockingSlot)
+
+        #expect(ReservationStatus.pending.isBlockingSlot)
+        #expect(ReservationStatus.accepted.isBlockingSlot)
+        #expect(ReservationStatus.inProgress.isBlockingSlot)
+        #expect(ReservationStatus.completed.isBlockingSlot)
+        #expect(ReservationStatus.noShow.isBlockingSlot)
+    }
+}
