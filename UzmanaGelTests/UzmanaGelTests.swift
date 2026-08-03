@@ -99,3 +99,87 @@ struct NotificationPreferenceResolverTests {
         #expect(result == false)
     }
 }
+@Suite("Reservation Slot Key Builder Tests")
+struct ReservationSlotKeyBuilderTests {
+
+    @Test("Builds date and time keys correctly")
+    func buildsDateAndTimeKeysCorrectly() {
+        let timeZone = TimeZone(secondsFromGMT: 0)!
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+
+        let date = calendar.date(
+            from: DateComponents(
+                year: 2026,
+                month: 8,
+                day: 3,
+                hour: 13,
+                minute: 45
+            )
+        )!
+
+        let result = ReservationSlotKeyBuilder.build(
+            from: date,
+            timeZone: timeZone
+        )
+
+        #expect(result.dateKey == "20260803")
+        #expect(result.timeString == "13:45")
+        #expect(result.timeKey == "1345")
+    }
+
+    @Test("Uses the provided time zone")
+    func usesProvidedTimeZone() {
+        let utc = TimeZone(secondsFromGMT: 0)!
+        let istanbul = TimeZone(identifier: "Europe/Istanbul")!
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = utc
+
+        let date = calendar.date(
+            from: DateComponents(
+                year: 2026,
+                month: 8,
+                day: 3,
+                hour: 22,
+                minute: 30
+            )
+        )!
+
+        let result = ReservationSlotKeyBuilder.build(
+            from: date,
+            timeZone: istanbul
+        )
+
+        #expect(result.dateKey == "20260804")
+        #expect(result.timeString == "01:30")
+        #expect(result.timeKey == "0130")
+    }
+
+    @Test("Preserves leading zeros in time key")
+    func preservesLeadingZerosInTimeKey() {
+        let timeZone = TimeZone(secondsFromGMT: 0)!
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+
+        let date = calendar.date(
+            from: DateComponents(
+                year: 2026,
+                month: 8,
+                day: 3,
+                hour: 0,
+                minute: 5
+            )
+        )!
+
+        let result = ReservationSlotKeyBuilder.build(
+            from: date,
+            timeZone: timeZone
+        )
+
+        #expect(result.timeString == "00:05")
+        #expect(result.timeKey == "0005")
+    }
+}

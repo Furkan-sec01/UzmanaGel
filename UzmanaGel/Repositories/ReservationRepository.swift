@@ -9,6 +9,42 @@ import Foundation
 import FirebaseAuth
 import FirebaseFirestore
 
+struct ReservationSlotKey: Equatable {
+    let dateKey: String
+    let timeString: String
+    let timeKey: String
+}
+
+enum ReservationSlotKeyBuilder {
+
+    static func build(
+        from date: Date,
+        timeZone: TimeZone = .current
+    ) -> ReservationSlotKey {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
+
+        formatter.dateFormat = "yyyyMMdd"
+        let dateKey = formatter.string(from: date)
+
+        formatter.dateFormat = "HH:mm"
+        let timeString = formatter.string(from: date)
+
+        let timeKey = timeString.replacingOccurrences(
+            of: ":",
+            with: ""
+        )
+
+        return ReservationSlotKey(
+            dateKey: dateKey,
+            timeString: timeString,
+            timeKey: timeKey
+        )
+    }
+}
+
 
 final class ReservationRepository {
 
@@ -150,10 +186,13 @@ final class ReservationRepository {
             .collection(collectionName)
             .document()
 
-        let dateKey = bookedSlotDateKey(from: reservationDate)
-        let timeString = bookedSlotTimeString(from: reservationDate)
-        let timeKey = timeString.replacingOccurrences(of: ":", with: "")
+        let slotKey = ReservationSlotKeyBuilder.build(
+            from: reservationDate
+        )
 
+        let dateKey = slotKey.dateKey
+        let timeString = slotKey.timeString
+        let timeKey = slotKey.timeKey
         let bookedSlotRef = db
             .collection(bookedSlotsCollectionName)
             .document(trimmedProviderId)
@@ -251,13 +290,13 @@ final class ReservationRepository {
 
         return reservationId
     }
-    
+
     // Fetch one reservation by ID
     func fetchReservation(byId reservationId: String) async throws -> Reservation {
         guard let currentUser = Auth.auth().currentUser else {
             throw ReservationRepositoryError.userNotFound
         }
-        
+
 
         let trimmedReservationId = reservationId.trimmingCharacters(
             in: .whitespacesAndNewlines
@@ -300,7 +339,9 @@ final class ReservationRepository {
             throw ReservationRepositoryError.invalidProvider
         }
 
-        let dateKey = bookedSlotDateKey(from: date)
+        let dateKey = ReservationSlotKeyBuilder.build(
+            from: date
+        ).dateKey
 
         let snapshot = try await db
             .collection(bookedSlotsCollectionName)
@@ -351,7 +392,7 @@ final class ReservationRepository {
             $0.createdAt > $1.createdAt
         }
     }
-    
+
     func fetchProviderReservations() async throws -> [Reservation] {
         guard let currentUser = Auth.auth().currentUser else {
             throw ReservationRepositoryError.userNotFound
@@ -370,7 +411,7 @@ final class ReservationRepository {
             $0.reservationDate < $1.reservationDate
         }
     }
-    
+
     func fetchReservationsForProvider(
         providerId: String
     ) async throws -> [Reservation] {
@@ -521,9 +562,13 @@ final class ReservationRepository {
             throw ReservationRepositoryError.invalidReservation
         }
 
-        let dateKey = bookedSlotDateKey(from: reservationDate)
-        let timeString = bookedSlotTimeString(from: reservationDate)
-        let timeKey = timeString.replacingOccurrences(of: ":", with: "")
+        let slotKey = ReservationSlotKeyBuilder.build(
+            from: reservationDate
+        )
+
+        let dateKey = slotKey.dateKey
+        let timeString = slotKey.timeString
+        let timeKey = slotKey.timeKey
 
         let bookedSlotRef = db
             .collection(bookedSlotsCollectionName)
@@ -584,19 +629,7 @@ final class ReservationRepository {
         try await batch.commit()
     }
 
-    private func bookedSlotDateKey(from date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "yyyyMMdd"
-        return formatter.string(from: date)
-    }
 
-    private func bookedSlotTimeString(from date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
-    }
 
     ///Firestore'dan gelen veriyi Swift modeline cevirir
     private func mapReservation(
