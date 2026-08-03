@@ -24,6 +24,45 @@ service cloud.firestore {
         ).data.participantIds;
     }
 
+    // Keep reservation and slot status in sync.
+    function reservationSlotMatchesAfter(
+      reservationId,
+      previousReservation,
+      nextReservation
+    ) {
+      return (
+        previousReservation.keys().hasAll([
+          "dateKey",
+          "timeString",
+          "timeKey"
+        ])
+        && existsAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(previousReservation.providerId)/dates/$(previousReservation.dateKey)/times/$(previousReservation.timeKey)
+        )
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(previousReservation.providerId)/dates/$(previousReservation.dateKey)/times/$(previousReservation.timeKey)
+        ).data.providerId == previousReservation.providerId
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(previousReservation.providerId)/dates/$(previousReservation.dateKey)/times/$(previousReservation.timeKey)
+        ).data.dateKey == previousReservation.dateKey
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(previousReservation.providerId)/dates/$(previousReservation.dateKey)/times/$(previousReservation.timeKey)
+        ).data.timeString == previousReservation.timeString
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(previousReservation.providerId)/dates/$(previousReservation.dateKey)/times/$(previousReservation.timeKey)
+        ).data.reservationId == reservationId
+        && getAfter(
+          /databases/$(database)/documents/provider_booked_slots/$(previousReservation.providerId)/dates/$(previousReservation.dateKey)/times/$(previousReservation.timeKey)
+        ).data.status == nextReservation.status
+      )
+      ||
+      !previousReservation.keys().hasAny([
+        "dateKey",
+        "timeString",
+        "timeKey"
+      ]);
+    }
+
     // MARK: - Provider Application History
 
     match /provider_application_history/{historyId} {
@@ -638,6 +677,11 @@ service cloud.firestore {
 
       allow update: if signedIn()
         && request.resource.data.updatedAt is timestamp
+        && reservationSlotMatchesAfter(
+          reservationId,
+          resource.data,
+          request.resource.data
+        )
         && (
           (
             resource.data.customerId == request.auth.uid
