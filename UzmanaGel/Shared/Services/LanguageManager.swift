@@ -73,6 +73,71 @@ class LanguageManager: ObservableObject {
         "Moderasyon": "Moderation",
         "Arşiv": "Archive",
         
+        // Admin - Expert Applications
+        "Uzman Başvuruları": "Expert Applications",
+        "Bekleyen Başvuru Yok": "No Pending Applications",
+        "Yeni bir uzman başvurusu gönderildiğinde burada görünecektir.": "When a new expert application is submitted, it will appear here.",
+        "Listeyi Yenile": "Refresh List",
+        "Başvurular yükleniyor...": "Loading applications...",
+        "Başvuru geçmişi": "Application history",
+        
+        // Admin - Reported Reviews
+        "Rapor durumu": "Report status",
+        "İncelemede": "Under Review",
+        "Bekleyen Bildirim Yok": "No Pending Reports",
+        "İncelemede Yorum Yok": "No Reviews Under Review",
+        "İncelenmesi gereken yeni bir yorum bildirimi bulunmuyor.": "There are no new comment reports to review.",
+        "İleri incelemeye alınmış bir yorum bulunmuyor.": "There are no reviews marked for further review.",
+        "Yenile": "Refresh",
+        "Bildirimler yükleniyor...": "Loading reports...",
+        "Raporu Reddet": "Reject Report",
+        "İncelemeye Al": "Move to Under Review",
+        "Yorumu Kaldır": "Remove Review",
+        "Rapor reddedilsin mi?": "Reject this report?",
+        "Yorum incelemeye alınsın mı?": "Move review to under review?",
+        "Yorum kaldırılsın mı?": "Remove this review?",
+        "Rapor kapatılacak ancak yorum yayında kalacak.": "Report will be closed but review remains published.",
+        "Rapor ileri inceleme kuyruğuna taşınacak.": "Report will be moved to further review queue.",
+        "Yorum yayından kaldırılacak ve moderasyon arşivine kaydedilecek.": "Review will be removed from publication and saved to moderation archive.",
+        
+        // Admin - Application History
+        "Başvuru Geçmişi": "Application History",
+        "Başvuru Geçmişi Yok": "No Application History",
+        "Tamamlanan uzman başvuru kararları burada görünecek.": "Completed expert application decisions will appear here.",
+        "Başvuru geçmişi yükleniyor...": "Loading application history...",
+        "Geçmiş Yüklenemedi": "Failed to Load History",
+        "Eksik Belge": "Missing Document",
+        "İşlem": "Action",
+        "Taslak": "Draft",
+        "Belirtilmemiş": "Not Specified",
+        "Önceki": "Previous",
+        "Admin Açıklaması": "Admin Note",
+        "İşlemi yapan": "Processed by",
+        
+        // Admin - Moderation History
+        "Moderasyon Geçmişi Yok": "No Moderation History",
+        "Tamamlanan yorum moderasyon işlemleri burada görüntülenecektir.": "Completed review moderation operations will be displayed here.",
+        "Rapor Reddedildi": "Report Rejected",
+        "Yorum Kaldırıldı": "Review Removed",
+        "Kategori:": "Category:",
+        "YORUM İÇERİĞİ": "REVIEW CONTENT",
+        "Kullanıcı:": "User:",
+        "Yorum ID:": "Comment ID:",
+        "Admin Notu": "Admin Note",
+        "Geçmiş yükleniyor...": "Loading history...",
+        "Geçmiş yüklenemedi": "Failed to load history",
+        
+        // Report Categories & Common Badges
+        "Spam / Reklam": "Spam / Advertising",
+        "Diğer": "Other",
+        "Sahte Yorum": "Fake Review",
+        "Uygunsuz İçerik": "Inappropriate Content",
+        "Taciz / Hakaret": "Harassment / Insult",
+        "Telif / Gizlilik İhlali": "Copyright / Privacy Violation",
+        "Bilinmeyen kullanıcı": "Unknown user",
+        "Yorum bulunamadı.": "Review not found.",
+
+        
         // Preferences Page / View
         "BİLDİRİM AYARLARI": "NOTIFICATION SETTINGS",
         "Bildirim Ayarları": "Notification Settings",

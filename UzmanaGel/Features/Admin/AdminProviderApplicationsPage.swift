@@ -26,7 +26,7 @@ struct AdminProviderApplicationsPage: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(backgroundColor.ignoresSafeArea())
-        .navigationTitle("Uzman Başvuruları")
+        .navigationTitle("Uzman Başvuruları".localized)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -47,7 +47,7 @@ struct AdminProviderApplicationsPage: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
                 }
-                .accessibilityLabel("Başvuru geçmişi")
+                .accessibilityLabel("Başvuru geçmişi".localized)
             }
         }
     }
@@ -55,7 +55,7 @@ struct AdminProviderApplicationsPage: View {
     @ViewBuilder
     private var adminContent: some View {
         if viewModel.isLoading && viewModel.applications.isEmpty {
-            ProgressView("Başvurular yükleniyor...")
+            ProgressView("Başvurular yükleniyor...".localized)
         } else if let errorMessage = viewModel.errorMessage,
                   viewModel.applications.isEmpty {
             errorState(message: errorMessage)
@@ -121,7 +121,7 @@ struct AdminProviderApplicationsPage: View {
 
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
-                    Text("Bekleyen Başvuru Yok")
+                    Text("Bekleyen Başvuru Yok".localized)
                         .font(.title3.bold())
                         .foregroundStyle(.primary)
 
@@ -134,7 +134,7 @@ struct AdminProviderApplicationsPage: View {
                         .clipShape(Capsule())
                 }
 
-                Text("Yeni bir uzman başvurusu gönderildiğinde burada görünecektir.")
+                Text("Yeni bir uzman başvurusu gönderildiğinde burada görünecektir.".localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -149,7 +149,7 @@ struct AdminProviderApplicationsPage: View {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 14, weight: .bold))
-                    Text("Listeyi Yenile")
+                    Text("Listeyi Yenile".localized)
                         .font(.system(size: 14, weight: .bold))
                 }
                 .foregroundStyle(Color("PrimaryColor"))

@@ -36,33 +36,33 @@ private enum AdminModerationAction {
     var dialogTitle: String {
         switch self {
         case .dismiss:
-            return "Rapor reddedilsin mi?"
+            return "Rapor reddedilsin mi?".localized
         case .flag:
-            return "Yorum incelemeye alınsın mı?"
+            return "Yorum incelemeye alınsın mı?".localized
         case .remove:
-            return "Yorum kaldırılsın mı?"
+            return "Yorum kaldırılsın mı?".localized
         }
     }
 
     var confirmationTitle: String {
         switch self {
         case .dismiss:
-            return "Raporu Reddet"
+            return "Raporu Reddet".localized
         case .flag:
-            return "İncelemeye Al"
+            return "İncelemeye Al".localized
         case .remove:
-            return "Yorumu Kaldır"
+            return "Yorumu Kaldır".localized
         }
     }
 
     var message: String {
         switch self {
         case .dismiss:
-            return "Rapor kapatılacak ancak yorum yayında kalacak."
+            return "Rapor kapatılacak ancak yorum yayında kalacak.".localized
         case .flag:
-            return "Rapor ileri inceleme kuyruğuna taşınacak."
+            return "Rapor ileri inceleme kuyruğuna taşınacak.".localized
         case .remove:
-            return "Yorum yayından kaldırılacak ve moderasyon arşivine kaydedilecek."
+            return "Yorum yayından kaldırılacak ve moderasyon arşivine kaydedilecek.".localized
         }
     }
 }
@@ -335,7 +335,7 @@ struct AdminReviewReportsPage: View {
             }
         }
         .background(backgroundColor.ignoresSafeArea())
-        .navigationTitle("Bildirilen Yorumlar")
+        .navigationTitle("Bildirilen Yorumlar".localized)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -359,16 +359,16 @@ struct AdminReviewReportsPage: View {
             Text(selectedAction?.message ?? "")
         }
         .alert(
-            "İşlem Başarısız",
+            "İşlem Başarısız".localized,
             isPresented: operationErrorBinding
         ) {
-            Button("Tamam", role: .cancel) {
+            Button("Tamam".localized, role: .cancel) {
                 viewModel.errorMessage = nil
             }
         } message: {
             Text(
                 viewModel.errorMessage
-                    ?? "Bilinmeyen bir hata oluştu."
+                    ?? "Bilinmeyen bir hata oluştu.".localized
             )
         }
     }
@@ -376,13 +376,13 @@ struct AdminReviewReportsPage: View {
     private var adminContent: some View {
         VStack(spacing: 0) {
             Picker(
-                "Rapor durumu",
+                "Rapor durumu".localized,
                 selection: $selectedStatus
             ) {
-                Text("Bekleyen")
+                Text("Bekleyen".localized)
                     .tag("pending")
 
-                Text("İncelemede")
+                Text("İncelemede".localized)
                     .tag("flagged")
             }
             .pickerStyle(.segmented)
@@ -393,7 +393,7 @@ struct AdminReviewReportsPage: View {
             Group {
                 if viewModel.isLoading &&
                     viewModel.reports.isEmpty {
-                    ProgressView("Bildirimler yükleniyor...")
+                    ProgressView("Bildirimler yükleniyor...".localized)
                         .frame(
                             maxWidth: .infinity,
                             maxHeight: .infinity
@@ -443,7 +443,7 @@ struct AdminReviewReportsPage: View {
 
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
-                    Text(selectedStatus == "pending" ? "Bekleyen Bildirim Yok" : "İncelemede Yorum Yok")
+                    Text(selectedStatus == "pending" ? "Bekleyen Bildirim Yok".localized : "İncelemede Yorum Yok".localized)
                         .font(.title3.bold())
                         .foregroundStyle(.primary)
 
@@ -458,8 +458,8 @@ struct AdminReviewReportsPage: View {
 
                 Text(
                     selectedStatus == "pending"
-                        ? "İncelenmesi gereken yeni bir yorum bildirimi bulunmuyor."
-                        : "İleri incelemeye alınmış bir yorum bulunmuyor."
+                        ? "İncelenmesi gereken yeni bir yorum bildirimi bulunmuyor.".localized
+                        : "İleri incelemeye alınmış bir yorum bulunmuyor.".localized
                 )
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -475,7 +475,7 @@ struct AdminReviewReportsPage: View {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 14, weight: .bold))
-                    Text("Yenile")
+                    Text("Yenile".localized)
                         .font(.system(size: 14, weight: .bold))
                 }
                 .foregroundStyle(Color("PrimaryColor"))

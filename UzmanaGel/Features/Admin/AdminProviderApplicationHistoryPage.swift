@@ -283,7 +283,7 @@ struct AdminProviderApplicationHistoryPage: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(backgroundColor.ignoresSafeArea())
-        .navigationTitle("Başvuru Geçmişi")
+        .navigationTitle("Başvuru Geçmişi".localized)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -296,16 +296,16 @@ struct AdminProviderApplicationHistoryPage: View {
             await viewModel.loadHistory()
         }
         .alert(
-            "Geçmiş Yüklenemedi",
+            "Geçmiş Yüklenemedi".localized,
             isPresented: operationErrorBinding
         ) {
-            Button("Tamam", role: .cancel) {
+            Button("Tamam".localized, role: .cancel) {
                 viewModel.clearError()
             }
         } message: {
             Text(
                 viewModel.errorMessage
-                    ?? "Bilinmeyen bir hata oluştu."
+                    ?? "Bilinmeyen bir hata oluştu.".localized
             )
         }
     }
@@ -313,7 +313,7 @@ struct AdminProviderApplicationHistoryPage: View {
     @ViewBuilder
     private var adminContent: some View {
         if viewModel.isLoading && viewModel.records.isEmpty {
-            ProgressView("Başvuru geçmişi yükleniyor...")
+            ProgressView("Başvuru geçmişi yükleniyor...".localized)
         } else if let errorMessage = viewModel.errorMessage,
                   viewModel.records.isEmpty {
             errorState(message: errorMessage)
@@ -406,13 +406,13 @@ struct AdminProviderApplicationHistoryPage: View {
 
             // Status transition pill box
             HStack(spacing: 12) {
-                statusPill(title: "Önceki", status: record.previousStatus)
+                statusPill(title: "Önceki".localized, status: record.previousStatus)
 
                 Image(systemName: "arrow.right")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(Color.secondary.opacity(0.6))
 
-                statusPill(title: "Yeni", status: record.status)
+                statusPill(title: "Yeni".localized, status: record.status)
             }
             .padding(12)
             .background(Color.primary.opacity(0.03))
@@ -425,7 +425,7 @@ struct AdminProviderApplicationHistoryPage: View {
                         .frame(width: 3)
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Admin Açıklaması")
+                        Text("Admin Açıklaması".localized)
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Color("PrimaryColor"))
 
@@ -448,7 +448,7 @@ struct AdminProviderApplicationHistoryPage: View {
                         .foregroundStyle(Color.secondary)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("İşlemi yapan")
+                        Text("İşlemi yapan".localized)
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
 
@@ -504,28 +504,28 @@ struct AdminProviderApplicationHistoryPage: View {
         switch action {
         case "approve":
             return (
-                "Onaylandı",
+                "Onaylandı".localized,
                 "checkmark.shield.fill",
                 .green
             )
 
         case "reject":
             return (
-                "Reddedildi",
+                "Reddedildi".localized,
                 "xmark.shield.fill",
                 .red
             )
 
         case "requestDocuments":
             return (
-                "Eksik Belge",
+                "Eksik Belge".localized,
                 "doc.badge.ellipsis",
                 .orange
             )
 
         default:
             return (
-                "İşlem",
+                "İşlem".localized,
                 "clock.arrow.circlepath",
                 .secondary
             )
@@ -535,31 +535,31 @@ struct AdminProviderApplicationHistoryPage: View {
     private func statusTitle(_ status: String) -> String {
         switch status.lowercased() {
         case "draft":
-            return "Taslak"
+            return "Taslak".localized
 
         case "pending":
-            return "Bekliyor"
+            return "Bekliyor".localized
 
         case "approved":
-            return "Onaylandı"
+            return "Onaylandı".localized
 
         case "rejected":
-            return "Reddedildi"
+            return "Reddedildi".localized
 
         case "documentsrequired":
-            return "Eksik Belge"
+            return "Eksik Belge".localized
 
         default:
-            return status.isEmpty ? "Belirtilmemiş" : status
+            return status.isEmpty ? "Belirtilmemiş".localized : status.localized
         }
     }
 
     private var emptyState: some View {
         ContentUnavailableView(
-            "Başvuru Geçmişi Yok",
+            "Başvuru Geçmişi Yok".localized,
             systemImage: "clock.arrow.circlepath",
             description: Text(
-                "Tamamlanan uzman başvuru kararları burada görünecek."
+                "Tamamlanan uzman başvuru kararları burada görünecek.".localized
             )
         )
     }

@@ -9,9 +9,9 @@ private enum AdminModerationHistoryAction {
     var title: String {
         switch self {
         case .dismissed:
-            return "Rapor Reddedildi"
+            return "Rapor Reddedildi".localized
         case .removed:
-            return "Yorum Kaldırıldı"
+            return "Yorum Kaldırıldı".localized
         }
     }
 
@@ -162,11 +162,11 @@ struct AdminModerationHistoryPage: View {
                 )
             } else if viewModel.isLoading &&
                         viewModel.items.isEmpty {
-                ProgressView("Geçmiş yükleniyor...")
+                ProgressView("Geçmiş yükleniyor...".localized)
             } else if let errorMessage = viewModel.errorMessage,
                       viewModel.items.isEmpty {
                 ContentUnavailableView(
-                    "Geçmiş yüklenemedi",
+                    "Geçmiş yüklenemedi".localized,
                     systemImage: "exclamationmark.triangle",
                     description: Text(errorMessage)
                 )
@@ -181,7 +181,7 @@ struct AdminModerationHistoryPage: View {
             maxHeight: .infinity
         )
         .background(backgroundColor.ignoresSafeArea())
-        .navigationTitle("Moderasyon Geçmişi")
+        .navigationTitle("Moderasyon Geçmişi".localized)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color("PrimaryColor"), for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -226,11 +226,11 @@ struct AdminModerationHistoryPage: View {
             }
 
             VStack(spacing: 8) {
-                Text("Moderasyon Geçmişi Yok")
+                Text("Moderasyon Geçmişi Yok".localized)
                     .font(.title3.bold())
                     .foregroundStyle(.primary)
 
-                Text("Tamamlanan yorum moderasyon işlemleri burada görüntülenecektir.")
+                Text("Tamamlanan yorum moderasyon işlemleri burada görüntülenecektir.".localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -245,7 +245,7 @@ struct AdminModerationHistoryPage: View {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 14, weight: .bold))
-                    Text("Yenile")
+                    Text("Yenile".localized)
                         .font(.system(size: 14, weight: .bold))
                 }
                 .foregroundStyle(Color("PrimaryColor"))
@@ -305,11 +305,11 @@ struct AdminModerationHistoryPage: View {
 
             if !item.category.isEmpty {
                 HStack(spacing: 6) {
-                    Text("Kategori:")
+                    Text("Kategori:".localized)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.primary)
 
-                    Text(item.category)
+                    Text(item.category.localized)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Color("PrimaryColor"))
                 }
@@ -317,7 +317,7 @@ struct AdminModerationHistoryPage: View {
 
             if !item.comment.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("YORUM İÇERİĞİ")
+                    Text("YORUM İÇERİĞİ".localized)
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.secondary)
 
@@ -337,11 +337,11 @@ struct AdminModerationHistoryPage: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
 
-                    Text("Kullanıcı:")
+                    Text("Kullanıcı:".localized)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
 
-                    Text(formatIdentifier(item.userName))
+                    Text(formatIdentifier(item.userName.localized))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.primary)
                         .textSelection(.enabled)
@@ -352,7 +352,7 @@ struct AdminModerationHistoryPage: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
 
-                    Text("Yorum ID:")
+                    Text("Yorum ID:".localized)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
 
@@ -370,7 +370,7 @@ struct AdminModerationHistoryPage: View {
                         .frame(width: 3)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Admin Notu")
+                        Text("Admin Notu".localized)
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(item.action.tint)
 
