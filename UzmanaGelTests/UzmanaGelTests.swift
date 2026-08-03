@@ -336,3 +336,99 @@ struct ReservationTimeSelectionTests {
         #expect(result == date)
     }
 }
+
+@Suite("Reservation Form Validation Tests")
+struct ReservationFormValidationTests {
+
+    private let now = Date(timeIntervalSince1970: 1_786_000_000)
+
+    @Test("Fails when booked slots could not be loaded")
+    func failsWhenBookedSlotsCouldNotBeLoaded() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: false,
+            selectedTime: "09:00",
+            bookedTimeStrings: [],
+            customerName: "Halil",
+            addressText: "Bursa",
+            reservationDate: now.addingTimeInterval(3_600),
+            now: now
+        )
+
+        #expect(result == .bookedSlotsUnavailable)
+    }
+
+    @Test("Fails when selected time is booked")
+    func failsWhenSelectedTimeIsBooked() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: true,
+            selectedTime: "09:00",
+            bookedTimeStrings: ["09:00"],
+            customerName: "Halil",
+            addressText: "Bursa",
+            reservationDate: now.addingTimeInterval(3_600),
+            now: now
+        )
+
+        #expect(result == .selectedTimeBooked)
+    }
+
+    @Test("Fails when customer name is empty")
+    func failsWhenCustomerNameIsEmpty() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: true,
+            selectedTime: "09:00",
+            bookedTimeStrings: [],
+            customerName: "   ",
+            addressText: "Bursa",
+            reservationDate: now.addingTimeInterval(3_600),
+            now: now
+        )
+
+        #expect(result == .customerNameMissing)
+    }
+
+    @Test("Fails when address is empty")
+    func failsWhenAddressIsEmpty() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: true,
+            selectedTime: "09:00",
+            bookedTimeStrings: [],
+            customerName: "Halil",
+            addressText: "   ",
+            reservationDate: now.addingTimeInterval(3_600),
+            now: now
+        )
+
+        #expect(result == .addressMissing)
+    }
+
+    @Test("Fails when reservation date is not in the future")
+    func failsWhenReservationDateIsNotFuture() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: true,
+            selectedTime: "09:00",
+            bookedTimeStrings: [],
+            customerName: "Halil",
+            addressText: "Bursa",
+            reservationDate: now,
+            now: now
+        )
+
+        #expect(result == .reservationDateNotFuture)
+    }
+
+    @Test("Succeeds when reservation form is valid")
+    func succeedsWhenReservationFormIsValid() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: true,
+            selectedTime: "09:00",
+            bookedTimeStrings: ["10:00"],
+            customerName: " Halil ",
+            addressText: " Bursa ",
+            reservationDate: now.addingTimeInterval(3_600),
+            now: now
+        )
+
+        #expect(result == nil)
+    }
+}
