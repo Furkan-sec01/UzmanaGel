@@ -12,3 +12,6 @@ ui-debug.log
 storage-debug.log
 firebase-debug.log
 firebase-debug.*.log
+
+# Node dependencies
+node_modules/
