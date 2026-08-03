@@ -432,3 +432,82 @@ struct ReservationFormValidationTests {
         #expect(result == nil)
     }
 }
+
+@Suite("Reservation Validation Priority Tests")
+struct ReservationValidationPriorityTests {
+
+    private let now = Date(timeIntervalSince1970: 1_786_000_000)
+
+    @Test("Booked slot loading error has first priority")
+    func bookedSlotLoadingErrorHasFirstPriority() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: false,
+            selectedTime: "09:00",
+            bookedTimeStrings: ["09:00"],
+            customerName: "",
+            addressText: "",
+            reservationDate: now,
+            now: now
+        )
+
+        #expect(result == .bookedSlotsUnavailable)
+    }
+
+    @Test("Booked time error is checked before form fields")
+    func bookedTimeErrorIsCheckedBeforeFormFields() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: true,
+            selectedTime: "09:00",
+            bookedTimeStrings: ["09:00"],
+            customerName: "",
+            addressText: "",
+            reservationDate: now,
+            now: now
+        )
+
+        #expect(result == .selectedTimeBooked)
+    }
+
+    @Test("Customer name is checked before address and date")
+    func customerNameIsCheckedBeforeAddressAndDate() {
+        let result = ReservationFormValidator.validate(
+            bookedSlotsLoaded: true,
+            selectedTime: "09:00",
+            bookedTimeStrings: [],
+            customerName: "   ",
+            addressText: "   ",
+            reservationDate: now,
+            now: now
+        )
+
+        #expect(result == .customerNameMissing)
+    }
+
+    @Test("Validation errors contain correct user messages")
+    func validationErrorsContainCorrectMessages() {
+        #expect(
+            ReservationFormValidationError.bookedSlotsUnavailable.message ==
+            "Dolu saatler kontrol edilemediği için rezervasyon oluşturulamadı."
+        )
+
+        #expect(
+            ReservationFormValidationError.selectedTimeBooked.message ==
+            "Seçtiğiniz saat dolu. Lütfen başka bir saat seçin."
+        )
+
+        #expect(
+            ReservationFormValidationError.customerNameMissing.message ==
+            "Kullanıcı adı bulunamadı."
+        )
+
+        #expect(
+            ReservationFormValidationError.addressMissing.message ==
+            "Adres bilgisi boş bırakılamaz."
+        )
+
+        #expect(
+            ReservationFormValidationError.reservationDateNotFuture.message ==
+            "Geçmiş bir tarih veya saat seçemezsiniz."
+        )
+    }
+}
